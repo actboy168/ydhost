@@ -304,21 +304,14 @@ CAura::CAura(CConfig *CFG)
 
   m_CRC->Initialize();
   m_HostPort = CFG->GetInt("bot_hostport", 6112);
-  m_DefaultMap = CFG->GetString("bot_defaultmap", "dota");
   m_LANWar3Version = CFG->GetInt("lan_war3version", 26);
 
   // read the rest of the general configuration
 
   SetConfigs(CFG);
 
-  // load the default maps (note: make sure to run ExtractScripts first)
 
-  if (m_DefaultMap.size() < 4 || m_DefaultMap.substr(m_DefaultMap.size() - 4) != ".cfg")
-    m_DefaultMap += ".cfg";
-
-  CConfig MapCFG;
-  MapCFG.Read(m_MapCFGPath + m_DefaultMap);
-  m_Map = new CMap(this, &MapCFG, m_MapCFGPath + m_DefaultMap);
+  m_Map = new CMap(this, CFG, "");
 
 }
 

@@ -56,7 +56,6 @@ public:
   std::string m_VirtualHostName;                // config value: virtual host name
   std::string m_LanguageFile;                   // config value: language file
   std::string m_BindAddress;                    // config value: the address to host games on
-  std::string m_DefaultMap;                     // config value: default map (map.cfg)
   uint32_t m_ReconnectWaitTime;                 // config value: the maximum number of minutes to wait for a GProxy++ reliable reconnect
   uint32_t m_MaxGames;                          // config value: maximum number of games in progress
   uint32_t m_HostCounter;                       // the current host counter (a unique number to identify a game, incremented each time a game is created)
