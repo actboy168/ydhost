@@ -276,7 +276,7 @@ CAura::CAura(CConfig *CFG)
     m_GPSProtocol(new CGPSProtocol()),
     m_CRC(new CCRC32()),
     m_SHA(new CSHA1()),
-    m_CurrentGame(nullptr),	 \
+    m_CurrentGame(nullptr),
     m_Map(nullptr),
     m_Version(VERSION),
     m_HostCounter(1),
