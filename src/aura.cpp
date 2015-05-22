@@ -154,7 +154,7 @@ int main(int, char *argv[])
   // read config file
 
   CConfig CFG;
-  CFG.Read("aura.cfg");
+  CFG.Read("ydhost.cfg");
 
   Print("[AURA] starting up");
 
@@ -223,7 +223,7 @@ int main(int, char *argv[])
 
   gAura = new CAura(&CFG);
 
-  gAura->CreateGame(gAura->m_Map, GAME_PRIVATE, "123", "233", "", "", false);
+  gAura->CreateGame(gAura->m_Map, GAME_PRIVATE, CFG.GetString("bot_defaultgamename", ""), CFG.GetString("bot_defaultownername", ""), "", "", false);
 
   // check if it's properly configured
 
