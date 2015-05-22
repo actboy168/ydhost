@@ -226,6 +226,7 @@
   <ItemGroup>
     <ClCompile Include="config.cpp" />
     <ClCompile Include="crc32.cpp" />
+    <ClCompile Include="logging.cpp" />
     <ClCompile Include="fileutil.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="gameplayer.cpp" />
@@ -240,6 +241,7 @@
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="crc32.h" />
+    <ClInclude Include="logging.h" />
     <ClInclude Include="fileutil.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="gameplayer.h" />

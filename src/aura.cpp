@@ -130,14 +130,11 @@ static void SignalCatcher(int32_t)
     exit(1);
 }
 
+#include "logging.h"
 void Print(const string &message)
 {
-  cout << message << endl;
-}
-
-void Print2(const string &message)
-{
-  cout << message << endl;
+	cout << message << endl;
+	logging::logger() << message;
 }
 
 //
@@ -430,7 +427,7 @@ bool CAura::Update()
   {
     if ((*i)->Update(&fd, &send_fd))
     {
-      Print2("[AURA] deleting game [" + (*i)->GetGameName() + "]");
+      Print("[AURA] deleting game [" + (*i)->GetGameName() + "]");
       EventGameDeleted(*i);
       delete *i;
       i = m_Games.erase(i);
@@ -448,7 +445,7 @@ bool CAura::Update()
   {
     if (m_CurrentGame->Update(&fd, &send_fd))
     {
-      Print2("[AURA] deleting current game [" + m_CurrentGame->GetGameName() + "]");
+      Print("[AURA] deleting current game [" + m_CurrentGame->GetGameName() + "]");
       delete m_CurrentGame;
       m_CurrentGame = nullptr;
     }
@@ -638,7 +635,7 @@ void CAura::CreateGame(CMap *map, uint8_t gameState, string gameName, string own
     return;
   }
 
-  Print2("[AURA] creating game [" + gameName + "]");
+  Print("[AURA] creating game [" + gameName + "]");
 
   m_CurrentGame = new CGame(this, map, m_HostPort, gameState, gameName, ownerName, creatorName, creatorServer);
 }

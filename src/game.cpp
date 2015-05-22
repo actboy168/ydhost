@@ -111,7 +111,7 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     Print("[GAME: " + m_GameName + "] listening on port " + to_string(m_HostPort));
   else
   {
-    Print2("[GAME: " + m_GameName + "] error listening on port " + to_string(m_HostPort));
+    Print("[GAME: " + m_GameName + "] error listening on port " + to_string(m_HostPort));
     m_Exiting = true;
   }
 }
@@ -2919,7 +2919,7 @@ void CGame::EventPlayerPongToHost(CGamePlayer *player)
 
 void CGame::EventGameStarted()
 {
-  Print2("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumHumanPlayers()) + " players");
+  Print("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumHumanPlayers()) + " players");
 
   // encode the HCL command string in the slot handicaps
   // here's how it works:

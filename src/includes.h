@@ -56,7 +56,6 @@ uint32_t GetTicks();  // milliseconds
 
 // output
 
-void Print(const std::string &message);    // outputs to console
-void Print2(const std::string &message);   // outputs to console and irc
+void Print(const std::string &message);
 
 #endif  // AURA_INCLUDES_H_
