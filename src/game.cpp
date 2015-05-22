@@ -1343,6 +1343,11 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
     SendAllChat("Game locked. Only the game owner and root admins can run game commands");
     m_Locked = true;
   }
+
+  if (!m_CountDownStarted)
+  {
+	  StartCountDown(true);
+  }
 }
 
 void CGame::EventPlayerLeft(CGamePlayer *player, uint32_t reason)
