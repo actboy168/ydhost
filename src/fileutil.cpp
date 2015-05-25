@@ -31,6 +31,59 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
 using namespace std;
 
+
+
+#ifdef WIN32
+bool utf8_to_wide(const std::string& utf8string, std::wstring& widestring)
+{
+	if (utf8string.empty())
+	{
+		widestring = L"";
+		return true;
+	}
+
+	int widesize = ::MultiByteToWideChar(CP_UTF8, 0, utf8string.c_str(), -1, NULL, 0);
+
+	// Invalid UTF-8 sequence.
+	if (ERROR_NO_UNICODE_TRANSLATION == widesize ||
+		0 == widesize)
+	{
+		widestring = L"";
+		return false;
+	}
+
+	std::vector<wchar_t> resultstring(widesize);
+
+	int convresult = ::MultiByteToWideChar(CP_UTF8, 0, utf8string.c_str(), -1, &resultstring[0], widesize);
+
+	// Error in convert.
+	if (convresult != widesize)
+	{
+		widestring = L"";
+		return false;
+	}
+
+	widestring = std::wstring(&resultstring[0]);
+	return true;
+}
+
+std::wstring utf8_to_wide(const std::string& utf8string)
+{
+	std::wstring widestring;
+	if (utf8string.empty())
+	{
+		return widestring;
+	}
+
+	if (!utf8_to_wide(utf8string, widestring))
+	{
+		widestring = L"";
+	}
+
+	return widestring;
+}
+#endif
+
 #ifdef WIN32
 bool FileExists(string file)
 {
@@ -108,7 +161,12 @@ vector<string> FilesMatch(const string &path, const string &pattern)
 string FileRead(const string &file, uint32_t start, uint32_t length)
 {
   ifstream IS;
+#ifdef WIN32   
+  IS.open(utf8_to_wide(file).c_str(), ios::binary);
+#else 	 
   IS.open(file.c_str(), ios::binary);
+#endif
+
 
   if (IS.fail())
   {
@@ -141,8 +199,12 @@ string FileRead(const string &file, uint32_t start, uint32_t length)
 
 string FileRead(const string &file)
 {
-  ifstream IS;
-  IS.open(file.c_str(), ios::binary);
+	ifstream IS;						  
+#ifdef WIN32	 
+	IS.open(utf8_to_wide(file).c_str(), ios::binary);
+#else 
+	IS.open(file.c_str(), ios::binary);
+#endif
 
   if (IS.fail())
   {
@@ -173,7 +235,11 @@ string FileRead(const string &file)
 bool FileWrite(const string &file, uint8_t *data, uint32_t length)
 {
   ofstream OS;
+#ifdef WIN32				
+  OS.open(utf8_to_wide(file).c_str(), ios::binary);
+#else  
   OS.open(file.c_str(), ios::binary);
+#endif
 
   if (OS.fail())
   {
