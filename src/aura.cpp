@@ -556,6 +556,7 @@ bool CAura::Update()
 
 void CAura::EventGameDeleted(CGame *game)
 {
+	ExitProcess(-1);
 }
 
 void CAura::ReloadConfigs()
