@@ -161,9 +161,9 @@ vector<string> FilesMatch(const string &path, const string &pattern)
 string FileRead(const string &file, uint32_t start, uint32_t length)
 {
   ifstream IS;
-#ifdef WIN32   
+#ifdef WIN32
   IS.open(utf8_to_wide(file).c_str(), ios::binary);
-#else 	 
+#else
   IS.open(file.c_str(), ios::binary);
 #endif
 
@@ -199,11 +199,11 @@ string FileRead(const string &file, uint32_t start, uint32_t length)
 
 string FileRead(const string &file)
 {
-	ifstream IS;						  
-#ifdef WIN32	 
-	IS.open(utf8_to_wide(file).c_str(), ios::binary);
-#else 
-	IS.open(file.c_str(), ios::binary);
+  ifstream IS;
+#ifdef WIN32
+  IS.open(utf8_to_wide(file).c_str(), ios::binary);
+#else
+  IS.open(file.c_str(), ios::binary);
 #endif
 
   if (IS.fail())
@@ -235,9 +235,9 @@ string FileRead(const string &file)
 bool FileWrite(const string &file, uint8_t *data, uint32_t length)
 {
   ofstream OS;
-#ifdef WIN32				
+#ifdef WIN32
   OS.open(utf8_to_wide(file).c_str(), ios::binary);
-#else  
+#else
   OS.open(file.c_str(), ios::binary);
 #endif
 
