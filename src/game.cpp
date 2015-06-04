@@ -1604,40 +1604,6 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
       }
 
       //
-      // !LATENCY (set game latency)
-      //
-
-      else if (Command == "latency" || Command == "l")
-      {
-        if (Payload.empty())
-          SendAllChat("The game latency is " + to_string(m_Latency) + " ms");
-        else
-        {
-          try
-          {
-            m_Latency = stoul(Payload);
-
-            if (m_Latency <= 25)
-            {
-              m_Latency = 25;
-              SendAllChat("Setting game latency to the minimum of 25 ms");
-            }
-            else if (m_Latency >= 250)
-            {
-              m_Latency = 250;
-              SendAllChat("Setting game latency to the maximum of 250 ms");
-            }
-            else
-              SendAllChat("Setting game latency to " + to_string(m_Latency) + " ms");
-          }
-          catch (...)
-          {
-            // do nothing
-          }
-        }
-      }
-
-      //
       // !OPEN (open slot)
       //
 
@@ -1737,40 +1703,6 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
               Print("[GAME: " + m_GameName + "] bad input #2 to swap command");
             else
               SwapSlots((uint8_t)(SID1 - 1), (uint8_t)(SID2 - 1));
-          }
-        }
-      }
-
-      //
-      // !SYNCLIMIT
-      //
-
-      else if (Command == "synclimit" || Command == "sl")
-      {
-        if (Payload.empty())
-          SendAllChat("The sync limit is " + to_string(m_SyncLimit) + " packets");
-        else
-        {
-          try
-          {
-            m_SyncLimit = stoul(Payload);
-
-            if (m_SyncLimit <= 40)
-            {
-              m_SyncLimit = 40;
-              SendAllChat("Setting sync limit to the minimum of 40 packets");
-            }
-            else if (m_SyncLimit >= 120)
-            {
-              m_SyncLimit = 120;
-              SendAllChat("Setting sync limit to the maximum of 120 packets");
-            }
-            else
-              SendAllChat("Setting sync limit to " + to_string(m_SyncLimit) + " packets");
-          }
-          catch (...)
-          {
-            // do nothing
           }
         }
       }
