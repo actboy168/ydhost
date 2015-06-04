@@ -217,7 +217,6 @@ public:
   void OpenAllSlots();
   void CloseAllSlots();
   void ShuffleSlots();
-  void AddToSpoofed(const std::string &server, const std::string &name, bool sendMessage);
   bool IsOwner(std::string name);
   bool IsDownloading();
   void StartCountDown(bool force);

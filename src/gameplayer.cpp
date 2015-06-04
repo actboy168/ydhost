@@ -119,12 +119,11 @@ void CPotentialPlayer::Send(const BYTEARRAY &data) const
 // CGamePlayer
 //
 
-CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string &nJoinedRealm, const string &nName, const BYTEARRAY &nInternalIP)
+CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string &nName, const BYTEARRAY &nInternalIP)
   : m_Protocol(potential->m_Protocol),
     m_Game(potential->m_Game),
     m_Socket(potential->GetSocket()),
     m_InternalIP(nInternalIP),
-    m_JoinedRealm(nJoinedRealm),
     m_Name(nName),
     m_TotalPacketsSent(0),
     m_TotalPacketsReceived(1),
@@ -139,9 +138,7 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
     m_GProxyReconnectKey(GetTicks()),
     m_LastGProxyAckTime(0),
     m_PID(nPID),
-    m_Spoofed(false),
     m_WhoisShouldBeSent(false),
-    m_WhoisSent(false),
     m_DownloadAllowed(false),
     m_DownloadStarted(false),
     m_DownloadFinished(false),
@@ -186,14 +183,6 @@ uint32_t CGamePlayer::GetPing(bool LCPing) const
 bool CGamePlayer::Update(void *fd)
 {
   const uint32_t Time = GetTime();
-
-  // wait 4 seconds after joining before sending the /whois or /w
-  // if we send the /whois too early battle.net may not have caught up with where the player is and return erroneous results
-
-  if (m_WhoisShouldBeSent && !m_Spoofed && !m_WhoisSent && !m_JoinedRealm.empty() && Time - m_JoinTime >= 4)
-  {
-    m_WhoisSent = true;
-  }
 
   // check for socket timeouts
   // if we don't receive anything from a player for 30 seconds we can assume they've dropped

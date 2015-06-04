@@ -1094,12 +1094,6 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
     return;
   }
 
-  // identify their joined realm
-  // this is only possible because when we send a game refresh via LAN or battle.net we encode an ID value in the 4 most significant bits of the host counter
-  // the client sends the host counter when it joins so we can extract the ID value here
-  // note: this is not a replacement for spoof checking since it doesn't verify the player's name and it can be spoofed anyway
-
-  string JoinedRealm;
   const uint32_t HostCounterID = joinPlayer->GetHostCounter() >> 28;
 
   // we use an ID value of 0 to denote joining via LAN, we don't have to set their joined realm.
@@ -1169,13 +1163,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
   // we also have to be careful to not modify the m_Potentials vector since we're currently looping through it
 
   Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] joined the game");
-  CGamePlayer *Player = new CGamePlayer(potential, GetNewPID(), JoinedRealm, joinPlayer->GetName(), joinPlayer->GetInternalIP());
-
-  // consider LAN players to have already spoof checked since they can't
-  // since so many people have trouble with this feature we now use the JoinedRealm to determine LAN status
-
-  if (JoinedRealm.empty())
-    Player->SetSpoofed(true);
+  CGamePlayer *Player = new CGamePlayer(potential, GetNewPID(), joinPlayer->GetName(), joinPlayer->GetInternalIP());
 
   Player->SetWhoisShouldBeSent(false);
   m_Players.push_back(Player);
@@ -1439,7 +1427,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
 {
   string User = player->GetName(), Command = command, Payload = payload;
 
-  if (player->GetSpoofed() && IsOwner(User))
+  if (IsOwner(User))
   {
     Print("[GAME: " + m_GameName + "] admin [" + User + "] sent command [" + Command + "] with payload [" + Payload + "]");
 
@@ -2407,10 +2395,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
   }
   else
   {
-    if (!player->GetSpoofed())
-      Print("[GAME: " + m_GameName + "] non-spoofchecked user [" + User + "] sent command [" + Command + "] with payload [" + Payload + "]");
-    else
-      Print("[GAME: " + m_GameName + "] non-admin [" + User + "] sent command [" + Command + "] with payload [" + Payload + "]");
+    Print("[GAME: " + m_GameName + "] non-admin [" + User + "] sent command [" + Command + "] with payload [" + Payload + "]");
   }
 
   /*********************
@@ -3436,20 +3421,6 @@ void CGame::ShuffleSlots()
   // and finally tell everyone about the new slot configuration
 
   SendAllSlotInfo();
-}
-
-void CGame::AddToSpoofed(const string &server, const string &name, bool sendMessage)
-{
-  CGamePlayer *Player = GetPlayerFromName(name, true);
-
-  if (Player)
-  {
-    Player->SetSpoofedRealm(server);
-    Player->SetSpoofed(true);
-
-    if (sendMessage)
-      SendChat(Player, "Spoof check accepted for [" + name + "] on server [" + server + "]");
-  }
 }
 
 bool CGame::IsOwner(string name)

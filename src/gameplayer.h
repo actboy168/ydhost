@@ -87,8 +87,6 @@ private:
   std::queue<uint32_t> m_CheckSums;         // the last few checksums the player has sent (for detecting desyncs)
   std::queue<BYTEARRAY> m_GProxyBuffer;     // buffer with data used with GProxy++
   std::string m_LeftReason;                 // the reason the player left the game
-  std::string m_SpoofedRealm;               // the realm the player last spoof checked :wq
-  std::string m_JoinedRealm;                // the realm the player joined on (probable, can be spoofed)
   std::string m_Name;                       // the player's name
   uint32_t m_TotalPacketsSent;              // the total number of packets sent to the player
   uint32_t m_TotalPacketsReceived;          // the total number of packets received from the player
@@ -105,9 +103,7 @@ private:
   uint32_t m_GProxyReconnectKey;            // the GProxy++ reconnect key
   uint32_t m_LastGProxyAckTime;             // GetTime when we last acknowledged GProxy++ packet
   uint8_t m_PID;                            // the player's PID
-  bool m_Spoofed;                           // if the player has spoof checked or not
   bool m_WhoisShouldBeSent;                 // if a battle.net /whois should be sent for this player or not
-  bool m_WhoisSent;                         // if we've sent a battle.net /whois for this player yet (for spoof checking)
   bool m_DownloadAllowed;                   // if we're allowed to download the map or not (used with permission based map downloads)
   bool m_DownloadStarted;                   // if we've started downloading the map or not
   bool m_DownloadFinished;                  // if we've finished downloading the map or not
@@ -124,7 +120,7 @@ protected:
   bool m_DeleteMe;
 
 public:
-  CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nJoinedRealm, const std::string &nName, const BYTEARRAY &nInternalIP);
+  CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nName, const BYTEARRAY &nInternalIP);
   ~CGamePlayer();
 
   uint32_t GetPing(bool LCPing) const;
@@ -139,8 +135,6 @@ public:
   inline uint32_t GetNumCheckSums() const                             { return m_CheckSums.size(); }
   inline std::queue<uint32_t> *GetCheckSums()                         { return &m_CheckSums; }
   inline std::string GetLeftReason() const                            { return m_LeftReason; }
-  inline std::string GetSpoofedRealm() const                          { return m_SpoofedRealm; }
-  inline std::string GetJoinedRealm() const                           { return m_JoinedRealm; }
   inline uint32_t GetLeftCode() const                                 { return m_LeftCode; }
   inline uint32_t GetSyncCounter() const                              { return m_SyncCounter; }
   inline uint32_t GetJoinTime() const                                 { return m_JoinTime; }
@@ -154,9 +148,7 @@ public:
   inline uint32_t GetGProxyReconnectKey() const                       { return m_GProxyReconnectKey; }
   inline bool GetGProxy() const                                       { return m_GProxy; }
   inline bool GetGProxyDisconnectNoticeSent() const                   { return m_GProxyDisconnectNoticeSent; }
-  inline bool GetSpoofed() const                                      { return m_Spoofed; }
   inline bool GetWhoisShouldBeSent() const                            { return m_WhoisShouldBeSent; }
-  inline bool GetWhoisSent() const                                    { return m_WhoisSent; }
   inline bool GetDownloadAllowed() const                              { return m_DownloadAllowed; }
   inline bool GetDownloadStarted() const                              { return m_DownloadStarted; }
   inline bool GetDownloadFinished() const                             { return m_DownloadFinished; }
@@ -170,7 +162,6 @@ public:
   inline void SetSocket(CTCPSocket *nSocket)                                           { m_Socket = nSocket; }
   inline void SetDeleteMe(bool nDeleteMe)                                              { m_DeleteMe = nDeleteMe; }
   inline void SetLeftReason(const std::string &nLeftReason)                            { m_LeftReason = nLeftReason; }
-  inline void SetSpoofedRealm(const std::string &nSpoofedRealm)                        { m_SpoofedRealm = nSpoofedRealm; }
   inline void SetLeftCode(uint32_t nLeftCode)                                          { m_LeftCode = nLeftCode; }
   inline void SetSyncCounter(uint32_t nSyncCounter)                                    { m_SyncCounter = nSyncCounter; }
   inline void SetLastMapPartSent(uint32_t nLastMapPartSent)                            { m_LastMapPartSent = nLastMapPartSent; }
@@ -178,7 +169,6 @@ public:
   inline void SetStartedDownloadingTicks(uint32_t nStartedDownloadingTicks)            { m_StartedDownloadingTicks = nStartedDownloadingTicks; }
   inline void SetFinishedDownloadingTime(uint32_t nFinishedDownloadingTime)            { m_FinishedDownloadingTime = nFinishedDownloadingTime; }
   inline void SetStartedLaggingTicks(uint32_t nStartedLaggingTicks)                    { m_StartedLaggingTicks = nStartedLaggingTicks; }
-  inline void SetSpoofed(bool nSpoofed)                                                { m_Spoofed = nSpoofed; }
   inline void SetWhoisShouldBeSent(bool nWhoisShouldBeSent)                            { m_WhoisShouldBeSent = nWhoisShouldBeSent; }
   inline void SetDownloadAllowed(bool nDownloadAllowed)                                { m_DownloadAllowed = nDownloadAllowed; }
   inline void SetDownloadStarted(bool nDownloadStarted)                                { m_DownloadStarted = nDownloadStarted; }
