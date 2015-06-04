@@ -669,30 +669,6 @@ bool CGame::Update(void *fd, void *send_fd)
     m_LastCountDownTicks = Ticks;
   }
 
-  // check if the lobby is "abandoned" and needs to be closed since it will never start
-
-  if (!m_GameLoading && !m_GameLoaded && m_Aura->m_LobbyTimeLimit > 0)
-  {
-    // check if there's a player with reserved status in the game
-
-    for (auto & player : m_Players)
-    {
-      if (player->GetReserved())
-      {
-        m_LastReservedSeen = Time;
-        break;
-      }
-    }
-
-    // check if we've hit the time limit
-
-    if (Time - m_LastReservedSeen > m_Aura->m_LobbyTimeLimit * 60)
-    {
-      Print("[GAME: " + m_GameName + "] is over (lobby time limit hit)");
-      return true;
-    }
-  }
-
   // create the virtual host player
 
   if (!m_GameLoading && !m_GameLoaded && GetNumPlayers() < 12)
