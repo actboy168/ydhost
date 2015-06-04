@@ -74,6 +74,7 @@ public:
   bool m_Enabled;                               // set to false to prevent new games from being created
   bool m_Ready;                                 // indicates if there's lacking configuration info so we can quit
   bool m_LCPings;                               // config value: use LC style pings (divide actual pings by two)
+  uint32_t m_AutoStart;
 
   explicit CAura(CConfig *CFG);
   ~CAura();

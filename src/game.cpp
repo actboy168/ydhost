@@ -1256,7 +1256,18 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
   if (!m_CountDownStarted)
   {
-	  StartCountDown(true);
+	  switch (m_Aura->m_AutoStart)
+	  {
+	  case 1:
+		  StartCountDown(true);
+		  break;
+	  case 2:
+		  if (GetEmptySlot() == 255)
+		  {
+			  StartCountDown(true);
+		  }
+		  break;
+	  }
   }
 }
 

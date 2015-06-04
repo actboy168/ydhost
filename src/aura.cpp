@@ -595,6 +595,7 @@ void CAura::SetConfigs(CConfig *CFG)
   m_Latency = CFG->GetInt("bot_latency", 100);
   m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
   m_VoteKickPercentage = CFG->GetInt("bot_votekickpercentage", 70);
+  m_AutoStart = CFG->GetInt("bot_autostart", 1);
 
   if (m_VoteKickPercentage > 100)
     m_VoteKickPercentage = 100;
