@@ -81,7 +81,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_Exiting(false),
     m_Saving(false),
     m_SlotInfoChanged(false),
-    m_Locked(false),
     m_RefreshError(false),
     m_MuteAll(false),
     m_MuteLobby(false),
@@ -698,14 +697,6 @@ bool CGame::Update(void *fd, void *send_fd)
 
   if (!m_GameLoading && !m_GameLoaded && GetNumPlayers() < 12)
     CreateVirtualHost();
-
-  // unlock the game
-
-  if (m_Locked && !GetPlayerFromName(m_OwnerName, false))
-  {
-    SendAllChat("Game unlocked. All admins can run game commands");
-    m_Locked = false;
-  }
 
   // accept new connections
 
@@ -1335,14 +1326,6 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
     m_CountDownStarted = false;
   }
 
-  // auto lock the game
-
-  if (m_Aura->m_AutoLock && !m_Locked && IsOwner(joinPlayer->GetName()))
-  {
-    SendAllChat("Game locked. Only the game owner and root admins can run game commands");
-    m_Locked = true;
-  }
-
   if (!m_CountDownStarted)
   {
 	  StartCountDown(true);
@@ -1516,7 +1499,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
   {
     Print("[GAME: " + m_GameName + "] admin [" + User + "] sent command [" + Command + "] with payload [" + Payload + "]");
 
-    if (!m_Locked || IsOwner(User))
+    if (IsOwner(User))
     {
       /*****************
        * ADMIN COMMANDS *
@@ -2359,31 +2342,11 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
       }
 
       //
-      // !LOCK
-      //
-
-      else if (Command == "lock" && IsOwner(User))
-      {
-        SendAllChat("Game locked. Only the game owner and root admins can run game commands");
-        m_Locked = true;
-      }
-
-      //
       // !OPENALL
       //
 
       else if (Command == "openall" && !m_GameLoading && !m_GameLoaded)
         OpenAllSlots();
-
-      //
-      // !UNLOCK
-      //
-
-      else if (Command == "unlock" && IsOwner(User))
-      {
-        SendAllChat("Game unlocked. All admins can run game commands");
-        m_Locked = false;
-      }
 
       //
       // !UNMUTE
@@ -2822,19 +2785,17 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 
   uint32_t MapSize = ByteArrayToUInt32(m_Map->GetMapSize(), false);
 
-  bool Admin = false;
-
   if (mapSize->GetSizeFlag() != 1 || mapSize->GetMapSize() != MapSize)
   {
     // the player doesn't have the map
 
-    if (Admin || m_Aura->m_AllowDownloads)
+    if (m_Aura->m_AllowDownloads)
     {
       string *MapData = m_Map->GetMapData();
 
       if (!MapData->empty())
       {
-        if (Admin || m_Aura->m_AllowDownloads == 1 || (m_Aura->m_AllowDownloads == 2 && player->GetDownloadAllowed()))
+        if (m_Aura->m_AllowDownloads == 1 || (m_Aura->m_AllowDownloads == 2 && player->GetDownloadAllowed()))
         {
           if (!player->GetDownloadStarted() && mapSize->GetSizeFlag() == 1)
           {

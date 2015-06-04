@@ -587,7 +587,6 @@ void CAura::SetConfigs(CConfig *CFG)
     Print("[AURA] warning - bot_virtualhostname is longer than 15 characters, using default virtual host name");
   }
 
-  m_AutoLock = CFG->GetInt("bot_autolock", 0) == 0 ? false : true;
   m_AllowDownloads = CFG->GetInt("bot_allowdownloads", 0);
   m_MaxDownloaders = CFG->GetInt("bot_maxdownloaders", 3);
   m_MaxDownloadSpeed = CFG->GetInt("bot_maxdownloadspeed", 100);

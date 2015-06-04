@@ -73,7 +73,6 @@ public:
   int32_t m_CommandTrigger;                     // config value: the command trigger inside games
   bool m_Exiting;                               // set to true to force aura to shutdown next update (used by SignalCatcher)
   bool m_Enabled;                               // set to false to prevent new games from being created
-  bool m_AutoLock;                              // config value: auto lock games when the owner is present
   bool m_Ready;                                 // indicates if there's lacking configuration info so we can quit
   bool m_LCPings;                               // config value: use LC style pings (divide actual pings by two)
 

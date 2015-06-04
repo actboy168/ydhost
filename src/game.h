@@ -96,7 +96,6 @@ protected:
   bool m_Exiting;                               // set to true and this class will be deleted next update
   bool m_Saving;                                // if we're currently saving game data to the database
   bool m_SlotInfoChanged;                       // if the slot info has changed and hasn't been sent to the players yet (optimization)
-  bool m_Locked;                                // if the game owner is the only one allowed to run game commands or not
   bool m_RefreshError;                          // if the game had a refresh error
   bool m_MuteAll;                               // if we should stop forwarding ingame chat messages targeted for all players or not
   bool m_MuteLobby;                             // if we should stop forwarding lobby chat messages
@@ -125,7 +124,6 @@ public:
   inline std::string GetCreatorServer() const       { return m_CreatorServer; }
   inline uint32_t GetHostCounter() const            { return m_HostCounter; }
   inline uint32_t GetLastLagScreenTime() const      { return m_LastLagScreenTime; }
-  inline bool GetLocked() const                     { return m_Locked; }
   inline bool GetCountDownStarted() const           { return m_CountDownStarted; }
   inline bool GetGameLoading() const                { return m_GameLoading; }
   inline bool GetGameLoaded() const                 { return m_GameLoaded; }
