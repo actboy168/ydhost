@@ -47,7 +47,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_VirtualHostName(nAura->m_VirtualHostName),
     m_OwnerName(nOwnerName),
     m_CreatorName(nCreatorName),
-    m_CreatorServer(nCreatorServer),
     m_HCLCommandString(nMap->GetMapDefaultHCL()),
     m_MapPath(nMap->GetMapPath()),
     m_RandomSeed(GetTicks()),
@@ -82,8 +81,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_Saving(false),
     m_SlotInfoChanged(false),
     m_RefreshError(false),
-    m_MuteAll(false),
-    m_MuteLobby(false),
     m_CountDownStarted(false),
     m_GameLoading(false),
     m_GameLoaded(false),
@@ -1165,7 +1162,6 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
   Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] joined the game");
   CGamePlayer *Player = new CGamePlayer(potential, GetNewPID(), joinPlayer->GetName(), joinPlayer->GetInternalIP());
 
-  Player->SetWhoisShouldBeSent(false);
   m_Players.push_back(Player);
   potential->SetSocket(nullptr);
   potential->SetDeleteMe(true);
@@ -1335,7 +1331,7 @@ void CGame::EventPlayerChatToHost(CGamePlayer *player, CIncomingChatPlayer *chat
     {
       // relay the chat message to other players
 
-      bool Relay = !player->GetMuted();
+      bool Relay = true;
       const BYTEARRAY ExtraFlags = chatPlayer->GetExtraFlags();
 
       // calculate timestamp
@@ -1348,31 +1344,6 @@ void CGame::EventPlayerChatToHost(CGamePlayer *player, CIncomingChatPlayer *chat
 
       if (SecString.size() == 1)
         SecString.insert(0, "0");
-
-      if (!ExtraFlags.empty())
-      {
-        if (ExtraFlags[0] == 0)
-        {
-          // this is an ingame [All] message, print it to the console
-
-          Print("[GAME: " + m_GameName + "] (" + MinString + ":" + SecString + ") [All] [" + player->GetName() + "] " + chatPlayer->GetMessage());
-
-          // don't relay ingame messages targeted for all players if we're currently muting all
-          // note that commands will still be processed even when muting all because we only stop relaying the messages, the rest of the function is unaffected
-
-          if (m_MuteAll)
-            Relay = false;
-        }
-      }
-      else
-      {
-        // this is a lobby message, print it to the console
-
-        Print("[GAME: " + m_GameName + "] [Lobby] [" + player->GetName() + "] " + chatPlayer->GetMessage());
-
-        if (m_MuteLobby)
-          Relay = false;
-      }
 
       // handle bot commands
 
@@ -1930,36 +1901,6 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
         StopLaggers("lagged out (dropped by admin)");
 
       //
-      // !MUTE
-      //
-
-      else if (Command == "mute")
-      {
-        CGamePlayer *LastMatch = nullptr;
-        const uint32_t Matches = GetPlayerFromNamePartial(Payload, &LastMatch);
-
-        if (Matches == 0)
-          SendChat(player, "Unable to mute/unmute player [" + Payload + "]. No matches found");
-        else if (Matches == 1)
-        {
-          SendAllChat("Player [" + LastMatch->GetName() + "] was muted by player [" + User + "]");
-          LastMatch->SetMuted(true);
-        }
-        else
-          SendChat(player, "Unable to mute/unmute player [" + Payload + "]. Found more than one match");
-      }
-
-      //
-      // !MUTEALL
-      //
-
-      else if (Command == "muteall" && m_GameLoaded)
-      {
-        SendAllChat("Global chat muted (allied and private chat is unaffected)");
-        m_MuteAll = true;
-      }
-
-      //
       // !ABORT (abort countdown)
       // !A
       //
@@ -2223,36 +2164,6 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
 
       else if (Command == "openall" && !m_GameLoading && !m_GameLoaded)
         OpenAllSlots();
-
-      //
-      // !UNMUTE
-      //
-
-      else if (Command == "unmute")
-      {
-        CGamePlayer *LastMatch = nullptr;
-        uint32_t Matches = GetPlayerFromNamePartial(Payload, &LastMatch);
-
-        if (Matches == 0)
-          SendChat(player, "Unable to mute/unmute player [" + Payload + "]. No matches found");
-        else if (Matches == 1)
-        {
-          SendAllChat("Player [" + LastMatch->GetName() + "] was unmuted by player [" + User + "]");
-          LastMatch->SetMuted(false);
-        }
-        else
-          SendChat(player, "Unable to mute/unmute player [" + Payload + "]. Found more than one match");
-      }
-
-      //
-      // !UNMUTEALL
-      //
-
-      else if (Command == "unmuteall" && m_GameLoaded)
-      {
-        SendAllChat("Global chat unmuted");
-        m_MuteAll = false;
-      }
 
       //
       // !VOTECANCEL

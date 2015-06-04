@@ -58,7 +58,6 @@ protected:
   std::string m_VirtualHostName;                // host's name
   std::string m_OwnerName;                      // name of the player who owns this game (should be considered an admin)
   std::string m_CreatorName;                    // name of the player who created this game
-  std::string m_CreatorServer;                  // battle.net server the player who created this game was on
   std::string m_KickVotePlayer;                 // the player to be kicked with the currently running kick vote
   std::string m_HCLCommandString;               // the "HostBot Command Library" command std::string, used to pass a limited amount of data to specially designed maps
   std::string m_MapPath;                        // store the map path to save in the database on game end
@@ -96,8 +95,6 @@ protected:
   bool m_Saving;                                // if we're currently saving game data to the database
   bool m_SlotInfoChanged;                       // if the slot info has changed and hasn't been sent to the players yet (optimization)
   bool m_RefreshError;                          // if the game had a refresh error
-  bool m_MuteAll;                               // if we should stop forwarding ingame chat messages targeted for all players or not
-  bool m_MuteLobby;                             // if we should stop forwarding lobby chat messages
   bool m_CountDownStarted;                      // if the game start countdown has started or not
   bool m_GameLoading;                           // if the game is currently loading or not
   bool m_GameLoaded;                            // if the game has loaded or not
@@ -120,7 +117,6 @@ public:
   inline std::string GetVirtualHostName() const     { return m_VirtualHostName; }
   inline std::string GetOwnerName() const           { return m_OwnerName; }
   inline std::string GetCreatorName() const         { return m_CreatorName; }
-  inline std::string GetCreatorServer() const       { return m_CreatorServer; }
   inline uint32_t GetHostCounter() const            { return m_HostCounter; }
   inline uint32_t GetLastLagScreenTime() const      { return m_LastLagScreenTime; }
   inline bool GetCountDownStarted() const           { return m_CountDownStarted; }

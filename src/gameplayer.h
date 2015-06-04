@@ -103,7 +103,6 @@ private:
   uint32_t m_GProxyReconnectKey;            // the GProxy++ reconnect key
   uint32_t m_LastGProxyAckTime;             // GetTime when we last acknowledged GProxy++ packet
   uint8_t m_PID;                            // the player's PID
-  bool m_WhoisShouldBeSent;                 // if a battle.net /whois should be sent for this player or not
   bool m_DownloadAllowed;                   // if we're allowed to download the map or not (used with permission based map downloads)
   bool m_DownloadStarted;                   // if we've started downloading the map or not
   bool m_DownloadFinished;                  // if we've finished downloading the map or not
@@ -111,7 +110,6 @@ private:
   bool m_Lagging;                           // if the player is lagging or not (on the lag screen)
   bool m_DropVote;                          // if the player voted to drop the laggers or not (on the lag screen)
   bool m_KickVote;                          // if the player voted to kick a player or not
-  bool m_Muted;                             // if the player is muted or not
   bool m_LeftMessageSent;                   // if the playerleave message has been sent or not
   bool m_GProxy;                            // if the player is using GProxy++
   bool m_GProxyDisconnectNoticeSent;        // if a disconnection notice has been sent or not when using GProxy++
@@ -148,7 +146,6 @@ public:
   inline uint32_t GetGProxyReconnectKey() const                       { return m_GProxyReconnectKey; }
   inline bool GetGProxy() const                                       { return m_GProxy; }
   inline bool GetGProxyDisconnectNoticeSent() const                   { return m_GProxyDisconnectNoticeSent; }
-  inline bool GetWhoisShouldBeSent() const                            { return m_WhoisShouldBeSent; }
   inline bool GetDownloadAllowed() const                              { return m_DownloadAllowed; }
   inline bool GetDownloadStarted() const                              { return m_DownloadStarted; }
   inline bool GetDownloadFinished() const                             { return m_DownloadFinished; }
@@ -156,7 +153,6 @@ public:
   inline bool GetLagging() const                                      { return m_Lagging; }
   inline bool GetDropVote() const                                     { return m_DropVote; }
   inline bool GetKickVote() const                                     { return m_KickVote; }
-  inline bool GetMuted() const                                        { return m_Muted; }
   inline bool GetLeftMessageSent() const                              { return m_LeftMessageSent; }
 
   inline void SetSocket(CTCPSocket *nSocket)                                           { m_Socket = nSocket; }
@@ -169,14 +165,12 @@ public:
   inline void SetStartedDownloadingTicks(uint32_t nStartedDownloadingTicks)            { m_StartedDownloadingTicks = nStartedDownloadingTicks; }
   inline void SetFinishedDownloadingTime(uint32_t nFinishedDownloadingTime)            { m_FinishedDownloadingTime = nFinishedDownloadingTime; }
   inline void SetStartedLaggingTicks(uint32_t nStartedLaggingTicks)                    { m_StartedLaggingTicks = nStartedLaggingTicks; }
-  inline void SetWhoisShouldBeSent(bool nWhoisShouldBeSent)                            { m_WhoisShouldBeSent = nWhoisShouldBeSent; }
   inline void SetDownloadAllowed(bool nDownloadAllowed)                                { m_DownloadAllowed = nDownloadAllowed; }
   inline void SetDownloadStarted(bool nDownloadStarted)                                { m_DownloadStarted = nDownloadStarted; }
   inline void SetDownloadFinished(bool nDownloadFinished)                              { m_DownloadFinished = nDownloadFinished; }
   inline void SetLagging(bool nLagging)                                                { m_Lagging = nLagging; }
   inline void SetDropVote(bool nDropVote)                                              { m_DropVote = nDropVote; }
   inline void SetKickVote(bool nKickVote)                                              { m_KickVote = nKickVote; }
-  inline void SetMuted(bool nMuted)                                                    { m_Muted = nMuted; }
   inline void SetLeftMessageSent(bool nLeftMessageSent)                                { m_LeftMessageSent = nLeftMessageSent; }
   inline void SetGProxyDisconnectNoticeSent(bool nGProxyDisconnectNoticeSent)          { m_GProxyDisconnectNoticeSent = nGProxyDisconnectNoticeSent; }
   inline void SetLastGProxyWaitNoticeSentTime(uint32_t nLastGProxyWaitNoticeSentTime)  { m_LastGProxyWaitNoticeSentTime = nLastGProxyWaitNoticeSentTime; }
