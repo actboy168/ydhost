@@ -106,7 +106,6 @@ private:
   uint32_t m_LastGProxyAckTime;             // GetTime when we last acknowledged GProxy++ packet
   uint8_t m_PID;                            // the player's PID
   bool m_Spoofed;                           // if the player has spoof checked or not
-  bool m_Reserved;                          // if the player is reserved (VIP) or not
   bool m_WhoisShouldBeSent;                 // if a battle.net /whois should be sent for this player or not
   bool m_WhoisSent;                         // if we've sent a battle.net /whois for this player yet (for spoof checking)
   bool m_DownloadAllowed;                   // if we're allowed to download the map or not (used with permission based map downloads)
@@ -125,7 +124,7 @@ protected:
   bool m_DeleteMe;
 
 public:
-  CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nJoinedRealm, const std::string &nName, const BYTEARRAY &nInternalIP, bool nReserved);
+  CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nJoinedRealm, const std::string &nName, const BYTEARRAY &nInternalIP);
   ~CGamePlayer();
 
   uint32_t GetPing(bool LCPing) const;
@@ -156,7 +155,6 @@ public:
   inline bool GetGProxy() const                                       { return m_GProxy; }
   inline bool GetGProxyDisconnectNoticeSent() const                   { return m_GProxyDisconnectNoticeSent; }
   inline bool GetSpoofed() const                                      { return m_Spoofed; }
-  inline bool GetReserved() const                                     { return m_Reserved; }
   inline bool GetWhoisShouldBeSent() const                            { return m_WhoisShouldBeSent; }
   inline bool GetWhoisSent() const                                    { return m_WhoisSent; }
   inline bool GetDownloadAllowed() const                              { return m_DownloadAllowed; }
@@ -181,7 +179,6 @@ public:
   inline void SetFinishedDownloadingTime(uint32_t nFinishedDownloadingTime)            { m_FinishedDownloadingTime = nFinishedDownloadingTime; }
   inline void SetStartedLaggingTicks(uint32_t nStartedLaggingTicks)                    { m_StartedLaggingTicks = nStartedLaggingTicks; }
   inline void SetSpoofed(bool nSpoofed)                                                { m_Spoofed = nSpoofed; }
-  inline void SetReserved(bool nReserved)                                              { m_Reserved = nReserved; }
   inline void SetWhoisShouldBeSent(bool nWhoisShouldBeSent)                            { m_WhoisShouldBeSent = nWhoisShouldBeSent; }
   inline void SetDownloadAllowed(bool nDownloadAllowed)                                { m_DownloadAllowed = nDownloadAllowed; }
   inline void SetDownloadStarted(bool nDownloadStarted)                                { m_DownloadStarted = nDownloadStarted; }

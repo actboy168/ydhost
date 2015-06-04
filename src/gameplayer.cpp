@@ -119,7 +119,7 @@ void CPotentialPlayer::Send(const BYTEARRAY &data) const
 // CGamePlayer
 //
 
-CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string &nJoinedRealm, const string &nName, const BYTEARRAY &nInternalIP, bool nReserved)
+CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string &nJoinedRealm, const string &nName, const BYTEARRAY &nInternalIP)
   : m_Protocol(potential->m_Protocol),
     m_Game(potential->m_Game),
     m_Socket(potential->GetSocket()),
@@ -140,7 +140,6 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
     m_LastGProxyAckTime(0),
     m_PID(nPID),
     m_Spoofed(false),
-    m_Reserved(nReserved),
     m_WhoisShouldBeSent(false),
     m_WhoisSent(false),
     m_DownloadAllowed(false),

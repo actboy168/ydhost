@@ -207,7 +207,7 @@ public:
   BYTEARRAY GetPIDs();
   BYTEARRAY GetPIDs(uint8_t excludePID);
   uint8_t GetHostPID();
-  uint8_t GetEmptySlot(bool reserved);
+  uint8_t GetEmptySlot();
   uint8_t GetEmptySlot(uint8_t team, uint8_t PID);
   void SwapSlots(uint8_t SID1, uint8_t SID2);
   void OpenSlot(uint8_t SID, bool kick);

@@ -1117,40 +1117,8 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
     }
   }
 
-  // check if the player is an admin or root admin on any connected realm for determining reserved status
-  // we can't just use the spoof checked realm like in EventPlayerBotCommand because the player hasn't spoof checked yet
-
-  const bool Reserved = IsOwner(joinPlayer->GetName());
-
   // try to find an empty slot
-
-  uint8_t SID = GetEmptySlot(false);
-
-  if (SID == 255 && Reserved)
-  {
-    // a reserved player is trying to join the game but it's full, try to find a reserved slot
-
-    SID = GetEmptySlot(true);
-
-    if (SID != 255)
-    {
-      CGamePlayer *KickedPlayer = GetPlayerFromSID(SID);
-
-      if (KickedPlayer)
-      {
-        KickedPlayer->SetDeleteMe(true);
-        KickedPlayer->SetLeftReason("was kicked to make room for a reserved player [" + joinPlayer->GetName() + "]");
-        KickedPlayer->SetLeftCode(PLAYERLEAVE_LOBBY);
-
-        // send a playerleave message immediately since it won't normally get sent until the player is deleted which is after we send a playerjoin message
-        // we don't need to call OpenSlot here because we're about to overwrite the slot data anyway
-
-        SendAll(m_Protocol->SEND_W3GS_PLAYERLEAVE_OTHERS(KickedPlayer->GetPID(), KickedPlayer->GetLeftCode()));
-        KickedPlayer->SetLeftMessageSent(true);
-      }
-    }
-  }
-
+  uint8_t SID = GetEmptySlot();
   if (SID == 255 && IsOwner(joinPlayer->GetName()))
   {
     // the owner player is trying to join the game but it's full and we couldn't even find a reserved slot, kick the player in the lowest numbered slot
@@ -1201,7 +1169,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
   // we also have to be careful to not modify the m_Potentials vector since we're currently looping through it
 
   Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] joined the game");
-  CGamePlayer *Player = new CGamePlayer(potential, GetNewPID(), JoinedRealm, joinPlayer->GetName(), joinPlayer->GetInternalIP(), Reserved);
+  CGamePlayer *Player = new CGamePlayer(potential, GetNewPID(), JoinedRealm, joinPlayer->GetName(), joinPlayer->GetInternalIP());
 
   // consider LAN players to have already spoof checked since they can't
   // since so many people have trouble with this feature we now use the JoinedRealm to determine LAN status
@@ -1522,7 +1490,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
           {
             Pings += to_string((*i)->GetPing(m_Aura->m_LCPings));
 
-            if (!m_GameLoaded && !m_GameLoading && !(*i)->GetReserved() && KickPing > 0 && (*i)->GetPing(m_Aura->m_LCPings) > KickPing)
+            if (!m_GameLoaded && !m_GameLoading && KickPing > 0 && (*i)->GetPing(m_Aura->m_LCPings) > KickPing)
             {
               (*i)->SetDeleteMe(true);
               (*i)->SetLeftReason("was kicked for excessive ping " + to_string((*i)->GetPing(m_Aura->m_LCPings)) + " > " + to_string(KickPing));
@@ -2478,21 +2446,16 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
         SendChat(player, "Unable to votekick player [" + Payload + "]. No matches found");
       else if (Matches == 1)
       {
-        if (LastMatch->GetReserved())
-          SendChat(player, "Unable to votekick player [" + LastMatch->GetName() + "]. That player is reserved and cannot be votekicked");
-        else
-        {
-          m_KickVotePlayer = LastMatch->GetName();
-          m_StartedKickVoteTime = GetTime();
+        m_KickVotePlayer = LastMatch->GetName();
+        m_StartedKickVoteTime = GetTime();
 
-          for (auto & player : m_Players)
-            player->SetKickVote(false);
+        for (auto & player : m_Players)
+          player->SetKickVote(false);
 
-          player->SetKickVote(true);
-          Print("[GAME: " + m_GameName + "] votekick against player [" + m_KickVotePlayer + "] started by player [" + User + "]");
-          SendAllChat("Player [" + User + "] voted to kick player [" + LastMatch->GetName() + "]. " + to_string((uint32_t) ceil((GetNumHumanPlayers() - 1) * (float) m_Aura->m_VoteKickPercentage / 100) - 1) + " more votes are needed to pass");
-          SendAllChat("Type " + string(1, m_Aura->m_CommandTrigger) + "yes to vote");
-        }
+        player->SetKickVote(true);
+        Print("[GAME: " + m_GameName + "] votekick against player [" + m_KickVotePlayer + "] started by player [" + User + "]");
+        SendAllChat("Player [" + User + "] voted to kick player [" + LastMatch->GetName() + "]. " + to_string((uint32_t) ceil((GetNumHumanPlayers() - 1) * (float) m_Aura->m_VoteKickPercentage / 100) - 1) + " more votes are needed to pass");
+        SendAllChat("Type " + string(1, m_Aura->m_CommandTrigger) + "yes to vote");
       }
       else
         SendChat(player, "Unable to votekick player [" + Payload + "]. Found more than one match");
@@ -2788,7 +2751,7 @@ void CGame::EventPlayerPongToHost(CGamePlayer *player)
   // also don't kick anyone if the game is loading or loaded - this could happen because we send pings during loading but we stop sending them after the game is loaded
   // see the Update function for where we send pings
 
-  if (!m_GameLoading && !m_GameLoaded && !player->GetDeleteMe() && !player->GetReserved() && player->GetNumPings() >= 3 && player->GetPing(m_Aura->m_LCPings) > m_Aura->m_AutoKickPing)
+  if (!m_GameLoading && !m_GameLoaded && !player->GetDeleteMe() && player->GetNumPings() >= 3 && player->GetPing(m_Aura->m_LCPings) > m_Aura->m_AutoKickPing)
   {
     // send a chat message because we don't normally do so when a player leaves the lobby
 
@@ -3180,61 +3143,15 @@ uint8_t CGame::GetHostPID()
   return 255;
 }
 
-uint8_t CGame::GetEmptySlot(bool reserved)
+uint8_t CGame::GetEmptySlot()
 {
   if (m_Slots.size() > 255)
     return 255;
-
-  // look for an empty slot for a new player to occupy
-  // if reserved is true then we're willing to use closed or occupied slots as long as it wouldn't displace a player with a reserved slot
-
   for (uint8_t i = 0; i < m_Slots.size(); ++i)
   {
     if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_OPEN)
       return i;
   }
-
-  if (reserved)
-  {
-    // no empty slots, but since player is reserved give them a closed slot
-
-    for (uint8_t i = 0; i < m_Slots.size(); ++i)
-    {
-      if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_CLOSED)
-        return i;
-    }
-
-    // no closed slots either, give them an occupied slot but not one occupied by another reserved player
-    // first look for a player who is downloading the map and has the least amount downloaded so far
-
-    uint8_t LeastDownloaded = 100;
-    uint8_t LeastSID = 255;
-
-    for (uint8_t i = 0; i < m_Slots.size(); ++i)
-    {
-      CGamePlayer *Player = GetPlayerFromSID(i);
-
-      if (Player && !Player->GetReserved() && m_Slots[i].GetDownloadStatus() < LeastDownloaded)
-      {
-        LeastDownloaded = m_Slots[i].GetDownloadStatus();
-        LeastSID = i;
-      }
-    }
-
-    if (LeastSID != 255)
-      return LeastSID;
-
-    // nobody who isn't reserved is downloading the map, just choose the first player who isn't reserved
-
-    for (uint8_t i = 0; i < m_Slots.size(); ++i)
-    {
-      CGamePlayer *Player = GetPlayerFromSID(i);
-
-      if (Player && !Player->GetReserved())
-        return i;
-    }
-  }
-
   return 255;
 }
 
@@ -3606,7 +3523,7 @@ void CGame::StartCountDown(bool force)
 
       for (auto & player : m_Players)
       {
-        if (!player->GetReserved() && player->GetNumPings() < 3)
+        if (player->GetNumPings() < 3)
         {
           if (NotPinged.empty())
             NotPinged = player->GetName();
@@ -3683,7 +3600,7 @@ void CGame::CreateFakePlayer()
   if (m_FakePlayers.size() > 10)
     return;
 
-  uint8_t SID = GetEmptySlot(false);
+  uint8_t SID = GetEmptySlot();
 
   if (SID < m_Slots.size())
   {
