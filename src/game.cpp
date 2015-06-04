@@ -1144,7 +1144,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
   // check if the player is an admin or root admin on any connected realm for determining reserved status
   // we can't just use the spoof checked realm like in EventPlayerBotCommand because the player hasn't spoof checked yet
 
-  const bool Reserved = IsReserved(joinPlayer->GetName()) || IsOwner(joinPlayer->GetName());
+  const bool Reserved = IsOwner(joinPlayer->GetName());
 
   // try to find an empty slot
 
@@ -1670,62 +1670,6 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
         }
         else
           SendAllChat("The HCL command string is [" + m_HCLCommandString + "]");
-      }
-
-      //
-      // !HOLD (hold a slot for someone)
-      //
-
-      else if (Command == "hold" && !Payload.empty() && !m_GameLoading && !m_GameLoaded)
-      {
-        // hold as many players as specified, e.g. "Varlock Kilranin" holds players "Varlock" and "Kilranin"
-
-        stringstream SS;
-        SS << Payload;
-
-        while (!SS.eof())
-        {
-          string HoldName;
-          SS >> HoldName;
-
-          if (SS.fail())
-          {
-            Print("[GAME: " + m_GameName + "] bad input to hold command");
-            break;
-          }
-          else
-          {
-            SendAllChat("Added player [" + HoldName + "] to the hold list");
-            AddToReserved(HoldName);
-          }
-        }
-      }
-
-      //
-      // !UNHOLD
-      //
-
-      else if (Command == "unhold" && !Payload.empty() && !m_GameLoading && !m_GameLoaded)
-      {
-        stringstream SS;
-        SS << Payload;
-
-        while (!SS.eof())
-        {
-          string UnholdName;
-          SS >> UnholdName;
-
-          if (SS.fail())
-          {
-            Print("[GAME: " + m_GameName + "] bad input to unhold command");
-            break;
-          }
-          else
-          {
-            SendAllChat("Removed player [" + UnholdName + "] from the hold list");
-            RemoveFromReserved(UnholdName);
-          }
-        }
       }
 
       //
@@ -3615,55 +3559,6 @@ void CGame::AddToSpoofed(const string &server, const string &name, bool sendMess
   }
 }
 
-void CGame::AddToReserved(string name)
-{
-  transform(begin(name), end(name), begin(name), ::tolower);
-
-  // check that the user is not already reserved
-
-  for (auto & player : m_Reserved)
-  {
-    if (player == name)
-      return;
-  }
-
-  m_Reserved.push_back(name);
-
-  // upgrade the user if they're already in the game
-
-  for (auto & player : m_Players)
-  {
-    string NameLower = player->GetName();
-    transform(begin(NameLower), end(NameLower), begin(NameLower), ::tolower);
-
-    if (NameLower == name)
-      player->SetReserved(true);
-  }
-}
-
-void CGame::RemoveFromReserved(string name)
-{
-  transform(begin(name), end(name), begin(name), ::tolower);
-
-  auto it = find(begin(m_Reserved), end(m_Reserved), name);
-
-  if (it != end(m_Reserved))
-  {
-    m_Reserved.erase(it);
-
-    // demote the user if they're already in the game
-
-    for (auto & player : m_Players)
-    {
-      string NameLower = player->GetName();
-      transform(begin(NameLower), end(NameLower), begin(NameLower), ::tolower);
-
-      if (NameLower == name)
-        player->SetReserved(false);
-    }
-  }
-}
-
 bool CGame::IsOwner(string name)
 {
   string OwnerLower = m_OwnerName;
@@ -3671,19 +3566,6 @@ bool CGame::IsOwner(string name)
   transform(begin(OwnerLower), end(OwnerLower), begin(OwnerLower), ::tolower);
 
   return name == OwnerLower;
-}
-
-bool CGame::IsReserved(string name)
-{
-  transform(begin(name), end(name), begin(name), ::tolower);
-
-  for (auto & player : m_Reserved)
-  {
-    if (player == name)
-      return true;
-  }
-
-  return false;
 }
 
 bool CGame::IsDownloading()

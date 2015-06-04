@@ -50,7 +50,6 @@ protected:
   std::vector<CPotentialPlayer *> m_Potentials; // std::vector of potential players (connections that haven't sent a W3GS_REQJOIN packet yet)
   std::vector<CGamePlayer *> m_Players;         // std::vector of players
   std::queue<CIncomingAction *> m_Actions;      // queue of actions to be sent
-  std::vector<std::string> m_Reserved;          // std::vector of player names with reserved slots (from the !hold command)
   std::set<std::string> m_IgnoredNames;         // set of player names to NOT print ban messages for when joining because they've already been printed
   std::vector<uint8_t> m_FakePlayers;           // the fake player's PIDs (if present)
   CMap *m_Map;                                  // map data
@@ -219,10 +218,7 @@ public:
   void CloseAllSlots();
   void ShuffleSlots();
   void AddToSpoofed(const std::string &server, const std::string &name, bool sendMessage);
-  void AddToReserved(std::string name);
-  void RemoveFromReserved(std::string name);
   bool IsOwner(std::string name);
-  bool IsReserved(std::string name);
   bool IsDownloading();
   void StartCountDown(bool force);
   void StopPlayers(const std::string &reason);
