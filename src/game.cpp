@@ -1153,8 +1153,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
   // check if the player is an admin or root admin on any connected realm for determining reserved status
   // we can't just use the spoof checked realm like in EventPlayerBotCommand because the player hasn't spoof checked yet
 
-  const bool AnyAdminCheck = false;
-  const bool Reserved = IsReserved(joinPlayer->GetName()) || AnyAdminCheck || IsOwner(joinPlayer->GetName());
+  const bool Reserved = IsReserved(joinPlayer->GetName()) || IsOwner(joinPlayer->GetName());
 
   // try to find an empty slot
 
@@ -1243,7 +1242,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
   if (JoinedRealm.empty())
     Player->SetSpoofed(true);
 
-  Player->SetWhoisShouldBeSent(AnyAdminCheck);
+  Player->SetWhoisShouldBeSent(false);
   m_Players.push_back(Player);
   potential->SetSocket(nullptr);
   potential->SetDeleteMe(true);
@@ -1513,13 +1512,11 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
 {
   string User = player->GetName(), Command = command, Payload = payload;
 
-  bool AdminCheck = false, RootAdminCheck = false;
-
-  if (player->GetSpoofed() && (AdminCheck || RootAdminCheck || IsOwner(User)))
+  if (player->GetSpoofed() && IsOwner(User))
   {
     Print("[GAME: " + m_GameName + "] admin [" + User + "] sent command [" + Command + "] with payload [" + Payload + "]");
 
-    if (!m_Locked || RootAdminCheck || IsOwner(User))
+    if (!m_Locked || IsOwner(User))
     {
       /*****************
        * ADMIN COMMANDS *
@@ -2177,7 +2174,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
 
       else if (Command == "owner")
       {
-        if (RootAdminCheck || IsOwner(User) || !GetPlayerFromName(m_OwnerName, false))
+        if (IsOwner(User) || !GetPlayerFromName(m_OwnerName, false))
         {
           if (!Payload.empty())
           {
@@ -2365,7 +2362,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
       // !LOCK
       //
 
-      else if (Command == "lock" && (RootAdminCheck || IsOwner(User)))
+      else if (Command == "lock" && IsOwner(User))
       {
         SendAllChat("Game locked. Only the game owner and root admins can run game commands");
         m_Locked = true;
@@ -2382,7 +2379,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &
       // !UNLOCK
       //
 
-      else if (Command == "unlock" && (RootAdminCheck || IsOwner(User)))
+      else if (Command == "unlock" && IsOwner(User))
       {
         SendAllChat("Game unlocked. All admins can run game commands");
         m_Locked = false;
