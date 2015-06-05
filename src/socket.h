@@ -240,7 +240,7 @@ public:
   CTCPServer();
   ~CTCPServer();
 
-  bool Listen(const std::string &address, uint16_t port);
+  bool Listen(const std::string &address, uint16_t& port);
   CTCPSocket *Accept(fd_set *fd);
 };
 

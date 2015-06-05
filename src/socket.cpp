@@ -461,7 +461,7 @@ CTCPServer::~CTCPServer()
     closesocket(m_Socket);
 }
 
-bool CTCPServer::Listen(const string &address, uint16_t port)
+bool CTCPServer::Listen(const string &address, uint16_t& port)
 {
   if (m_Socket == INVALID_SOCKET || m_HasError)
     return false;
@@ -485,6 +485,11 @@ bool CTCPServer::Listen(const string &address, uint16_t port)
     Print("[TCPSERVER] error (bind) - " + GetErrorString());
     return false;
   }
+
+  sockaddr_in addr;
+  int addrlen = sizeof(sockaddr_in);
+  ::getsockname(m_Socket, (sockaddr*)&addr, &addrlen);
+  port = ::ntohs(addr.sin_port);
 
   // listen, queue length 8
 

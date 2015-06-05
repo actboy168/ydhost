@@ -295,7 +295,7 @@ CAura::CAura(CConfig *CFG)
   m_UDPSocket->SetDontRoute(CFG->GetInt("udp_dontroute", 0) == 0 ? false : true);
 
   m_CRC->Initialize();
-  m_HostPort = CFG->GetInt("bot_hostport", 6112);
+  m_HostPort = CFG->GetInt("bot_hostport", 0);
   m_LANWar3Version = CFG->GetInt("lan_war3version", 26);
 
   // read the rest of the general configuration
