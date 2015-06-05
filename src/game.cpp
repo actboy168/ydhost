@@ -87,17 +87,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_Lagging(false),
     m_Desynced(false)
 {
-
-  // wait time of 1 minute  = 0 empty actions required
-  // wait time of 2 minutes = 1 empty action required...
-
-  m_GProxyEmptyActions = m_Aura->m_ReconnectWaitTime - 1;
-
-  // clamp to 9 empty actions (10 minutes)
-
-  if (m_GProxyEmptyActions > 9)
-    m_GProxyEmptyActions = 9;
-
   // start listening for connections
 
   if (!m_Aura->m_BindAddress.empty())
@@ -395,21 +384,7 @@ bool CGame::Update(void *fd, void *send_fd)
 
     if (m_Lagging)
     {
-      bool UsingGProxy = false;
-
-      for (auto & player : m_Players)
-      {
-        if (player->GetGProxy())
-        {
-          UsingGProxy = true;
-          break;
-        }
-      }
-
       uint32_t WaitTime = 60;
-
-      if (UsingGProxy)
-        WaitTime = (m_GProxyEmptyActions + 1) * 60;
 
       if (Time - m_StartedLaggingTime >= WaitTime)
         StopLaggers("was automatically dropped after " + to_string(WaitTime) + " seconds");
@@ -428,19 +403,6 @@ bool CGame::Update(void *fd, void *send_fd)
           {
             if (player->GetLagging())
               Send(_i, m_Protocol->SEND_W3GS_STOP_LAG(player));
-          }
-
-          // send an empty update
-          // this resets the lag screen timer
-
-          if (UsingGProxy && !(_i)->GetGProxy())
-          {
-            // we must send additional empty actions to non-GProxy++ players
-            // GProxy++ will insert these itself so we don't need to send them to GProxy++ players
-            // empty actions are used to extend the time a player can use when reconnecting
-
-            for (uint8_t j = 0; j < m_GProxyEmptyActions; ++j)
-              Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(queue<CIncomingAction *>(), 0));
           }
 
           Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(queue<CIncomingAction *>(), 0));
@@ -835,35 +797,7 @@ void CGame::SendFakePlayerInfo(CGamePlayer *player)
 
 void CGame::SendAllActions()
 {
-  bool UsingGProxy = false;
-
-  for (auto & player : m_Players)
-  {
-    if (player->GetGProxy())
-    {
-      UsingGProxy = true;
-      break;
-    }
-  }
-
   m_GameTicks += m_Latency;
-
-  if (UsingGProxy)
-  {
-    // we must send empty actions to non-GProxy++ players
-    // GProxy++ will insert these itself so we don't need to send them to GProxy++ players
-    // empty actions are used to extend the time a player can use when reconnecting
-
-    for (auto & player : m_Players)
-    {
-      if (!player->GetGProxy())
-      {
-        for (uint8_t j = 0; j < m_GProxyEmptyActions; ++j)
-          Send(player, m_Protocol->SEND_W3GS_INCOMING_ACTION(queue<CIncomingAction *>(), 0));
-      }
-    }
-  }
-
   ++m_SyncCounter;
 
   // we aren't allowed to send more than 1460 bytes in a single packet but it's possible we might have more than that many bytes waiting in the queue
@@ -978,28 +912,6 @@ void CGame::EventPlayerDeleted(CGamePlayer *player)
 
 void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 {
-  if (player->GetGProxy() && m_GameLoaded)
-  {
-    if (!player->GetGProxyDisconnectNoticeSent())
-    {
-      SendAllChat(player->GetName() + " " + "has lost the connection (timed out) but is using GProxy++ and may reconnect");
-      player->SetGProxyDisconnectNoticeSent(true);
-    }
-
-    if (GetTime() - player->GetLastGProxyWaitNoticeSentTime() >= 20)
-    {
-      uint32_t TimeRemaining = (m_GProxyEmptyActions + 1) * 60 - (GetTime() - m_StartedLaggingTime);
-
-      if (TimeRemaining > ((uint32_t) m_GProxyEmptyActions + 1) * 60)
-        TimeRemaining = (m_GProxyEmptyActions + 1) * 60;
-
-      SendAllChat(player->GetPID(), "Please wait for me to reconnect (" + to_string(TimeRemaining) + " seconds remain)");
-      player->SetLastGProxyWaitNoticeSentTime(GetTime());
-    }
-
-    return;
-  }
-
   // not only do we not do any timeouts if the game is lagging, we allow for an additional grace period of 10 seconds
   // this is because Warcraft 3 stops sending packets during the lag screen
   // so when the lag screen finishes we would immediately disconnect everyone if we didn't give them some extra time
@@ -1017,28 +929,6 @@ void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 
 void CGame::EventPlayerDisconnectSocketError(CGamePlayer *player)
 {
-  if (player->GetGProxy() && m_GameLoaded)
-  {
-    if (!player->GetGProxyDisconnectNoticeSent())
-    {
-      SendAllChat(player->GetName() + " " + "has lost the connection (connection error - " + player->GetSocket()->GetErrorString() + ") but is using GProxy++ and may reconnect");
-      player->SetGProxyDisconnectNoticeSent(true);
-    }
-
-    if (GetTime() - player->GetLastGProxyWaitNoticeSentTime() >= 20)
-    {
-      uint32_t TimeRemaining = (m_GProxyEmptyActions + 1) * 60 - (GetTime() - m_StartedLaggingTime);
-
-      if (TimeRemaining > ((uint32_t) m_GProxyEmptyActions + 1) * 60)
-        TimeRemaining = (m_GProxyEmptyActions + 1) * 60;
-
-      SendAllChat(player->GetPID(), "Please wait for me to reconnect (" + to_string(TimeRemaining) + " seconds remain)");
-      player->SetLastGProxyWaitNoticeSentTime(GetTime());
-    }
-
-    return;
-  }
-
   player->SetDeleteMe(true);
   player->SetLeftReason("has lost the connection (connection error - " + player->GetSocket()->GetErrorString() + ")");
   player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
@@ -1049,28 +939,6 @@ void CGame::EventPlayerDisconnectSocketError(CGamePlayer *player)
 
 void CGame::EventPlayerDisconnectConnectionClosed(CGamePlayer *player)
 {
-  if (player->GetGProxy() && m_GameLoaded)
-  {
-    if (!player->GetGProxyDisconnectNoticeSent())
-    {
-      SendAllChat(player->GetName() + " " + "has lost the connection (connection closed by remote host) but is using GProxy++ and may reconnect");
-      player->SetGProxyDisconnectNoticeSent(true);
-    }
-
-    if (GetTime() - player->GetLastGProxyWaitNoticeSentTime() >= 20)
-    {
-      uint32_t TimeRemaining = (m_GProxyEmptyActions + 1) * 60 - (GetTime() - m_StartedLaggingTime);
-
-      if (TimeRemaining > ((uint32_t) m_GProxyEmptyActions + 1) * 60)
-        TimeRemaining = (m_GProxyEmptyActions + 1) * 60;
-
-      SendAllChat(player->GetPID(), "Please wait for me to reconnect (" + to_string(TimeRemaining) + " seconds remain)");
-      player->SetLastGProxyWaitNoticeSentTime(GetTime());
-    }
-
-    return;
-  }
-
   player->SetDeleteMe(true);
   player->SetLeftReason("has lost the connection (connection closed by remote host)");
   player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
@@ -1276,12 +1144,7 @@ void CGame::EventPlayerLeft(CGamePlayer *player, uint32_t reason)
   // this function is only called when a player leave packet is received, not when there's a socket error, kick, etc...
 
   player->SetDeleteMe(true);
-
-  if (reason == PLAYERLEAVE_GPROXY)
-    player->SetLeftReason("was unrecoverably dropped from GProxy++");
-  else
-    player->SetLeftReason("has left the game voluntarily");
-
+  player->SetLeftReason("has left the game voluntarily");
   player->SetLeftCode(PLAYERLEAVE_LOST);
 
   if (!m_GameLoading && !m_GameLoaded)

@@ -90,7 +90,6 @@ protected:
   uint16_t m_HostPort;                          // the port to host games on
   uint8_t m_GameState;                          // game state, public or private
   uint8_t m_VirtualHostPID;                     // host's PID
-  uint8_t  m_GProxyEmptyActions;                // empty actions used for gproxy protocol
   bool m_Exiting;                               // set to true and this class will be deleted next update
   bool m_Saving;                                // if we're currently saving game data to the database
   bool m_SlotInfoChanged;                       // if the slot info has changed and hasn't been sent to the players yet (optimization)
@@ -111,7 +110,6 @@ public:
   inline uint32_t GetEntryKey() const               { return m_EntryKey; }
   inline uint16_t GetHostPort() const               { return m_HostPort; }
   inline uint8_t GetGameState() const               { return m_GameState; }
-  inline uint8_t GetGProxyEmptyActions() const      { return m_GProxyEmptyActions; }
   inline std::string GetGameName() const            { return m_GameName; }
   inline std::string GetLastGameName() const        { return m_LastGameName; }
   inline std::string GetVirtualHostName() const     { return m_VirtualHostName; }

@@ -22,7 +22,6 @@
 #include "aura.h"
 #include "map.h"
 #include "gameprotocol.h"
-#include "gpsprotocol.h"
 #include "game.h"
 
 using namespace std;
@@ -69,7 +68,7 @@ bool CPotentialPlayer::Update(void *fd)
 
   while (Bytes.size() >= 4)
   {
-    if (Bytes[0] == W3GS_HEADER_CONSTANT || Bytes[0] == GPS_HEADER_CONSTANT)
+    if (Bytes[0] == W3GS_HEADER_CONSTANT)
     {
       // bytes 2 and 3 contain the length of the packet
 
@@ -134,9 +133,6 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
     m_LastMapPartAcked(0),
     m_FinishedLoadingTicks(0),
     m_StartedLaggingTicks(0),
-    m_LastGProxyWaitNoticeSentTime(0),
-    m_GProxyReconnectKey(GetTicks()),
-    m_LastGProxyAckTime(0),
     m_PID(nPID),
     m_DownloadAllowed(false),
     m_DownloadStarted(false),
@@ -146,8 +142,6 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
     m_DropVote(false),
     m_KickVote(false),
     m_LeftMessageSent(false),
-    m_GProxy(false),
-    m_GProxyDisconnectNoticeSent(false),
     m_DeleteMe(false)
 {
 
@@ -189,14 +183,6 @@ bool CGamePlayer::Update(void *fd)
 
   if (Time - m_Socket->GetLastRecv() >= 30)
     m_Game->EventPlayerDisconnectTimedOut(this);
-
-  // GProxy++ acks
-
-  if (m_GProxy && Time - m_LastGProxyAckTime >= 10)
-  {
-    m_Socket->PutBytes(m_Game->m_Aura->m_GPSProtocol->SEND_GPSS_ACK(m_TotalPacketsReceived));
-    m_LastGProxyAckTime = Time;
-  }
 
   m_Socket->DoRecv((fd_set *) fd);
 
@@ -325,45 +311,6 @@ bool CGamePlayer::Update(void *fd)
       else
         break;
     }
-    else if (Bytes[0] == GPS_HEADER_CONSTANT)
-    {
-      if (Length >= 4)
-      {
-        if (Bytes.size() >= Length)
-        {
-          if (Bytes[1] == CGPSProtocol::GPS_ACK && Data.size() == 8)
-          {
-            const uint32_t LastPacket = ByteArrayToUInt32(Data, false, 4);
-            const uint32_t PacketsAlreadyUnqueued = m_TotalPacketsSent - m_GProxyBuffer.size();
-
-            if (LastPacket > PacketsAlreadyUnqueued)
-            {
-              uint32_t PacketsToUnqueue = LastPacket - PacketsAlreadyUnqueued;
-
-              if (PacketsToUnqueue > m_GProxyBuffer.size())
-                PacketsToUnqueue = m_GProxyBuffer.size();
-
-              while (PacketsToUnqueue > 0)
-              {
-                m_GProxyBuffer.pop();
-                --PacketsToUnqueue;
-              }
-            }
-          }
-          else if (Bytes[1] == CGPSProtocol::GPS_INIT)
-          {
-            m_GProxy = true;
-            m_Socket->PutBytes(m_Game->m_Aura->m_GPSProtocol->SEND_GPSS_INIT(m_Game->m_Aura->m_ReconnectPort, m_PID, m_GProxyReconnectKey, m_Game->GetGProxyEmptyActions()));
-            Print("[GAME: " + m_Game->GetGameName() + "] player [" + m_Name + "] is using GProxy++");
-          }
-        }
-
-        LengthProcessed += Length;
-        Bytes = BYTEARRAY(begin(Bytes) + Length, end(Bytes));
-      }
-      else
-        break;
-    }
   }
 
   *RecvBuffer = RecvBuffer->substr(LengthProcessed);
@@ -385,60 +332,11 @@ bool CGamePlayer::Update(void *fd)
     }
   }
 
-  if (m_GProxy && m_Game->GetGameLoaded())
-    return m_DeleteMe;
-
   return m_DeleteMe || m_Socket->HasError() || !m_Socket->GetConnected();
 }
 
 void CGamePlayer::Send(const BYTEARRAY &data)
 {
-  // must start counting packet total from beginning of connection
-  // but we can avoid buffering packets until we know the client is using GProxy++ since that'll be determined before the game starts
-  // this prevents us from buffering packets for non-GProxy++ clients
-
   ++m_TotalPacketsSent;
-
-  if (m_GProxy && m_Game->GetGameLoaded())
-    m_GProxyBuffer.push(data);
-
   m_Socket->PutBytes(data);
-}
-
-void CGamePlayer::EventGProxyReconnect(CTCPSocket *NewSocket, uint32_t LastPacket)
-{
-  delete m_Socket;
-  m_Socket = NewSocket;
-  m_Socket->PutBytes(m_Game->m_Aura->m_GPSProtocol->SEND_GPSS_RECONNECT(m_TotalPacketsReceived));
-
-  const uint32_t PacketsAlreadyUnqueued = m_TotalPacketsSent - m_GProxyBuffer.size();
-
-  if (LastPacket > PacketsAlreadyUnqueued)
-  {
-    uint32_t PacketsToUnqueue = LastPacket - PacketsAlreadyUnqueued;
-
-    if (PacketsToUnqueue > m_GProxyBuffer.size())
-      PacketsToUnqueue = m_GProxyBuffer.size();
-
-    while (PacketsToUnqueue > 0)
-    {
-      m_GProxyBuffer.pop();
-      --PacketsToUnqueue;
-    }
-  }
-
-  // send remaining packets from buffer, preserve buffer
-
-  queue<BYTEARRAY> TempBuffer;
-
-  while (!m_GProxyBuffer.empty())
-  {
-    m_Socket->PutBytes(m_GProxyBuffer.front());
-    TempBuffer.push(m_GProxyBuffer.front());
-    m_GProxyBuffer.pop();
-  }
-
-  m_GProxyBuffer = TempBuffer;
-  m_GProxyDisconnectNoticeSent = false;
-  m_Game->SendAllChat("Player [" + m_Name + "] reconnected with GProxy++!");
 }

@@ -85,7 +85,6 @@ private:
   BYTEARRAY m_InternalIP;                   // the player's internal IP address as reported by the player when connecting
   std::vector<uint32_t> m_Pings;            // store the last few (10) pings received so we can take an average
   std::queue<uint32_t> m_CheckSums;         // the last few checksums the player has sent (for detecting desyncs)
-  std::queue<BYTEARRAY> m_GProxyBuffer;     // buffer with data used with GProxy++
   std::string m_LeftReason;                 // the reason the player left the game
   std::string m_Name;                       // the player's name
   uint32_t m_TotalPacketsSent;              // the total number of packets sent to the player
@@ -99,9 +98,6 @@ private:
   uint32_t m_FinishedDownloadingTime;       // GetTime when the player finished downloading the map
   uint32_t m_FinishedLoadingTicks;          // GetTicks when the player finished loading the game
   uint32_t m_StartedLaggingTicks;           // GetTicks when the player started laggin
-  uint32_t m_LastGProxyWaitNoticeSentTime;  // GetTime when the last disconnection notice has been sent when using GProxy++
-  uint32_t m_GProxyReconnectKey;            // the GProxy++ reconnect key
-  uint32_t m_LastGProxyAckTime;             // GetTime when we last acknowledged GProxy++ packet
   uint8_t m_PID;                            // the player's PID
   bool m_DownloadAllowed;                   // if we're allowed to download the map or not (used with permission based map downloads)
   bool m_DownloadStarted;                   // if we've started downloading the map or not
@@ -111,8 +107,6 @@ private:
   bool m_DropVote;                          // if the player voted to drop the laggers or not (on the lag screen)
   bool m_KickVote;                          // if the player voted to kick a player or not
   bool m_LeftMessageSent;                   // if the playerleave message has been sent or not
-  bool m_GProxy;                            // if the player is using GProxy++
-  bool m_GProxyDisconnectNoticeSent;        // if a disconnection notice has been sent or not when using GProxy++
 
 protected:
   bool m_DeleteMe;
@@ -142,10 +136,6 @@ public:
   inline uint32_t GetFinishedDownloadingTime() const                  { return m_FinishedDownloadingTime; }
   inline uint32_t GetFinishedLoadingTicks() const                     { return m_FinishedLoadingTicks; }
   inline uint32_t GetStartedLaggingTicks() const                      { return m_StartedLaggingTicks; }
-  inline uint32_t GetLastGProxyWaitNoticeSentTime() const             { return m_LastGProxyWaitNoticeSentTime; }
-  inline uint32_t GetGProxyReconnectKey() const                       { return m_GProxyReconnectKey; }
-  inline bool GetGProxy() const                                       { return m_GProxy; }
-  inline bool GetGProxyDisconnectNoticeSent() const                   { return m_GProxyDisconnectNoticeSent; }
   inline bool GetDownloadAllowed() const                              { return m_DownloadAllowed; }
   inline bool GetDownloadStarted() const                              { return m_DownloadStarted; }
   inline bool GetDownloadFinished() const                             { return m_DownloadFinished; }
@@ -172,8 +162,6 @@ public:
   inline void SetDropVote(bool nDropVote)                                              { m_DropVote = nDropVote; }
   inline void SetKickVote(bool nKickVote)                                              { m_KickVote = nKickVote; }
   inline void SetLeftMessageSent(bool nLeftMessageSent)                                { m_LeftMessageSent = nLeftMessageSent; }
-  inline void SetGProxyDisconnectNoticeSent(bool nGProxyDisconnectNoticeSent)          { m_GProxyDisconnectNoticeSent = nGProxyDisconnectNoticeSent; }
-  inline void SetLastGProxyWaitNoticeSentTime(uint32_t nLastGProxyWaitNoticeSentTime)  { m_LastGProxyWaitNoticeSentTime = nLastGProxyWaitNoticeSentTime; }
 
   // processing functions
 
@@ -182,7 +170,6 @@ public:
   // other functions
 
   void Send(const BYTEARRAY &data);
-  void EventGProxyReconnect(CTCPSocket *NewSocket, uint32_t LastPacket);
 };
 
 #endif  // AURA_GAMEPLAYER_H_

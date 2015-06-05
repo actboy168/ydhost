@@ -231,7 +231,6 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="gameplayer.cpp" />
     <ClCompile Include="gameprotocol.cpp" />
-    <ClCompile Include="gpsprotocol.cpp" />
     <ClCompile Include="gameslot.cpp" />
     <ClCompile Include="aura.cpp" />
     <ClCompile Include="map.cpp" />
@@ -246,7 +245,6 @@
     <ClInclude Include="game.h" />
     <ClInclude Include="gameplayer.h" />
     <ClInclude Include="gameprotocol.h" />
-    <ClInclude Include="gpsprotocol.h" />
     <ClInclude Include="gameslot.h" />
     <ClInclude Include="aura.h" />
     <ClInclude Include="includes.h" />

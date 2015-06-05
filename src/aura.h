@@ -42,9 +42,6 @@ class CAura
 {
 public:
   CUDPSocket *m_UDPSocket;                      // a UDP socket for sending broadcasts and other junk (used with !sendlan)
-  CTCPServer *m_ReconnectSocket;                // listening socket for GProxy++ reliable reconnects
-  std::vector<CTCPSocket *> m_ReconnectSockets; // std::vector of sockets attempting to reconnect (connected but not identified yet)
-  CGPSProtocol *m_GPSProtocol;                  // class for gproxy protocol
   CCRC32 *m_CRC;                                // for calculating CRC's
   CSHA1 *m_SHA;                                 // for calculating SHA1's
   CGame *m_CurrentGame;                         // this game is still in the lobby state
@@ -56,7 +53,6 @@ public:
   std::string m_VirtualHostName;                // config value: virtual host name
   std::string m_LanguageFile;                   // config value: language file
   std::string m_BindAddress;                    // config value: the address to host games on
-  uint32_t m_ReconnectWaitTime;                 // config value: the maximum number of minutes to wait for a GProxy++ reliable reconnect
   uint32_t m_MaxGames;                          // config value: maximum number of games in progress
   uint32_t m_HostCounter;                       // the current host counter (a unique number to identify a game, incremented each time a game is created)
   uint32_t m_AllowDownloads;                    // config value: allow map downloads or not
@@ -67,7 +63,6 @@ public:
   uint32_t m_SyncLimit;                         // config value: the maximum number of packets a player can fall out of sync before starting the lag screen (by default)
   uint32_t m_VoteKickPercentage;                // config value: percentage of players required to vote yes for a votekick to pass
   uint16_t m_HostPort;                          // config value: the port to host games on
-  uint16_t m_ReconnectPort;                     // config value: the port to listen for GProxy++ reliable reconnects on
   uint8_t m_LANWar3Version;                     // config value: LAN warcraft 3 version
   int32_t m_CommandTrigger;                     // config value: the command trigger inside games
   bool m_Exiting;                               // set to true to force aura to shutdown next update (used by SignalCatcher)

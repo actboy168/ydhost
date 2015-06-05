@@ -26,7 +26,6 @@
 #include "map.h"
 #include "gameplayer.h"
 #include "gameprotocol.h"
-#include "gpsprotocol.h"
 #include "game.h"
 #include "util.h"
 #include "fileutil.h"
@@ -278,8 +277,6 @@ int main(int, char *argv[])
 
 CAura::CAura(CConfig *CFG)
   : m_UDPSocket(new CUDPSocket()),
-    m_ReconnectSocket(new CTCPServer()),
-    m_GPSProtocol(new CGPSProtocol()),
     m_CRC(new CCRC32()),
     m_SHA(new CSHA1()),
     m_CurrentGame(nullptr),
@@ -290,23 +287,12 @@ CAura::CAura(CConfig *CFG)
     m_Enabled(true),
     m_Ready(true)
 {
-  Print("[AURA] Aura++ version " + m_Version + " - with GProxy++ support");
+  Print("[AURA] Aura++ version " + m_Version);
 
   // get the general configuration variables
 
   m_UDPSocket->SetBroadcastTarget(CFG->GetString("udp_broadcasttarget", string()));
   m_UDPSocket->SetDontRoute(CFG->GetInt("udp_dontroute", 0) == 0 ? false : true);
-
-  m_ReconnectPort = CFG->GetInt("bot_reconnectport", 6113);
-
-  if (m_ReconnectSocket->Listen(m_BindAddress, m_ReconnectPort))
-    Print("[AURA] listening for GProxy++ reconnects on port " + to_string(m_ReconnectPort));
-  else
-  {
-    Print("[AURA] error listening for GProxy++ reconnects on port " + to_string(m_ReconnectPort));
-    m_Ready = false;
-    return;
-  }
 
   m_CRC->Initialize();
   m_HostPort = CFG->GetInt("bot_hostport", 6112);
@@ -326,14 +312,9 @@ CAura::~CAura()
   delete m_UDPSocket;
   delete m_CRC;
   delete m_SHA;
-  delete m_ReconnectSocket;
-  delete m_GPSProtocol;
 
   if (m_Map)
     delete m_Map;
-
-  for (auto & socket : m_ReconnectSockets)
-    delete socket;
 
   delete m_CurrentGame;
 
@@ -361,27 +342,6 @@ bool CAura::Update()
 
   for (auto & game : m_Games)
     NumFDs += game->SetFD(&fd, &send_fd, &nfds);
-
-  // 5. reconnect socket
-
-  if (m_ReconnectSocket->HasError())
-  {
-    Print("[AURA] GProxy++ reconnect listener error (" + m_ReconnectSocket->GetErrorString() + ")");
-    return true;
-  }
-  else
-  {
-    m_ReconnectSocket->SetFD(&fd, &send_fd, &nfds);
-    ++NumFDs;
-  }
-
-  // 6. reconnect sockets
-
-  for (auto & socket : m_ReconnectSockets)
-  {
-    socket->SetFD(&fd, &send_fd, &nfds);
-    ++NumFDs;
-  }
 
   // before we call select we need to determine how long to block for
   // 50 ms is the hard maximum
@@ -452,111 +412,6 @@ bool CAura::Update()
       m_CurrentGame->UpdatePost(&send_fd);
   }
 
-  // update GProxy++ reliable reconnect sockets
-
-  CTCPSocket *NewSocket = m_ReconnectSocket->Accept(&fd);
-
-  if (NewSocket)
-    m_ReconnectSockets.push_back(NewSocket);
-
-  for (auto i = begin(m_ReconnectSockets); i != end(m_ReconnectSockets);)
-  {
-    if ((*i)->HasError() || !(*i)->GetConnected() || GetTime() - (*i)->GetLastRecv() >= 10)
-    {
-      delete *i;
-      i = m_ReconnectSockets.erase(i);
-      continue;
-    }
-
-    (*i)->DoRecv(&fd);
-    string *RecvBuffer = (*i)->GetBytes();
-    const BYTEARRAY Bytes = CreateByteArray((uint8_t *) RecvBuffer->c_str(), RecvBuffer->size());
-
-    // a packet is at least 4 bytes
-
-    if (Bytes.size() >= 4)
-    {
-      if (Bytes[0] == GPS_HEADER_CONSTANT)
-      {
-        // bytes 2 and 3 contain the length of the packet
-
-        const uint16_t Length = (uint16_t)(Bytes[3] << 8 | Bytes[2]);
-
-        if (Bytes.size() >= Length)
-        {
-          if (Bytes[1] == CGPSProtocol::GPS_RECONNECT && Length == 13)
-          {
-            const uint32_t ReconnectKey = ByteArrayToUInt32(Bytes, false, 5);
-            const uint32_t LastPacket = ByteArrayToUInt32(Bytes, false, 9);
-
-            // look for a matching player in a running game
-
-            CGamePlayer *Match = nullptr;
-
-            for (auto & game : m_Games)
-            {
-              if (game->GetGameLoaded())
-              {
-                CGamePlayer *Player = game->GetPlayerFromPID(Bytes[4]);
-
-                if (Player && Player->GetGProxy() && Player->GetGProxyReconnectKey() == ReconnectKey)
-                {
-                  Match = Player;
-                  break;
-                }
-              }
-            }
-
-            if (Match)
-            {
-              // reconnect successful!
-
-              *RecvBuffer = RecvBuffer->substr(Length);
-              Match->EventGProxyReconnect(*i, LastPacket);
-              i = m_ReconnectSockets.erase(i);
-              continue;
-            }
-            else
-            {
-              (*i)->PutBytes(m_GPSProtocol->SEND_GPSS_REJECT(REJECTGPS_NOTFOUND));
-              (*i)->DoSend(&send_fd);
-              delete *i;
-              i = m_ReconnectSockets.erase(i);
-              continue;
-            }
-          }
-          else
-          {
-            (*i)->PutBytes(m_GPSProtocol->SEND_GPSS_REJECT(REJECTGPS_INVALID));
-            (*i)->DoSend(&send_fd);
-            delete *i;
-            i = m_ReconnectSockets.erase(i);
-            continue;
-          }
-        }
-        else
-        {
-          (*i)->PutBytes(m_GPSProtocol->SEND_GPSS_REJECT(REJECTGPS_INVALID));
-          (*i)->DoSend(&send_fd);
-          delete *i;
-          i = m_ReconnectSockets.erase(i);
-          continue;
-        }
-      }
-      else
-      {
-        (*i)->PutBytes(m_GPSProtocol->SEND_GPSS_REJECT(REJECTGPS_INVALID));
-        (*i)->DoSend(&send_fd);
-        delete *i;
-        i = m_ReconnectSockets.erase(i);
-        continue;
-      }
-    }
-
-    (*i)->DoSend(&send_fd);
-    ++i;
-  }
-
   return m_Exiting || Exit;
 }
 
@@ -578,7 +433,6 @@ void CAura::SetConfigs(CConfig *CFG)
   // it just set the easily reloadable values
 
   m_BindAddress = CFG->GetString("bot_bindaddress", string());
-  m_ReconnectWaitTime = CFG->GetInt("bot_reconnectwaittime", 3);
   m_MaxGames = CFG->GetInt("bot_maxgames", 20);
   string BotCommandTrigger = CFG->GetString("bot_commandtrigger", "!");
   m_CommandTrigger = BotCommandTrigger[0];
