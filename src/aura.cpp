@@ -223,6 +223,12 @@ int main(int, char *argv[])
 
   gAura = new CAura(&CFG);
 
+  if (!gAura->m_Map)
+  {
+	  Print("[AURA] could not found the map");
+	  return 1;
+  }
+
   gAura->CreateGame(gAura->m_Map, GAME_PRIVATE, CFG.GetString("bot_defaultgamename", ""), CFG.GetString("bot_defaultownername", ""), "", "", false);
 
   // check if it's properly configured
