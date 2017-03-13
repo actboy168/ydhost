@@ -13,7 +13,7 @@
 *.sln.cache
 Thumbs.db
 *.DS_Store
-
+.vs/
 bin/
 tmp/
 log/
