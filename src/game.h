@@ -53,9 +53,7 @@ protected:
   std::vector<uint8_t> m_FakePlayers;           // the fake player's PIDs (if present)
   CMap *m_Map;                                  // map data
   std::string m_GameName;                       // game name
-  std::string m_LastGameName;                   // last game name (the previous game name before it was rehosted)
   std::string m_VirtualHostName;                // host's name
-  std::string m_CreatorName;                    // name of the player who created this game
   std::string m_MapPath;                        // store the map path to save in the database on game end
   uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
   uint32_t m_HostCounter;                       // a unique game number
@@ -96,7 +94,7 @@ protected:
   bool m_Desynced;                              // if the game has desynced or not
 
 public:
-  CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, std::string &nGameName, std::string &nCreatorName, std::string &nCreatorServer);
+  CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, std::string &nGameName);
   ~CGame();
   CGame(CGame &) = delete;
 
@@ -106,9 +104,7 @@ public:
   inline uint16_t GetHostPort() const               { return m_HostPort; }
   inline uint8_t GetGameState() const               { return m_GameState; }
   inline std::string GetGameName() const            { return m_GameName; }
-  inline std::string GetLastGameName() const        { return m_LastGameName; }
   inline std::string GetVirtualHostName() const     { return m_VirtualHostName; }
-  inline std::string GetCreatorName() const         { return m_CreatorName; }
   inline uint32_t GetHostCounter() const            { return m_HostCounter; }
   inline uint32_t GetLastLagScreenTime() const      { return m_LastLagScreenTime; }
   inline bool GetCountDownStarted() const           { return m_CountDownStarted; }

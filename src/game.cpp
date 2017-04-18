@@ -36,16 +36,14 @@ using namespace std;
 // CGame
 //
 
-CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, string &nGameName, string &nCreatorName, string &nCreatorServer)
+CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, string &nGameName)
   : m_Aura(nAura),
     m_Socket(new CTCPServer()),
     m_Protocol(new CGameProtocol(nAura)),
     m_Slots(nMap->GetSlots()),
     m_Map(new CMap(*nMap)),
     m_GameName(nGameName),
-    m_LastGameName(nGameName),
     m_VirtualHostName(nAura->m_VirtualHostName),
-    m_CreatorName(nCreatorName),
     m_MapPath(nMap->GetMapPath()),
     m_RandomSeed(GetTicks()),
     m_HostCounter(nAura->m_HostCounter++),

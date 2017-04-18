@@ -228,7 +228,7 @@ int main(int, char *argv[])
 	  return 1;
   }
 
-  gAura->CreateGame(gAura->m_Map, GAME_PRIVATE, CFG.GetString("bot_defaultgamename", ""), "", "", false);
+  gAura->CreateGame(gAura->m_Map, GAME_PRIVATE, CFG.GetString("bot_defaultgamename", ""));
 
   // check if it's properly configured
 
@@ -457,7 +457,7 @@ void CAura::SetConfigs(CConfig *CFG)
   m_AutoStart = CFG->GetInt("bot_autostart", 1);
 }
 
-void CAura::CreateGame(CMap *map, uint8_t gameState, string gameName, string creatorName, string creatorServer, bool whisper)
+void CAura::CreateGame(CMap *map, uint8_t gameState, string gameName)
 {
   if (!m_Enabled)
   {
@@ -486,5 +486,5 @@ void CAura::CreateGame(CMap *map, uint8_t gameState, string gameName, string cre
 
   Print("[AURA] creating game [" + gameName + "]");
 
-  m_CurrentGame = new CGame(this, map, m_HostPort, gameState, gameName, creatorName, creatorServer);
+  m_CurrentGame = new CGame(this, map, m_HostPort, gameState, gameName);
 }
