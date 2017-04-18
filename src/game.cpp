@@ -389,7 +389,6 @@ bool CGame::Update(void *fd, void *send_fd)
   if (m_Players.empty() && (m_GameLoading || m_GameLoaded))
   {
     Print("[GAME: " + m_GameName + "] is over (no players left)");
-    Print("[GAME: " + m_GameName + "] saving game data to database");
 
     return true;
   }
@@ -1299,17 +1298,6 @@ uint8_t CGame::GetSIDFromPID(uint8_t PID) const
   }
 
   return 255;
-}
-
-CGamePlayer *CGame::GetPlayerFromPID(uint8_t PID)
-{
-  for (auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent() && player->GetPID() == PID)
-      return player;
-  }
-
-  return nullptr;
 }
 
 CGamePlayer *CGame::GetPlayerFromSID(uint8_t SID)

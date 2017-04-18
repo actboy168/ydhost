@@ -157,7 +157,6 @@ public:
   // other functions
 
   uint8_t GetSIDFromPID(uint8_t PID) const;
-  CGamePlayer *GetPlayerFromPID(uint8_t PID);
   CGamePlayer *GetPlayerFromSID(uint8_t SID);
   uint8_t GetNewPID();
   uint8_t GetNewColour();
