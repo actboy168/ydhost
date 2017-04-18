@@ -103,7 +103,7 @@ namespace logging {
 		{
 			rotate("ydhost.log");
 			std::string tmp = m_oss.str();
-			m_oss.clear();
+			m_oss.str("");
 			if (!tmp.empty())
 			{
 				FILE *f = fopen(m_last_filename.c_str(), "a");
