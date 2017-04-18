@@ -287,8 +287,30 @@ CAura::CAura(CConfig *CFG)
 
   // read the rest of the general configuration
 
-  SetConfigs(CFG);
+  // this doesn't set EVERY config value since that would potentially require reconfiguring the battle.net connections
+  // it just set the easily reloadable values
 
+  m_BindAddress = CFG->GetString("bot_bindaddress", string());
+  m_MaxGames = CFG->GetInt("bot_maxgames", 20);
+
+  m_MapCFGPath = AddPathSeparator(CFG->GetString("bot_mapcfgpath", string()));
+  m_MapPath = AddPathSeparator(CFG->GetString("bot_mappath", string()));
+  m_VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
+
+  if (m_VirtualHostName.size() > 15)
+  {
+	  m_VirtualHostName = "|cFF4080C0YDWE";
+	  Print("[AURA] warning - bot_virtualhostname is longer than 15 characters, using default virtual host name");
+  }
+
+  m_AllowDownloads = CFG->GetInt("bot_allowdownloads", 0);
+  m_MaxDownloaders = CFG->GetInt("bot_maxdownloaders", 3);
+  m_MaxDownloadSpeed = CFG->GetInt("bot_maxdownloadspeed", 100);
+  m_LCPings = CFG->GetInt("bot_lcpings", 1) == 0 ? false : true;
+  m_AutoKickPing = CFG->GetInt("bot_autokickping", 300);
+  m_Latency = CFG->GetInt("bot_latency", 100);
+  m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
+  m_AutoStart = CFG->GetInt("bot_autostart", 1);
 
   m_Map = new CMap(this, CFG, "");
 
@@ -405,41 +427,6 @@ bool CAura::Update()
 void CAura::EventGameDeleted(CGame *game)
 {
 	ExitProcess(-1);
-}
-
-void CAura::ReloadConfigs()
-{
-  CConfig CFG;
-  CFG.Read("aura.cfg");
-  SetConfigs(&CFG);
-}
-
-void CAura::SetConfigs(CConfig *CFG)
-{
-  // this doesn't set EVERY config value since that would potentially require reconfiguring the battle.net connections
-  // it just set the easily reloadable values
-
-  m_BindAddress = CFG->GetString("bot_bindaddress", string());
-  m_MaxGames = CFG->GetInt("bot_maxgames", 20);
-
-  m_MapCFGPath = AddPathSeparator(CFG->GetString("bot_mapcfgpath", string()));
-  m_MapPath = AddPathSeparator(CFG->GetString("bot_mappath", string()));
-  m_VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
-
-  if (m_VirtualHostName.size() > 15)
-  {
-    m_VirtualHostName = "|cFF4080C0YDWE";
-    Print("[AURA] warning - bot_virtualhostname is longer than 15 characters, using default virtual host name");
-  }
-
-  m_AllowDownloads = CFG->GetInt("bot_allowdownloads", 0);
-  m_MaxDownloaders = CFG->GetInt("bot_maxdownloaders", 3);
-  m_MaxDownloadSpeed = CFG->GetInt("bot_maxdownloadspeed", 100);
-  m_LCPings = CFG->GetInt("bot_lcpings", 1) == 0 ? false : true;
-  m_AutoKickPing = CFG->GetInt("bot_autokickping", 300);
-  m_Latency = CFG->GetInt("bot_latency", 100);
-  m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
-  m_AutoStart = CFG->GetInt("bot_autostart", 1);
 }
 
 void CAura::CreateGame(CMap *map, string gameName)
