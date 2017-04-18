@@ -131,7 +131,6 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
     m_JoinTime(GetTime()),
     m_LastMapPartSent(0),
     m_LastMapPartAcked(0),
-    m_FinishedLoadingTicks(0),
     m_StartedLaggingTicks(0),
     m_PID(nPID),
     m_DownloadAllowed(false),
@@ -225,7 +224,6 @@ bool CGamePlayer::Update(void *fd)
               if (!m_FinishedLoading)
               {
                 m_FinishedLoading = true;
-                m_FinishedLoadingTicks = GetTicks();
                 m_Game->EventPlayerLoaded(this);
               }
             }

@@ -123,8 +123,6 @@ public:
 
   // functions to send packets to players
 
-  void SendChat(uint8_t fromPID, CGamePlayer *player, const std::string &message);
-  void SendChat(CGamePlayer *player, const std::string &message);
   void SendAllChat(uint8_t fromPID, const std::string &message);
   void SendAllChat(const std::string &message);
   void SendAllSlotInfo();
@@ -156,7 +154,6 @@ public:
   // these events are called outside of any iterations
 
   void EventGameStarted();
-  void EventGameLoaded();
 
   // other functions
 

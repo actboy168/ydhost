@@ -96,7 +96,6 @@ private:
   uint32_t m_LastMapPartAcked;              // the last mappart acknowledged by the player
   uint32_t m_StartedDownloadingTicks;       // GetTicks when the player started downloading the map
   uint32_t m_FinishedDownloadingTime;       // GetTime when the player finished downloading the map
-  uint32_t m_FinishedLoadingTicks;          // GetTicks when the player finished loading the game
   uint32_t m_StartedLaggingTicks;           // GetTicks when the player started laggin
   uint8_t m_PID;                            // the player's PID
   bool m_DownloadAllowed;                   // if we're allowed to download the map or not (used with permission based map downloads)
@@ -133,7 +132,6 @@ public:
   inline uint32_t GetLastMapPartAcked() const                         { return m_LastMapPartAcked; }
   inline uint32_t GetStartedDownloadingTicks() const                  { return m_StartedDownloadingTicks; }
   inline uint32_t GetFinishedDownloadingTime() const                  { return m_FinishedDownloadingTime; }
-  inline uint32_t GetFinishedLoadingTicks() const                     { return m_FinishedLoadingTicks; }
   inline uint32_t GetStartedLaggingTicks() const                      { return m_StartedLaggingTicks; }
   inline bool GetDownloadAllowed() const                              { return m_DownloadAllowed; }
   inline bool GetDownloadStarted() const                              { return m_DownloadStarted; }

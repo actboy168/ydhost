@@ -413,7 +413,6 @@ bool CGame::Update(void *fd, void *send_fd)
       m_LastActionSentTicks = Ticks;
       m_GameLoading = false;
       m_GameLoaded = true;
-      EventGameLoaded();
     }
   }
 
@@ -577,43 +576,6 @@ void CGame::SendAll(const BYTEARRAY &data)
 {
   for (auto & player : m_Players)
     player->Send(data);
-}
-
-void CGame::SendChat(uint8_t fromPID, CGamePlayer *player, const string &message)
-{
-  // send a private message to one player - it'll be marked [Private] in Warcraft 3
-
-  if (player)
-  {
-    if (!m_GameLoading && !m_GameLoaded)
-    {
-      if (message.size() > 254)
-        Send(player, m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, CreateByteArray(player->GetPID()), 16, BYTEARRAY(), message.substr(0, 254)));
-      else
-        Send(player, m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, CreateByteArray(player->GetPID()), 16, BYTEARRAY(), message));
-    }
-    else
-    {
-      uint8_t ExtraFlags[] = { 3, 0, 0, 0 };
-
-      // based on my limited testing it seems that the extra flags' first byte contains 3 plus the recipient's colour to denote a private message
-
-      uint8_t SID = GetSIDFromPID(player->GetPID());
-
-      if (SID < m_Slots.size())
-        ExtraFlags[0] = 3 + m_Slots[SID].GetColour();
-
-      if (message.size() > 127)
-        Send(player, m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, CreateByteArray(player->GetPID()), 32, CreateByteArray(ExtraFlags, 4), message.substr(0, 127)));
-      else
-        Send(player, m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, CreateByteArray(player->GetPID()), 32, CreateByteArray(ExtraFlags, 4), message));
-    }
-  }
-}
-
-void CGame::SendChat(CGamePlayer *player, const string &message)
-{
-  SendChat(GetHostPID(), player, message);
 }
 
 void CGame::SendAllChat(uint8_t fromPID, const string &message)
@@ -982,9 +944,6 @@ void CGame::EventPlayerLeft(CGamePlayer *player, uint32_t reason)
 
 void CGame::EventPlayerLoaded(CGamePlayer *player)
 {
-  Print("[GAME: " + m_GameName + "] player [" + player->GetName() + "] finished loading in " + to_string((float)(player->GetFinishedLoadingTicks() - m_StartedLoadingTicks) / 1000.f) + " seconds");
-
-
   SendAll(m_Protocol->SEND_W3GS_GAMELOADED_OTHERS(player->GetPID()));
 }
 
@@ -1348,34 +1307,6 @@ void CGame::EventGameStarted()
 
   m_Aura->m_CurrentGame = nullptr;
   m_Aura->m_Games.push_back(this);
-}
-
-void CGame::EventGameLoaded()
-{
-  Print("[GAME: " + m_GameName + "] finished loading with " + to_string(GetNumPlayers()) + " players");
-
-  // send shortest, longest, and personal load times to each player
-
-  CGamePlayer *Shortest = nullptr;
-  CGamePlayer *Longest = nullptr;
-
-  for (auto & player : m_Players)
-  {
-    if (!Shortest || player->GetFinishedLoadingTicks() < Shortest->GetFinishedLoadingTicks())
-      Shortest = player;
-
-    if (!Longest || player->GetFinishedLoadingTicks() > Longest->GetFinishedLoadingTicks())
-      Longest = player;
-  }
-
-  if (Shortest && Longest)
-  {
-    SendAllChat("Shortest load by player [" + Shortest->GetName() + "] was " + to_string((float)(Shortest->GetFinishedLoadingTicks() - m_StartedLoadingTicks) / 1000.f) + " seconds");
-    SendAllChat("Longest load by player [" + Longest->GetName() + "] was " + to_string((float)(Longest->GetFinishedLoadingTicks() - m_StartedLoadingTicks) / 1000.f) + " seconds");
-  }
-
-  for (auto & player : m_Players)
-    SendChat(player, "Your load time was " + to_string((float)(player->GetFinishedLoadingTicks() - m_StartedLoadingTicks) / 1000.f) + " seconds");
 }
 
 uint8_t CGame::GetSIDFromPID(uint8_t PID) const
