@@ -47,11 +47,9 @@ public:
   CGame *m_CurrentGame;                         // this game is still in the lobby state
   std::vector<CGame *> m_Games;                 // these games are in progress
   CMap *m_Map;                                  // the currently loaded map
-  std::string m_Version;                        // Aura++ version string
   std::string m_MapCFGPath;                     // config value: map cfg path
   std::string m_MapPath;                        // config value: map path
   std::string m_VirtualHostName;                // config value: virtual host name
-  std::string m_LanguageFile;                   // config value: language file
   std::string m_BindAddress;                    // config value: the address to host games on
   uint32_t m_MaxGames;                          // config value: maximum number of games in progress
   uint32_t m_HostCounter;                       // the current host counter (a unique number to identify a game, incremented each time a game is created)
@@ -63,10 +61,7 @@ public:
   uint32_t m_SyncLimit;                         // config value: the maximum number of packets a player can fall out of sync before starting the lag screen (by default)
   uint16_t m_HostPort;                          // config value: the port to host games on
   uint8_t m_LANWar3Version;                     // config value: LAN warcraft 3 version
-  int32_t m_CommandTrigger;                     // config value: the command trigger inside games
   bool m_Exiting;                               // set to true to force aura to shutdown next update (used by SignalCatcher)
-  bool m_Enabled;                               // set to false to prevent new games from being created
-  bool m_Ready;                                 // indicates if there's lacking configuration info so we can quit
   bool m_LCPings;                               // config value: use LC style pings (divide actual pings by two)
   uint32_t m_AutoStart;
 
@@ -87,11 +82,6 @@ public:
   void ReloadConfigs();
   void SetConfigs(CConfig *CFG);
   void CreateGame(CMap *map, std::string gameName);
-
-  inline bool GetReady() const
-  {
-    return m_Ready;
-  }
 };
 
 #endif  // AURA_AURA_H_

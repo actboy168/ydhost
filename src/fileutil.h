@@ -23,7 +23,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
 #include "includes.h"
 
-std::string FileRead(const std::string &file, uint32_t start, uint32_t length);
 std::string FileRead(const std::string &file);
 
 #endif  // AURA_FILEUTIL_H_

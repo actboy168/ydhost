@@ -84,46 +84,6 @@ std::wstring utf8_to_wide(const std::string& utf8string)
 }
 #endif
 
-
-string FileRead(const string &file, uint32_t start, uint32_t length)
-{
-  ifstream IS;
-#ifdef WIN32
-  IS.open(utf8_to_wide(file).c_str(), ios::binary);
-#else
-  IS.open(file.c_str(), ios::binary);
-#endif
-
-
-  if (IS.fail())
-  {
-    Print("[UTIL] warning - unable to read file part [" + file + "]");
-    return string();
-  }
-
-  // get length of file
-
-  IS.seekg(0, ios::end);
-  uint32_t FileLength = IS.tellg();
-
-  if (start > FileLength)
-  {
-    IS.close();
-    return string();
-  }
-
-  IS.seekg(start, ios::beg);
-
-  // read data
-
-  auto Buffer = new char[length];
-  IS.read(Buffer, length);
-  string BufferString = string(Buffer, IS.gcount());
-  IS.close();
-  delete[] Buffer;
-  return BufferString;
-}
-
 string FileRead(const string &file)
 {
   ifstream IS;

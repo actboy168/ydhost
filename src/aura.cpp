@@ -49,8 +49,6 @@
 #include <mach/mach_time.h>
 #endif
 
-#define VERSION "1.24"
-
 using namespace std;
 
 static CAura *gAura = nullptr;
@@ -230,16 +228,8 @@ int main(int, char *argv[])
 
   gAura->CreateGame(gAura->m_Map, CFG.GetString("bot_defaultgamename", ""));
 
-  // check if it's properly configured
-
-  if (gAura->GetReady())
-  {
-    // loop
-
-    while (!gAura->Update());
-  }
-  else
-    Print("[AURA] check your aura.cfg and configure Aura properly");
+  // loop
+  while (!gAura->Update());
 
   // shutdown aura
 
@@ -281,13 +271,10 @@ CAura::CAura(CConfig *CFG)
     m_SHA(new CSHA1()),
     m_CurrentGame(nullptr),
     m_Map(nullptr),
-    m_Version(VERSION),
     m_HostCounter(1),
-    m_Exiting(false),
-    m_Enabled(true),
-    m_Ready(true)
+    m_Exiting(false)
 {
-  Print("[AURA] Aura++ version " + m_Version);
+  Print("[AURA] Aura++ version 1.24");
 
   // get the general configuration variables
 
@@ -434,8 +421,6 @@ void CAura::SetConfigs(CConfig *CFG)
 
   m_BindAddress = CFG->GetString("bot_bindaddress", string());
   m_MaxGames = CFG->GetInt("bot_maxgames", 20);
-  string BotCommandTrigger = CFG->GetString("bot_commandtrigger", "!");
-  m_CommandTrigger = BotCommandTrigger[0];
 
   m_MapCFGPath = AddPathSeparator(CFG->GetString("bot_mapcfgpath", string()));
   m_MapPath = AddPathSeparator(CFG->GetString("bot_mappath", string()));
@@ -459,11 +444,6 @@ void CAura::SetConfigs(CConfig *CFG)
 
 void CAura::CreateGame(CMap *map, string gameName)
 {
-  if (!m_Enabled)
-  {
-    return;
-  }
-
   if (gameName.size() > 31)
   {
     return;

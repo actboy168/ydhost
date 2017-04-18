@@ -61,7 +61,6 @@ protected:
   uint32_t m_SyncLimit;                         // the maximum number of packets a player can fall out of sync before starting the lag screen
   uint32_t m_SyncCounter;                       // the number of actions sent so far (for determining if anyone is lagging)
   uint32_t m_GameTicks;                         // ingame ticks
-  uint32_t m_CreationTime;                      // GetTime when the game was created
   uint32_t m_LastPingTime;                      // GetTime when the last ping was sent
   uint32_t m_LastDownloadTicks;                 // GetTicks when the last map download cycle was performed
   uint32_t m_DownloadCounter;                   // # of map bytes downloaded in the last second
@@ -80,7 +79,6 @@ protected:
   uint16_t m_HostPort;                          // the port to host games on
   uint8_t m_VirtualHostPID;                     // host's PID
   bool m_Exiting;                               // set to true and this class will be deleted next update
-  bool m_Saving;                                // if we're currently saving game data to the database
   bool m_SlotInfoChanged;                       // if the slot info has changed and hasn't been sent to the players yet (optimization)
   bool m_CountDownStarted;                      // if the game start countdown has started or not
   bool m_GameLoading;                           // if the game is currently loading or not
