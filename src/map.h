@@ -108,7 +108,6 @@ private:
   std::vector<CGameSlot> m_Slots;
   std::string m_CFGFile;
   std::string m_MapPath;              // config value: map path
-  std::string m_MapType;              // config value: map type (for stats class)
   std::string m_MapLocalPath;         // config value: map local path
   std::string m_MapData;              // the map data itself, for sending the map to players
   uint32_t m_MapOptions;
@@ -145,7 +144,6 @@ public:
   uint8_t GetMapLayoutStyle() const;
   inline BYTEARRAY GetMapWidth() const                       { return m_MapWidth; }
   inline BYTEARRAY GetMapHeight() const                      { return m_MapHeight; }
-  inline std::string GetMapType() const                           { return m_MapType; }
   inline std::string GetMapLocalPath() const                      { return m_MapLocalPath; }
   inline std::string *GetMapData()                                { return &m_MapData; }
   inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }

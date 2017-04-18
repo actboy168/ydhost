@@ -140,7 +140,6 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
     m_FinishedLoading(false),
     m_Lagging(false),
     m_DropVote(false),
-    m_KickVote(false),
     m_LeftMessageSent(false),
     m_DeleteMe(false)
 {

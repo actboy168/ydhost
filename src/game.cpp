@@ -70,7 +70,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_StartedLaggingTime(0),
     m_LastLagScreenTime(0),
     m_LastReservedSeen(GetTime()),
-    m_StartedKickVoteTime(0),
     m_GameOverTime(0),
     m_LastPlayerLeaveTicks(0),
     m_HostPort(nHostPort),
@@ -520,16 +519,6 @@ bool CGame::Update(void *fd, void *send_fd)
     }
   }
 
-  // expire the votekick
-
-  if (!m_KickVotePlayer.empty() && Time - m_StartedKickVoteTime >= 60)
-  {
-    Print("[GAME: " + m_GameName + "] votekick against player [" + m_KickVotePlayer + "] expired");
-    SendAllChat("A votekick against player [" + m_KickVotePlayer + "] has expired");
-    m_KickVotePlayer.clear();
-    m_StartedKickVoteTime = 0;
-  }
-
   if (m_GameLoaded)
     return m_Exiting;
 
@@ -899,14 +888,6 @@ void CGame::EventPlayerDeleted(CGamePlayer *player)
     SendAllChat("Countdown aborted!");
     m_CountDownStarted = false;
   }
-
-  // abort the votekick
-
-  if (!m_KickVotePlayer.empty())
-    SendAllChat("A votekick against player [" + m_KickVotePlayer + "] has been cancelled");
-
-  m_KickVotePlayer.clear();
-  m_StartedKickVoteTime = 0;
 }
 
 void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)

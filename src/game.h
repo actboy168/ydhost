@@ -50,7 +50,6 @@ protected:
   std::vector<CPotentialPlayer *> m_Potentials; // std::vector of potential players (connections that haven't sent a W3GS_REQJOIN packet yet)
   std::vector<CGamePlayer *> m_Players;         // std::vector of players
   std::queue<CIncomingAction *> m_Actions;      // queue of actions to be sent
-  std::set<std::string> m_IgnoredNames;         // set of player names to NOT print ban messages for when joining because they've already been printed
   std::vector<uint8_t> m_FakePlayers;           // the fake player's PIDs (if present)
   CMap *m_Map;                                  // map data
   std::string m_GameName;                       // game name
@@ -58,7 +57,6 @@ protected:
   std::string m_VirtualHostName;                // host's name
   std::string m_OwnerName;                      // name of the player who owns this game (should be considered an admin)
   std::string m_CreatorName;                    // name of the player who created this game
-  std::string m_KickVotePlayer;                 // the player to be kicked with the currently running kick vote
   std::string m_MapPath;                        // store the map path to save in the database on game end
   uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
   uint32_t m_HostCounter;                       // a unique game number
@@ -83,7 +81,6 @@ protected:
   uint32_t m_StartedLaggingTime;                // GetTime when the last lag screen started
   uint32_t m_LastLagScreenTime;                 // GetTime when the last lag screen was active (continuously updated)
   uint32_t m_LastReservedSeen;                  // GetTime when the last reserved player was seen in the lobby
-  uint32_t m_StartedKickVoteTime;               // GetTime when the kick vote was started
   uint32_t m_GameOverTime;                      // GetTime when the game was over
   uint32_t m_LastPlayerLeaveTicks;              // GetTicks when the most recent player left the game
   uint16_t m_HostPort;                          // the port to host games on

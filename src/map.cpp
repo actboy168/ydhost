@@ -757,7 +757,6 @@ void CMap::Load(CConfig *CFG, const string &nCFGFile)
   }
 
   m_MapHeight = MapHeight;
-  m_MapType = CFG->GetString("map_type", string());
 
   if (MapNumPlayers == 0)
     MapNumPlayers = CFG->GetInt("map_numplayers", 0);
