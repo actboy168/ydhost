@@ -125,7 +125,6 @@ public:
 
   void Send(CGamePlayer *player, const BYTEARRAY &data);
   void Send(uint8_t PID, const BYTEARRAY &data);
-  void Send(const BYTEARRAY &PIDs, const BYTEARRAY &data);
   void SendAll(const BYTEARRAY &data);
 
   // functions to send packets to players
@@ -154,7 +153,6 @@ public:
   void EventPlayerAction(CGamePlayer *player, CIncomingAction *action);
   void EventPlayerKeepAlive(CGamePlayer *player);
   void EventPlayerChatToHost(CGamePlayer *player, CIncomingChatPlayer *chatPlayer);
-  bool EventPlayerBotCommand(CGamePlayer *player, std::string &command, std::string &payload);
   void EventPlayerChangeTeam(CGamePlayer *player, uint8_t team);
   void EventPlayerChangeColour(CGamePlayer *player, uint8_t colour);
   void EventPlayerChangeRace(CGamePlayer *player, uint8_t race);

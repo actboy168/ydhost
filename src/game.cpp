@@ -589,12 +589,6 @@ void CGame::Send(uint8_t PID, const BYTEARRAY &data)
   Send(GetPlayerFromPID(PID), data);
 }
 
-void CGame::Send(const BYTEARRAY &PIDs, const BYTEARRAY &data)
-{
-  for (auto & PID : PIDs)
-    Send(PID, data);
-}
-
 void CGame::SendAll(const BYTEARRAY &data)
 {
   for (auto & player : m_Players)
@@ -1062,76 +1056,18 @@ void CGame::EventPlayerChatToHost(CGamePlayer *player, CIncomingChatPlayer *chat
 {
   if (chatPlayer->GetFromPID() == player->GetPID())
   {
-    if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_MESSAGE || chatPlayer->GetType() == CIncomingChatPlayer::CTH_MESSAGEEXTRA)
-    {
-      // relay the chat message to other players
-
-      bool Relay = true;
-      const BYTEARRAY ExtraFlags = chatPlayer->GetExtraFlags();
-
-      // calculate timestamp
-
-      string MinString = to_string((m_GameTicks / 1000) / 60);
-      string SecString = to_string((m_GameTicks / 1000) % 60);
-
-      if (MinString.size() == 1)
-        MinString.insert(0, "0");
-
-      if (SecString.size() == 1)
-        SecString.insert(0, "0");
-
-      // handle bot commands
-
-      const string Message = chatPlayer->GetMessage();
-
-      if (!Message.empty() && (Message[0] == m_Aura->m_CommandTrigger || Message[0] == '/'))
-      {
-        // extract the command trigger, the command, and the payload
-        // e.g. "!say hello world" -> command: "say", payload: "hello world"
-
-        string Command, Payload;
-        string::size_type PayloadStart = Message.find(" ");
-
-        if (PayloadStart != string::npos)
-        {
-          Command = Message.substr(1, PayloadStart - 1);
-          Payload = Message.substr(PayloadStart + 1);
-        }
-        else
-          Command = Message.substr(1);
-
-        transform(begin(Command), end(Command), begin(Command), ::tolower);
-
-        // don't allow EventPlayerBotCommand to veto a previous instruction to set Relay to false
-        // so if Relay is already false (e.g. because the player is muted) then it cannot be forced back to true here
-
-        EventPlayerBotCommand(player, Command, Payload);
-        Relay = false;
-      }
-
-      if (Relay)
-        Send(chatPlayer->GetToPIDs(), m_Protocol->SEND_W3GS_CHAT_FROM_HOST(chatPlayer->GetFromPID(), chatPlayer->GetToPIDs(), chatPlayer->GetFlag(), chatPlayer->GetExtraFlags(), chatPlayer->GetMessage()));
-    }
-    else
-    {
-      if (!m_CountDownStarted)
-      {
-        if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_TEAMCHANGE)
-          EventPlayerChangeTeam(player, chatPlayer->GetByte());
-        else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_COLOURCHANGE)
-          EventPlayerChangeColour(player, chatPlayer->GetByte());
-        else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_RACECHANGE)
-          EventPlayerChangeRace(player, chatPlayer->GetByte());
-        else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_HANDICAPCHANGE)
-          EventPlayerChangeHandicap(player, chatPlayer->GetByte());
-      }
-    }
+	  if (!m_CountDownStarted)
+	  {
+		  if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_TEAMCHANGE)
+			  EventPlayerChangeTeam(player, chatPlayer->GetByte());
+		  else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_COLOURCHANGE)
+			  EventPlayerChangeColour(player, chatPlayer->GetByte());
+		  else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_RACECHANGE)
+			  EventPlayerChangeRace(player, chatPlayer->GetByte());
+		  else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_HANDICAPCHANGE)
+			  EventPlayerChangeHandicap(player, chatPlayer->GetByte());
+	  }
   }
-}
-
-bool CGame::EventPlayerBotCommand(CGamePlayer *player, string &command, string &payload)
-{
-  return true;
 }
 
 void CGame::EventPlayerChangeTeam(CGamePlayer *player, uint8_t team)
