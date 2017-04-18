@@ -161,7 +161,7 @@ uint32_t CGame::GetSlotsOpen() const
 
 uint32_t CGame::GetNumPlayers() const
 {
-  return GetNumHumanPlayers() + m_FakePlayers.size();
+  return GetNumHumanPlayers();
 }
 
 uint32_t CGame::GetNumHumanPlayers() const
@@ -495,7 +495,7 @@ bool CGame::Update(void *fd, void *send_fd)
 
   // start the gameover timer if there's only one player left
 
-  if (m_Players.size() == 1 && m_FakePlayers.empty() && m_GameOverTime == 0 && (m_GameLoading || m_GameLoaded))
+  if (m_Players.size() == 1 && m_GameOverTime == 0 && (m_GameLoading || m_GameLoaded))
   {
     Print("[GAME: " + m_GameName + "] gameover timer started (one player left)");
     m_GameOverTime = Time;
@@ -769,17 +769,6 @@ void CGame::SendVirtualHostPlayerInfo(CGamePlayer *player)
   Send(player, m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, m_VirtualHostName, IP, IP));
 }
 
-void CGame::SendFakePlayerInfo(CGamePlayer *player)
-{
-  if (m_FakePlayers.empty())
-    return;
-
-  const BYTEARRAY IP = {0, 0, 0, 0};
-
-  for (auto & fakeplayer : m_FakePlayers)
-    Send(player, m_Protocol->SEND_W3GS_PLAYERINFO(fakeplayer, "Troll[" + to_string(fakeplayer) + "]", IP, IP));
-}
-
 void CGame::SendAllActions()
 {
   m_GameTicks += m_Latency;
@@ -928,7 +917,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 {
   // check the new player's name
 
-  if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == m_VirtualHostName || /*GetPlayerFromName(joinPlayer->GetName(), false) ||*/ joinPlayer->GetName().find(" ") != string::npos || joinPlayer->GetName().find("|") != string::npos)
+  if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == m_VirtualHostName || joinPlayer->GetName().find(" ") != string::npos || joinPlayer->GetName().find("|") != string::npos)
   {
     Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] invalid name (taken, invalid char, spoofer, too long)");
     potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
@@ -1018,7 +1007,6 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
   // send virtual host info and fake player info (if present) to the new player
 
   SendVirtualHostPlayerInfo(Player);
-  SendFakePlayerInfo(Player);
 
   for (auto & player : m_Players)
   {
@@ -1501,11 +1489,6 @@ void CGame::EventGameStarted()
 
   SendAll(m_Protocol->SEND_W3GS_COUNTDOWN_END());
 
-  // send a game loaded packet for the fake player (if present)
-
-  for (auto & fakeplayer : m_FakePlayers)
-    SendAll(m_Protocol->SEND_W3GS_GAMELOADED_OTHERS(fakeplayer));
-
   // record the number of starting players
 
   m_StartPlayers = GetNumHumanPlayers();
@@ -1602,73 +1585,6 @@ CGamePlayer *CGame::GetPlayerFromSID(uint8_t SID)
   return nullptr;
 }
 
-CGamePlayer *CGame::GetPlayerFromName(string name, bool sensitive)
-{
-  if (!sensitive)
-    transform(begin(name), end(name), begin(name), ::tolower);
-
-  for (auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent())
-    {
-      string TestName = player->GetName();
-
-      if (!sensitive)
-        transform(begin(TestName), end(TestName), begin(TestName), ::tolower);
-
-      if (TestName == name)
-        return player;
-    }
-  }
-
-  return nullptr;
-}
-
-uint32_t CGame::GetPlayerFromNamePartial(string name, CGamePlayer **player)
-{
-  transform(begin(name), end(name), begin(name), ::tolower);
-  uint32_t Matches = 0;
-  *player = nullptr;
-
-  // try to match each player with the passed string (e.g. "Varlock" would be matched with "lock")
-
-  for (auto & realplayer : m_Players)
-  {
-    if (!realplayer->GetLeftMessageSent())
-    {
-      string TestName = realplayer->GetName();
-      transform(begin(TestName), end(TestName), begin(TestName), ::tolower);
-
-      if (TestName.find(name) != string::npos)
-      {
-        ++Matches;
-        *player = realplayer;
-
-        // if the name matches exactly stop any further matching
-
-        if (TestName == name)
-        {
-          Matches = 1;
-          break;
-        }
-      }
-    }
-  }
-
-  return Matches;
-}
-
-CGamePlayer *CGame::GetPlayerFromColour(uint8_t colour)
-{
-  for (uint8_t i = 0; i < m_Slots.size(); ++i)
-  {
-    if (m_Slots[i].GetColour() == colour)
-      return GetPlayerFromSID(i);
-  }
-
-  return nullptr;
-}
-
 uint8_t CGame::GetNewPID()
 {
   // find an unused PID for a new player to use
@@ -1679,19 +1595,6 @@ uint8_t CGame::GetNewPID()
       continue;
 
     bool InUse = false;
-
-    for (auto & fakeplayer : m_FakePlayers)
-    {
-      if (fakeplayer == TestPID)
-      {
-        InUse = true;
-        break;
-      }
-    }
-
-    if (InUse)
-      continue;
-
     for (auto & player : m_Players)
     {
       if (!player->GetLeftMessageSent() && player->GetPID() == TestPID)
@@ -1769,11 +1672,6 @@ uint8_t CGame::GetHostPID()
 
   if (m_VirtualHostPID != 255)
     return m_VirtualHostPID;
-
-  // try to find the fakeplayer next
-
-  if (!m_FakePlayers.empty())
-    return m_FakePlayers[0];
 
   // okay then, just use the first available player
 
@@ -1975,112 +1873,6 @@ void CGame::ColourSlot(uint8_t SID, uint8_t colour)
   }
 }
 
-void CGame::OpenAllSlots()
-{
-  bool Changed = false;
-
-  for (auto & slot : m_Slots)
-  {
-    if (slot.GetSlotStatus() == SLOTSTATUS_CLOSED)
-    {
-      slot.SetSlotStatus(SLOTSTATUS_OPEN);
-      Changed = true;
-    }
-  }
-
-  if (Changed)
-    SendAllSlotInfo();
-}
-
-void CGame::CloseAllSlots()
-{
-  bool Changed = false;
-
-  for (auto & slot : m_Slots)
-  {
-    if (slot.GetSlotStatus() == SLOTSTATUS_OPEN)
-    {
-      slot.SetSlotStatus(SLOTSTATUS_CLOSED);
-      Changed = true;
-    }
-  }
-
-  if (Changed)
-    SendAllSlotInfo();
-}
-
-void CGame::ShuffleSlots()
-{
-  // we only want to shuffle the player slots
-  // that means we need to prevent this function from shuffling the open/closed/computer slots too
-  // so we start by copying the player slots to a temporary vector
-
-  vector<CGameSlot> PlayerSlots;
-
-  for (auto & slot : m_Slots)
-  {
-    if (slot.GetSlotStatus() == SLOTSTATUS_OCCUPIED && slot.GetComputer() == 0 && slot.GetTeam() != 12)
-      PlayerSlots.push_back(slot);
-  }
-
-  // now we shuffle PlayerSlots
-
-  if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
-  {
-    // rather than rolling our own probably broken shuffle algorithm we use random_shuffle because it's guaranteed to do it properly
-    // so in order to let random_shuffle do all the work we need a vector to operate on
-    // unfortunately we can't just use PlayerSlots because the team/colour/race shouldn't be modified
-    // so make a vector we can use
-
-    vector<uint8_t> SIDs;
-
-    for (uint8_t i = 0; i < PlayerSlots.size(); ++i)
-      SIDs.push_back(i);
-
-    random_shuffle(begin(SIDs), end(SIDs));
-
-    // now put the PlayerSlots vector in the same order as the SIDs vector
-
-    vector<CGameSlot> Slots;
-
-    // as usual don't modify the team/colour/race
-
-    for (uint8_t i = 0; i < SIDs.size(); ++i)
-      Slots.push_back(CGameSlot(PlayerSlots[SIDs[i]].GetPID(), PlayerSlots[SIDs[i]].GetDownloadStatus(), PlayerSlots[SIDs[i]].GetSlotStatus(), PlayerSlots[SIDs[i]].GetComputer(), PlayerSlots[i].GetTeam(), PlayerSlots[i].GetColour(), PlayerSlots[i].GetRace()));
-
-    PlayerSlots = Slots;
-  }
-  else
-  {
-    // regular game
-    // it's easy when we're allowed to swap the team/colour/race!
-
-    random_shuffle(begin(PlayerSlots), end(PlayerSlots));
-  }
-
-  // now we put m_Slots back together again
-
-  auto CurrentPlayer = begin(PlayerSlots);
-  vector<CGameSlot> Slots;
-
-  for (auto & slot : m_Slots)
-  {
-    if (slot.GetSlotStatus() == SLOTSTATUS_OCCUPIED && slot.GetComputer() == 0 && slot.GetTeam() != 12)
-    {
-      Slots.push_back(*CurrentPlayer);
-      ++CurrentPlayer;
-    }
-    else
-      Slots.push_back(slot);
-  }
-
-  m_Slots = Slots;
-
-  // and finally tell everyone about the new slot configuration
-
-  SendAllSlotInfo();
-}
-
 bool CGame::IsDownloading()
 {
   // returns true if at least one player is downloading the map
@@ -2205,48 +1997,4 @@ void CGame::DeleteVirtualHost()
 
   SendAll(m_Protocol->SEND_W3GS_PLAYERLEAVE_OTHERS(m_VirtualHostPID, PLAYERLEAVE_LOBBY));
   m_VirtualHostPID = 255;
-}
-
-void CGame::CreateFakePlayer()
-{
-  if (m_FakePlayers.size() > 10)
-    return;
-
-  uint8_t SID = GetEmptySlot();
-
-  if (SID < m_Slots.size())
-  {
-    if (GetNumPlayers() >= 11)
-      DeleteVirtualHost();
-
-    const uint8_t FakePlayerPID = GetNewPID();
-    const BYTEARRAY IP = {0, 0, 0, 0};
-
-    SendAll(m_Protocol->SEND_W3GS_PLAYERINFO(FakePlayerPID, "Troll[" + to_string(FakePlayerPID) + "]", IP, IP));
-    m_Slots[SID] = CGameSlot(FakePlayerPID, 100, SLOTSTATUS_OCCUPIED, 0, m_Slots[SID].GetTeam(), m_Slots[SID].GetColour(), m_Slots[SID].GetRace());
-    m_FakePlayers.push_back(FakePlayerPID);
-    SendAllSlotInfo();
-  }
-}
-
-void CGame::DeleteFakePlayers()
-{
-  if (m_FakePlayers.empty())
-    return;
-
-  for (auto & fakeplayer : m_FakePlayers)
-  {
-    for (auto & slot : m_Slots)
-    {
-      if (slot.GetPID() == fakeplayer)
-      {
-        slot = CGameSlot(0, 255, SLOTSTATUS_OPEN, 0, slot.GetTeam(), slot.GetColour(), slot.GetRace());
-        SendAll(m_Protocol->SEND_W3GS_PLAYERLEAVE_OTHERS(fakeplayer, PLAYERLEAVE_LOBBY));
-        break;
-      }
-    }
-  }
-
-  m_FakePlayers.clear();
-  SendAllSlotInfo();
 }

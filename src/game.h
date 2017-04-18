@@ -50,7 +50,6 @@ protected:
   std::vector<CPotentialPlayer *> m_Potentials; // std::vector of potential players (connections that haven't sent a W3GS_REQJOIN packet yet)
   std::vector<CGamePlayer *> m_Players;         // std::vector of players
   std::queue<CIncomingAction *> m_Actions;      // queue of actions to be sent
-  std::vector<uint8_t> m_FakePlayers;           // the fake player's PIDs (if present)
   CMap *m_Map;                                  // map data
   std::string m_GameName;                       // game name
   std::string m_VirtualHostName;                // host's name
@@ -147,7 +146,6 @@ public:
   void SendAllChat(const std::string &message);
   void SendAllSlotInfo();
   void SendVirtualHostPlayerInfo(CGamePlayer *player);
-  void SendFakePlayerInfo(CGamePlayer *player);
   void SendAllActions();
 
   // events
@@ -183,9 +181,6 @@ public:
   uint8_t GetSIDFromPID(uint8_t PID) const;
   CGamePlayer *GetPlayerFromPID(uint8_t PID);
   CGamePlayer *GetPlayerFromSID(uint8_t SID);
-  CGamePlayer *GetPlayerFromName(std::string name, bool sensitive);
-  uint32_t GetPlayerFromNamePartial(std::string name, CGamePlayer **player);
-  CGamePlayer *GetPlayerFromColour(uint8_t colour);
   uint8_t GetNewPID();
   uint8_t GetNewColour();
   BYTEARRAY GetPIDs();
@@ -198,17 +193,12 @@ public:
   void CloseSlot(uint8_t SID, bool kick);
   void ComputerSlot(uint8_t SID, uint8_t skill, bool kick);
   void ColourSlot(uint8_t SID, uint8_t colour);
-  void OpenAllSlots();
-  void CloseAllSlots();
-  void ShuffleSlots();
   bool IsDownloading();
   void StartCountDown(bool force);
   void StopPlayers(const std::string &reason);
   void StopLaggers(const std::string &reason);
   void CreateVirtualHost();
   void DeleteVirtualHost();
-  void CreateFakePlayer();
-  void DeleteFakePlayers();
 };
 
 #endif  // AURA_GAME_H_
