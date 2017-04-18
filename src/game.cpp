@@ -60,7 +60,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_LastCountDownTicks(0),
     m_CountDownCounter(0),
     m_StartedLoadingTicks(0),
-    m_StartPlayers(0),
     m_LastLagScreenResetTime(0),
     m_LastActionSentTicks(0),
     m_LastActionLateBy(0),
@@ -75,7 +74,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_Exiting(false),
     m_Saving(false),
     m_SlotInfoChanged(false),
-    m_RefreshError(false),
     m_CountDownStarted(false),
     m_GameLoading(false),
     m_GameLoaded(false),
@@ -133,19 +131,6 @@ uint32_t CGame::GetNextTimedActionTicks() const
     return m_Latency - m_LastActionLateBy - TicksSinceLastUpdate;
 }
 
-uint32_t CGame::GetSlotsOccupied() const
-{
-  uint32_t NumSlotsOccupied = 0;
-
-  for (const auto & slot : m_Slots)
-  {
-    if (slot.GetSlotStatus() == SLOTSTATUS_OCCUPIED)
-      ++NumSlotsOccupied;
-  }
-
-  return NumSlotsOccupied;
-}
-
 uint32_t CGame::GetSlotsOpen() const
 {
   uint32_t NumSlotsOpen = 0;
@@ -161,72 +146,15 @@ uint32_t CGame::GetSlotsOpen() const
 
 uint32_t CGame::GetNumPlayers() const
 {
-  return GetNumHumanPlayers();
-}
-
-uint32_t CGame::GetNumHumanPlayers() const
-{
-  uint32_t NumHumanPlayers = 0;
+  uint32_t NumPlayers = 0;
 
   for (const auto & player : m_Players)
   {
     if (!player->GetLeftMessageSent())
-      ++NumHumanPlayers;
+      ++NumPlayers;
   }
 
-  return NumHumanPlayers;
-}
-
-string CGame::GetDescription() const
-{
-  string Description = m_GameName + " : " + to_string(GetNumHumanPlayers()) + "/" + to_string(m_GameLoading || m_GameLoaded ? m_StartPlayers : m_Slots.size());
-
-  if (m_GameLoading || m_GameLoaded)
-    Description += " : " + to_string((m_GameTicks / 1000) / 60) + "m";
-  else
-    Description += " : " + to_string((GetTime() - m_CreationTime) / 60) + "m";
-
-  return Description;
-}
-
-string CGame::GetPlayers() const
-{
-  string Players;
-
-  for (const auto & player : m_Players)
-  {
-    const uint8_t SID = GetSIDFromPID(player->GetPID());
-
-    if (player->GetLeftMessageSent() == false && m_Slots[SID].GetTeam() != 12)
-      Players += player->GetName() + ", ";
-  }
-
-  const size_t size = Players.size();
-
-  if (size > 2)
-    Players = Players.substr(0, size - 2);
-
-  return Players;
-}
-
-string CGame::GetObservers() const
-{
-  string Observers;
-
-  for (const auto & player : m_Players)
-  {
-    const uint8_t SID = GetSIDFromPID(player->GetPID());
-
-    if (player->GetLeftMessageSent() == false && m_Slots[SID].GetTeam() == 12)
-      Observers += player->GetName() + ", ";
-  }
-
-  const size_t size = Observers.size();
-
-  if (size > 2)
-    Observers = Observers.substr(0, size - 2);
-
-  return Observers;
+  return NumPlayers;
 }
 
 uint32_t CGame::SetFD(void *fd, void *send_fd, int32_t *nfds)
@@ -521,7 +449,7 @@ bool CGame::Update(void *fd, void *send_fd)
 
   // refresh every 3 seconds
 
-  if (!m_RefreshError && !m_CountDownStarted && m_GameState == GAME_PUBLIC && GetSlotsOpen() > 0 && Time - m_LastRefreshTime >= 3)
+  if (!m_CountDownStarted && m_GameState == GAME_PUBLIC && GetSlotsOpen() > 0 && Time - m_LastRefreshTime >= 3)
   {
     m_LastRefreshTime = Time;
   }
@@ -724,7 +652,7 @@ void CGame::SendAllChat(uint8_t fromPID, const string &message)
 {
   // send a public message to all players - it'll be marked [All] in Warcraft 3
 
-  if (GetNumHumanPlayers() > 0)
+  if (GetNumPlayers() > 0)
   {
     Print("[GAME: " + m_GameName + "] [Local] " + message);
 
@@ -1461,7 +1389,7 @@ void CGame::EventPlayerPongToHost(CGamePlayer *player)
 
 void CGame::EventGameStarted()
 {
-  Print("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumHumanPlayers()) + " players");
+  Print("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumPlayers()) + " players");
 
   // send a final slot info update if necessary
   // this typically won't happen because we prevent the !start command from completing while someone is downloading the map
@@ -1489,10 +1417,6 @@ void CGame::EventGameStarted()
 
   SendAll(m_Protocol->SEND_W3GS_COUNTDOWN_END());
 
-  // record the number of starting players
-
-  m_StartPlayers = GetNumHumanPlayers();
-
   // close the listening socket
 
   delete m_Socket;
@@ -1518,7 +1442,7 @@ void CGame::EventGameStarted()
 
 void CGame::EventGameLoaded()
 {
-  Print("[GAME: " + m_GameName + "] finished loading with " + to_string(GetNumHumanPlayers()) + " players");
+  Print("[GAME: " + m_GameName + "] finished loading with " + to_string(GetNumPlayers()) + " players");
 
   // send shortest, longest, and personal load times to each player
 
@@ -1646,19 +1570,6 @@ BYTEARRAY CGame::GetPIDs()
   for (auto & player : m_Players)
   {
     if (!player->GetLeftMessageSent())
-      result.push_back(player->GetPID());
-  }
-
-  return result;
-}
-
-BYTEARRAY CGame::GetPIDs(uint8_t excludePID)
-{
-  BYTEARRAY result;
-
-  for (auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent() && player->GetPID() != excludePID)
       result.push_back(player->GetPID());
   }
 

@@ -70,7 +70,6 @@ protected:
   uint32_t m_LastCountDownTicks;                // GetTicks when the last countdown message was sent
   uint32_t m_CountDownCounter;                  // the countdown is finished when this reaches zero
   uint32_t m_StartedLoadingTicks;               // GetTicks when the game started loading
-  uint32_t m_StartPlayers;                      // number of players when the game started
   uint32_t m_LastLagScreenResetTime;            // GetTime when the "lag" screen was last reset
   uint32_t m_LastActionSentTicks;               // GetTicks when the last action packet was sent
   uint32_t m_LastActionLateBy;                  // the number of ticks we were late sending the last action packet by
@@ -85,7 +84,6 @@ protected:
   bool m_Exiting;                               // set to true and this class will be deleted next update
   bool m_Saving;                                // if we're currently saving game data to the database
   bool m_SlotInfoChanged;                       // if the slot info has changed and hasn't been sent to the players yet (optimization)
-  bool m_RefreshError;                          // if the game had a refresh error
   bool m_CountDownStarted;                      // if the game start countdown has started or not
   bool m_GameLoading;                           // if the game is currently loading or not
   bool m_GameLoaded;                            // if the game has loaded or not
@@ -112,16 +110,10 @@ public:
   inline bool GetLagging() const                    { return m_Lagging; }
 
   uint32_t GetNextTimedActionTicks() const;
-  uint32_t GetSlotsOccupied() const;
   uint32_t GetSlotsOpen() const;
   uint32_t GetNumPlayers() const;
-  uint32_t GetNumHumanPlayers() const;
-  std::string GetDescription() const;
-  std::string GetPlayers() const;
-  std::string GetObservers() const;
 
   inline void SetExiting(bool nExiting)                      { m_Exiting = nExiting; }
-  inline void SetRefreshError(bool nRefreshError)            { m_RefreshError = nRefreshError; }
 
   // processing functions
 
@@ -184,7 +176,6 @@ public:
   uint8_t GetNewPID();
   uint8_t GetNewColour();
   BYTEARRAY GetPIDs();
-  BYTEARRAY GetPIDs(uint8_t excludePID);
   uint8_t GetHostPID();
   uint8_t GetEmptySlot();
   uint8_t GetEmptySlot(uint8_t team, uint8_t PID);
