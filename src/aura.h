@@ -86,7 +86,7 @@ public:
 
   void ReloadConfigs();
   void SetConfigs(CConfig *CFG);
-  void CreateGame(CMap *map, uint8_t gameState, std::string gameName);
+  void CreateGame(CMap *map, std::string gameName);
 
   inline bool GetReady() const
   {

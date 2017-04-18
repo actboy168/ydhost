@@ -63,7 +63,6 @@ protected:
   uint32_t m_GameTicks;                         // ingame ticks
   uint32_t m_CreationTime;                      // GetTime when the game was created
   uint32_t m_LastPingTime;                      // GetTime when the last ping was sent
-  uint32_t m_LastRefreshTime;                   // GetTime when the last game refresh was sent
   uint32_t m_LastDownloadTicks;                 // GetTicks when the last map download cycle was performed
   uint32_t m_DownloadCounter;                   // # of map bytes downloaded in the last second
   uint32_t m_LastDownloadCounterResetTicks;     // GetTicks when the download counter was last reset
@@ -79,7 +78,6 @@ protected:
   uint32_t m_GameOverTime;                      // GetTime when the game was over
   uint32_t m_LastPlayerLeaveTicks;              // GetTicks when the most recent player left the game
   uint16_t m_HostPort;                          // the port to host games on
-  uint8_t m_GameState;                          // game state, public or private
   uint8_t m_VirtualHostPID;                     // host's PID
   bool m_Exiting;                               // set to true and this class will be deleted next update
   bool m_Saving;                                // if we're currently saving game data to the database
@@ -91,7 +89,7 @@ protected:
   bool m_Desynced;                              // if the game has desynced or not
 
 public:
-  CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, std::string &nGameName);
+  CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, std::string &nGameName);
   ~CGame();
   CGame(CGame &) = delete;
 
@@ -99,7 +97,6 @@ public:
   inline CGameProtocol *GetProtocol() const         { return m_Protocol; }
   inline uint32_t GetEntryKey() const               { return m_EntryKey; }
   inline uint16_t GetHostPort() const               { return m_HostPort; }
-  inline uint8_t GetGameState() const               { return m_GameState; }
   inline std::string GetGameName() const            { return m_GameName; }
   inline std::string GetVirtualHostName() const     { return m_VirtualHostName; }
   inline uint32_t GetHostCounter() const            { return m_HostCounter; }
@@ -124,15 +121,12 @@ public:
   // generic functions to send packets to players
 
   void Send(CGamePlayer *player, const BYTEARRAY &data);
-  void Send(uint8_t PID, const BYTEARRAY &data);
   void SendAll(const BYTEARRAY &data);
 
   // functions to send packets to players
 
   void SendChat(uint8_t fromPID, CGamePlayer *player, const std::string &message);
-  void SendChat(uint8_t fromPID, uint8_t toPID, const std::string &message);
   void SendChat(CGamePlayer *player, const std::string &message);
-  void SendChat(uint8_t toPID, const std::string &message);
   void SendAllChat(uint8_t fromPID, const std::string &message);
   void SendAllChat(const std::string &message);
   void SendAllSlotInfo();

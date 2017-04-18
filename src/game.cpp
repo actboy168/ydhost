@@ -36,7 +36,7 @@ using namespace std;
 // CGame
 //
 
-CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, string &nGameName)
+CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, string &nGameName)
   : m_Aura(nAura),
     m_Socket(new CTCPServer()),
     m_Protocol(new CGameProtocol(nAura)),
@@ -53,7 +53,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_SyncCounter(0), m_GameTicks(0),
     m_CreationTime(GetTime()),
     m_LastPingTime(GetTime()),
-    m_LastRefreshTime(GetTime()),
     m_LastDownloadTicks(GetTime()),
     m_DownloadCounter(0),
     m_LastDownloadCounterResetTicks(GetTicks()),
@@ -69,7 +68,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_GameOverTime(0),
     m_LastPlayerLeaveTicks(0),
     m_HostPort(nHostPort),
-    m_GameState(nGameState),
     m_VirtualHostPID(255),
     m_Exiting(false),
     m_Saving(false),
@@ -447,13 +445,6 @@ bool CGame::Update(void *fd, void *send_fd)
   if (m_GameLoaded)
     return m_Exiting;
 
-  // refresh every 3 seconds
-
-  if (!m_CountDownStarted && m_GameState == GAME_PUBLIC && GetSlotsOpen() > 0 && Time - m_LastRefreshTime >= 3)
-  {
-    m_LastRefreshTime = Time;
-  }
-
   // send more map data
 
   if (!m_GameLoading && !m_GameLoaded && Ticks - m_LastDownloadCounterResetTicks >= 1000)
@@ -584,11 +575,6 @@ void CGame::Send(CGamePlayer *player, const BYTEARRAY &data)
     player->Send(data);
 }
 
-void CGame::Send(uint8_t PID, const BYTEARRAY &data)
-{
-  Send(GetPlayerFromPID(PID), data);
-}
-
 void CGame::SendAll(const BYTEARRAY &data)
 {
   for (auto & player : m_Players)
@@ -627,19 +613,9 @@ void CGame::SendChat(uint8_t fromPID, CGamePlayer *player, const string &message
   }
 }
 
-void CGame::SendChat(uint8_t fromPID, uint8_t toPID, const string &message)
-{
-  SendChat(fromPID, GetPlayerFromPID(toPID), message);
-}
-
 void CGame::SendChat(CGamePlayer *player, const string &message)
 {
   SendChat(GetHostPID(), player, message);
-}
-
-void CGame::SendChat(uint8_t toPID, const string &message)
-{
-  SendChat(GetHostPID(), toPID, message);
 }
 
 void CGame::SendAllChat(uint8_t fromPID, const string &message)
