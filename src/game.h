@@ -123,7 +123,6 @@ public:
 
   // functions to send packets to players
 
-  void SendAllChat(uint8_t fromPID, const std::string &message);
   void SendAllChat(const std::string &message);
   void SendAllSlotInfo();
   void SendVirtualHostPlayerInfo(CGamePlayer *player);
@@ -172,7 +171,7 @@ public:
   void ComputerSlot(uint8_t SID, uint8_t skill, bool kick);
   void ColourSlot(uint8_t SID, uint8_t colour);
   bool IsDownloading();
-  void StartCountDown(bool force);
+  void StartCountDown();
   void StopPlayers(const std::string &reason);
   void StopLaggers(const std::string &reason);
   void CreateVirtualHost();

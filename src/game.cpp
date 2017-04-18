@@ -578,8 +578,9 @@ void CGame::SendAll(const BYTEARRAY &data)
     player->Send(data);
 }
 
-void CGame::SendAllChat(uint8_t fromPID, const string &message)
+void CGame::SendAllChat(const string &message)
 {
+	uint8_t fromPID = GetHostPID();
   // send a public message to all players - it'll be marked [All] in Warcraft 3
 
   if (GetNumPlayers() > 0)
@@ -601,11 +602,6 @@ void CGame::SendAllChat(uint8_t fromPID, const string &message)
         SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, CreateByteArray((uint32_t) 0, false), message));
     }
   }
-}
-
-void CGame::SendAllChat(const string &message)
-{
-  SendAllChat(GetHostPID(), message);
 }
 
 void CGame::SendAllSlotInfo()
@@ -887,24 +883,6 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
   SendAllSlotInfo();
 
-  // check for multiple IP usage
-
-  string Others;
-
-  for (auto & player : m_Players)
-  {
-    if (Player != player && Player->GetExternalIPString() == player->GetExternalIPString())
-    {
-      if (Others.empty())
-        Others = player->GetName();
-      else
-        Others += ", " + player->GetName();
-    }
-  }
-
-  if (!Others.empty())
-    SendAllChat("Player [" + joinPlayer->GetName() + "] has the same IP address as: " + Others);
-
   // abort the countdown if there was one in progress
 
   if (m_CountDownStarted && !m_GameLoading && !m_GameLoaded)
@@ -918,12 +896,12 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 	  switch (m_Aura->m_AutoStart)
 	  {
 	  case 1:
-		  StartCountDown(true);
+		  StartCountDown();
 		  break;
 	  case 2:
 		  if (GetEmptySlot() == 255)
 		  {
-			  StartCountDown(true);
+			  StartCountDown();
 		  }
 		  break;
 	  }
@@ -1638,67 +1616,12 @@ bool CGame::IsDownloading()
   return false;
 }
 
-void CGame::StartCountDown(bool force)
+void CGame::StartCountDown()
 {
   if (!m_CountDownStarted)
   {
-    if (force)
-    {
-      m_CountDownStarted = true;
-      m_CountDownCounter = 5;
-    }
-    else
-    {
-      // check if everyone has the map
-
-      string StillDownloading;
-
-      for (auto & slot : m_Slots)
-      {
-        if (slot.GetSlotStatus() == SLOTSTATUS_OCCUPIED && slot.GetComputer() == 0 && slot.GetDownloadStatus() != 100)
-        {
-          CGamePlayer *Player = GetPlayerFromPID(slot.GetPID());
-
-          if (Player)
-          {
-            if (StillDownloading.empty())
-              StillDownloading = Player->GetName();
-            else
-              StillDownloading += ", " + Player->GetName();
-          }
-        }
-      }
-
-      if (!StillDownloading.empty())
-        SendAllChat("Players still downloading the map: " + StillDownloading);
-
-      // check if everyone has been pinged enough (3 times) that the autokicker would have kicked them by now
-      // see function EventPlayerPongToHost for the autokicker code
-
-      string NotPinged;
-
-      for (auto & player : m_Players)
-      {
-        if (player->GetNumPings() < 3)
-        {
-          if (NotPinged.empty())
-            NotPinged = player->GetName();
-          else
-            NotPinged += ", " + player->GetName();
-        }
-      }
-
-      if (!NotPinged.empty())
-        SendAllChat("Players not yet pinged 3 times: " + NotPinged);
-
-      // if no problems found start the game
-
-      if (StillDownloading.empty() && NotPinged.empty())
-      {
-        m_CountDownStarted = true;
-        m_CountDownCounter = 5;
-      }
-    }
+	  m_CountDownStarted = true;
+	  m_CountDownCounter = 5;
   }
 }
 
