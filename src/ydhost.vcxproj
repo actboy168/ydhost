@@ -249,7 +249,6 @@
     <ClInclude Include="aura.h" />
     <ClInclude Include="includes.h" />
     <ClInclude Include="map.h" />
-    <ClInclude Include="ms_stdint.h" />
     <ClInclude Include="sha1.h" />
     <ClInclude Include="socket.h" />
     <ClInclude Include="util.h" />

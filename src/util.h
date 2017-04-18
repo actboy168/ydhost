@@ -23,15 +23,6 @@
 
 #include "includes.h"
 
-inline std::string ToHexString(uint32_t i)
-{
-  std::string result;
-  std::stringstream SS;
-  SS << std::hex << i;
-  SS >> result;
-  return result;
-}
-
 inline BYTEARRAY CreateByteArray(const uint8_t *a, int32_t size)
 {
   if (size < 1)
@@ -96,23 +87,6 @@ inline std::string ByteArrayToDecString(const BYTEARRAY &b)
   return result;
 }
 
-inline std::string ByteArrayToHexString(const BYTEARRAY &b)
-{
-  if (b.empty())
-    return std::string();
-
-  std::string result = ToHexString(b[0]);
-
-  for (auto i = begin(b) + 1; i != end(b); ++i)
-  {
-    if (*i < 16)
-      result += " 0" + ToHexString(*i);
-    else
-      result += " " + ToHexString(*i);
-  }
-
-  return result;
-}
 
 inline void AppendByteArray(BYTEARRAY &b, const BYTEARRAY &append)
 {
@@ -180,27 +154,6 @@ inline BYTEARRAY ExtractCString(const BYTEARRAY &b, uint32_t start)
   return BYTEARRAY();
 }
 
-inline uint8_t ExtractHex(const BYTEARRAY &b, uint32_t start, bool reverse)
-{
-  // consider the byte array to contain a 2 character ASCII encoded hex value at b[start] and b[start + 1] e.g. "FF"
-  // extract it as a single decoded byte
-
-  if (start + 1 < b.size())
-  {
-    uint32_t c;
-    std::string temp = std::string(begin(b) + start, begin(b) + start + 2);
-
-    if (reverse)
-      temp = std::string(temp.rend(), temp.rbegin());
-
-    std::stringstream SS;
-    SS << temp;
-    SS >> std::hex >> c;
-    return c;
-  }
-
-  return 0;
-}
 
 inline BYTEARRAY ExtractNumbers(const std::string &s, uint32_t count)
 {
@@ -217,27 +170,6 @@ inline BYTEARRAY ExtractNumbers(const std::string &s, uint32_t count)
       break;
 
     SS >> c;
-
-    // TODO: if c > 255 handle the error instead of truncating
-
-    result.push_back((uint8_t) c);
-  }
-
-  return result;
-}
-
-inline BYTEARRAY ExtractHexNumbers(std::string &s)
-{
-  // consider the std::string to contain a bytearray in hex-text form, e.g. "4e 17 b7 e6"
-
-  BYTEARRAY result;
-  uint32_t c;
-  std::stringstream SS;
-  SS << s;
-
-  while (!SS.eof())
-  {
-    SS >> std::hex >> c;
 
     // TODO: if c > 255 handle the error instead of truncating
 
@@ -299,50 +231,5 @@ inline BYTEARRAY EncodeStatString(BYTEARRAY &data)
   return Result;
 }
 
-inline BYTEARRAY DecodeStatString(const BYTEARRAY &data)
-{
-  uint8_t Mask = 1;
-  BYTEARRAY Result;
-
-  for (uint32_t i = 0; i < data.size(); ++i)
-  {
-    if ((i % 8) == 0)
-      Mask = data[i];
-    else
-    {
-      if ((Mask & (1 << (i % 8))) == 0)
-        Result.push_back(data[i] - 1);
-      else
-        Result.push_back(data[i]);
-    }
-  }
-
-  return Result;
-}
-
-inline std::vector<std::string> Tokenize(const std::string &s, const char delim)
-{
-  std::vector<std::string> Tokens;
-  std::string Token;
-
-  for (auto i = begin(s); i != end(s); ++i)
-  {
-    if (*i == delim)
-    {
-      if (Token.empty())
-        continue;
-
-      Tokens.push_back(Token);
-      Token.clear();
-    }
-    else
-      Token += *i;
-  }
-
-  if (!Token.empty())
-    Tokens.push_back(Token);
-
-  return Tokens;
-}
 
 #endif  // AURA_UTIL_H_

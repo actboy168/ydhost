@@ -80,9 +80,6 @@
     <ClInclude Include="map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ms_stdint.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="sha1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
