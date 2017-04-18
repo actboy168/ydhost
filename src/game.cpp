@@ -36,7 +36,7 @@ using namespace std;
 // CGame
 //
 
-CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, string &nGameName, string &nOwnerName, string &nCreatorName, string &nCreatorServer)
+CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, string &nGameName, string &nCreatorName, string &nCreatorServer)
   : m_Aura(nAura),
     m_Socket(new CTCPServer()),
     m_Protocol(new CGameProtocol(nAura)),
@@ -45,7 +45,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, s
     m_GameName(nGameName),
     m_LastGameName(nGameName),
     m_VirtualHostName(nAura->m_VirtualHostName),
-    m_OwnerName(nOwnerName),
     m_CreatorName(nCreatorName),
     m_MapPath(nMap->GetMapPath()),
     m_RandomSeed(GetTicks()),
@@ -182,7 +181,7 @@ uint32_t CGame::GetNumHumanPlayers() const
 
 string CGame::GetDescription() const
 {
-  string Description = m_GameName + " : " + m_OwnerName + " : " + to_string(GetNumHumanPlayers()) + "/" + to_string(m_GameLoading || m_GameLoaded ? m_StartPlayers : m_Slots.size());
+  string Description = m_GameName + " : " + to_string(GetNumHumanPlayers()) + "/" + to_string(m_GameLoading || m_GameLoaded ? m_StartPlayers : m_Slots.size());
 
   if (m_GameLoading || m_GameLoaded)
     Description += " : " + to_string((m_GameTicks / 1000) / 60) + "m";
@@ -958,38 +957,6 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
   // try to find an empty slot
   uint8_t SID = GetEmptySlot();
-  if (SID == 255 && IsOwner(joinPlayer->GetName()))
-  {
-    // the owner player is trying to join the game but it's full and we couldn't even find a reserved slot, kick the player in the lowest numbered slot
-    // updated this to try to find a player slot so that we don't end up kicking a computer
-
-    SID = 0;
-
-    for (uint8_t i = 0; i < m_Slots.size(); ++i)
-    {
-      if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_OCCUPIED && m_Slots[i].GetComputer() == 0)
-      {
-        SID = i;
-        break;
-      }
-    }
-
-    CGamePlayer *KickedPlayer = GetPlayerFromSID(SID);
-
-    if (KickedPlayer)
-    {
-      KickedPlayer->SetDeleteMe(true);
-      KickedPlayer->SetLeftReason("was kicked to make room for the owner player [" + joinPlayer->GetName() + "]");
-      KickedPlayer->SetLeftCode(PLAYERLEAVE_LOBBY);
-
-      // send a playerleave message immediately since it won't normally get sent until the player is deleted which is after we send a playerjoin message
-      // we don't need to call OpenSlot here because we're about to overwrite the slot data anyway
-
-      SendAll(m_Protocol->SEND_W3GS_PLAYERLEAVE_OTHERS(KickedPlayer->GetPID(), KickedPlayer->GetLeftCode()));
-      KickedPlayer->SetLeftMessageSent(true);
-    }
-  }
-
   if (SID >= m_Slots.size())
   {
     potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
@@ -1810,14 +1777,6 @@ uint8_t CGame::GetHostPID()
   if (!m_FakePlayers.empty())
     return m_FakePlayers[0];
 
-  // try to find the owner player next
-
-  for (auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent() && IsOwner(player->GetName()))
-      return player->GetPID();
-  }
-
   // okay then, just use the first available player
 
   for (auto & player : m_Players)
@@ -2122,15 +2081,6 @@ void CGame::ShuffleSlots()
   // and finally tell everyone about the new slot configuration
 
   SendAllSlotInfo();
-}
-
-bool CGame::IsOwner(string name)
-{
-  string OwnerLower = m_OwnerName;
-  transform(begin(name), end(name), begin(name), ::tolower);
-  transform(begin(OwnerLower), end(OwnerLower), begin(OwnerLower), ::tolower);
-
-  return name == OwnerLower;
 }
 
 bool CGame::IsDownloading()

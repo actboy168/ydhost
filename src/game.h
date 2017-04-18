@@ -55,7 +55,6 @@ protected:
   std::string m_GameName;                       // game name
   std::string m_LastGameName;                   // last game name (the previous game name before it was rehosted)
   std::string m_VirtualHostName;                // host's name
-  std::string m_OwnerName;                      // name of the player who owns this game (should be considered an admin)
   std::string m_CreatorName;                    // name of the player who created this game
   std::string m_MapPath;                        // store the map path to save in the database on game end
   uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
@@ -97,7 +96,7 @@ protected:
   bool m_Desynced;                              // if the game has desynced or not
 
 public:
-  CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, std::string &nGameName, std::string &nOwnerName, std::string &nCreatorName, std::string &nCreatorServer);
+  CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, uint8_t nGameState, std::string &nGameName, std::string &nCreatorName, std::string &nCreatorServer);
   ~CGame();
   CGame(CGame &) = delete;
 
@@ -109,7 +108,6 @@ public:
   inline std::string GetGameName() const            { return m_GameName; }
   inline std::string GetLastGameName() const        { return m_LastGameName; }
   inline std::string GetVirtualHostName() const     { return m_VirtualHostName; }
-  inline std::string GetOwnerName() const           { return m_OwnerName; }
   inline std::string GetCreatorName() const         { return m_CreatorName; }
   inline uint32_t GetHostCounter() const            { return m_HostCounter; }
   inline uint32_t GetLastLagScreenTime() const      { return m_LastLagScreenTime; }
@@ -207,7 +205,6 @@ public:
   void OpenAllSlots();
   void CloseAllSlots();
   void ShuffleSlots();
-  bool IsOwner(std::string name);
   bool IsDownloading();
   void StartCountDown(bool force);
   void StopPlayers(const std::string &reason);
