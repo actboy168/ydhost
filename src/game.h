@@ -59,7 +59,6 @@ protected:
   std::string m_OwnerName;                      // name of the player who owns this game (should be considered an admin)
   std::string m_CreatorName;                    // name of the player who created this game
   std::string m_KickVotePlayer;                 // the player to be kicked with the currently running kick vote
-  std::string m_HCLCommandString;               // the "HostBot Command Library" command std::string, used to pass a limited amount of data to specially designed maps
   std::string m_MapPath;                        // store the map path to save in the database on game end
   uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
   uint32_t m_HostCounter;                       // a unique game number

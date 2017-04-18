@@ -454,11 +454,7 @@ void CAura::SetConfigs(CConfig *CFG)
   m_AutoKickPing = CFG->GetInt("bot_autokickping", 300);
   m_Latency = CFG->GetInt("bot_latency", 100);
   m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
-  m_VoteKickPercentage = CFG->GetInt("bot_votekickpercentage", 70);
   m_AutoStart = CFG->GetInt("bot_autostart", 1);
-
-  if (m_VoteKickPercentage > 100)
-    m_VoteKickPercentage = 100;
 }
 
 void CAura::CreateGame(CMap *map, uint8_t gameState, string gameName, string ownerName, string creatorName, string creatorServer, bool whisper)

@@ -61,7 +61,6 @@ public:
   uint32_t m_AutoKickPing;                      // config value: auto kick players with ping higher than this
   uint32_t m_Latency;                           // config value: the latency (by default)
   uint32_t m_SyncLimit;                         // config value: the maximum number of packets a player can fall out of sync before starting the lag screen (by default)
-  uint32_t m_VoteKickPercentage;                // config value: percentage of players required to vote yes for a votekick to pass
   uint16_t m_HostPort;                          // config value: the port to host games on
   uint8_t m_LANWar3Version;                     // config value: LAN warcraft 3 version
   int32_t m_CommandTrigger;                     // config value: the command trigger inside games
