@@ -78,9 +78,6 @@ public:
   void EventGameDeleted(CGame *game);
 
   // other functions
-
-  void ReloadConfigs();
-  void SetConfigs(CConfig *CFG);
   void CreateGame(CMap *map, std::string gameName);
 };
 
