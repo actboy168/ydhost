@@ -17,3 +17,5 @@ Thumbs.db
 bin/
 tmp/
 log/
+*.j
+*.w3x

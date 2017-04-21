@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "测试",
+            "type": "lua",
+            "request": "launch",
+            "program": "${workspaceRoot}/script/test.lua",
+            "stopOnEntry": true,
+            "cwd": "${workspaceRoot}/bin",
+            "path": "${workspaceRoot}/script/?.lua;",
+            "cpath": "${workspaceRoot}/bin/?.dll;",
+            "luadll": "${workspaceRoot}/bin/luacore.dll",
+            "arg": [
+                "${workspaceRoot}/../test.w3x"
+            ],
+            "console": "utf8"
+        }
+    ]
+}
