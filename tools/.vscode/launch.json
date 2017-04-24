@@ -12,7 +12,9 @@
             "cpath": "${workspaceRoot}/bin/?.dll;",
             "luadll": "${workspaceRoot}/bin/luacore.dll",
             "arg": [
-                "${workspaceRoot}/../test.w3x"
+                "${workspaceRoot}/test.cfg",
+                "${workspaceRoot}/test.w3x",
+                "${workspaceRoot}"
             ],
             "console": "utf8"
         }

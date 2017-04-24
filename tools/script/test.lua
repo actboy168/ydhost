@@ -17,11 +17,25 @@ function io.load(filepath)
 	end
 end
 
-local map_path = fs.path(arg[1])
+local output = fs.path(arg[1])
+local input  = fs.path(arg[2])
+local jass   = fs.path(arg[3])
 
-local map = stormlib.open(map_path, true)
+local map = stormlib.open(input, true)
 if not map then
+    error('Couldn\'t open map.')
     return
+end
+
+local of = io.open(output, 'wb')
+if not of then
+    error(e)
+    return
+end
+
+local function write(s)
+    of:write(s .. '\n')
+    print(s)
 end
 
 local function tohex(n, reverse)
@@ -46,18 +60,17 @@ end
 -- Step.1 基本信息
 do 
     local crc32 = require 'crc32'
-    local buf = io.load(map_path)
-    print('map_size = ' .. tohex(#buf))
-    print('map_info = ' .. tohex(crc32(buf)))
+    local buf = io.load(input)
+    write('map_size = ' .. tohex(#buf))
+    write('map_info = ' .. tohex(crc32(buf)))
 end
 
 -- Step.2 hash值计算
 do
-    local path = fs.current_path():remove_filename()
     local hash = require 'hash'
-    local crc, sha1_a, sha1_b, sha1_c, sha1_d, sha1_e = hash(path, map)
-    print('map_crc = ' .. tohex(crc))
-    print('map_sha1 = ' .. tohex(sha1_a, true)..' '..tohex(sha1_b, true)..' '..tohex(sha1_c, true)..' '..tohex(sha1_d, true)..' '..tohex(sha1_e, true))
+    local crc, sha1_a, sha1_b, sha1_c, sha1_d, sha1_e = hash(jass, map)
+    write('map_crc = ' .. tohex(crc))
+    write('map_sha1 = ' .. tohex(sha1_a, true)..' '..tohex(sha1_b, true)..' '..tohex(sha1_c, true)..' '..tohex(sha1_d, true)..' '..tohex(sha1_e, true))
 end
 
 -- Step.3 w3i信息
@@ -67,9 +80,9 @@ do
     local map_options = (info['选项']['对战地图'] << 2)
         | (info['选项']['自定义玩家分组'] << 5)
         | (info['选项']['自定义队伍'] << 6)
-    print('map_options = ' .. map_options)
-    print('map_width = ' .. tohex(info['地形']['地图宽度']))
-    print('map_height = ' .. tohex(info['地形']['地图长度']))
+    write('map_options = ' .. map_options)
+    write('map_width = ' .. tohex(info['地形']['地图宽度']))
+    write('map_height = ' .. tohex(info['地形']['地图长度']))
     local n = info['玩家']['玩家数量']
     local closed = 0
     local players = {}
@@ -124,10 +137,10 @@ do
             end
         end
     end
-    print('map_numplayers = ' .. (n - closed))
-    print('map_numteams = ' .. info['队伍']['队伍数量'])
+    write('map_numplayers = ' .. (n - closed))
+    write('map_numteams = ' .. info['队伍']['队伍数量'])
     for i, ply in ipairs(players) do
-        print(('map_slot%d = %d %d %d %d %d %d %d %d %d'):format(i
+        write(('map_slot%d = %d %d %d %d %d %d %d %d %d'):format(i
             , ply.pid
             , ply.download_status
             , ply.slot_status
