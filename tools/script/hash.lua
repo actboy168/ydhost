@@ -40,15 +40,15 @@ end
 
 return function(path, map)
     hash:init(map)
-    if not (hash:update_mpq 'common.j' or hash:update_mpq 'script\\common.j') then
+    if not (hash:update_mpq 'common.j' or hash:update_mpq 'scripts\\common.j') then
         assert(hash:update_file(path / 'common.j'))
     end
-    if not (hash:update_mpq 'blizzard.j' or hash:update_mpq 'script\\blizzard.j') then
+    if not (hash:update_mpq 'blizzard.j' or hash:update_mpq 'scripts\\blizzard.j') then
         assert(hash:update_file(path / 'blizzard.j'))
     end
     hash:update_magic()
     if not hash:update_mpq 'war3map.j' then
-        hash:update_mpq 'script\\war3map.j'
+        hash:update_mpq 'scripts\\war3map.j'
     end
     hash:update_mpq 'war3map.w3e'
     hash:update_mpq 'war3map.wpm'
