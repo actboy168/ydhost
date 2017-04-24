@@ -21,6 +21,7 @@ local output = fs.path(arg[1])
 local input  = fs.path(arg[2])
 local jass   = fs.path(arg[3])
 
+local t = os.clock()
 local map = stormlib.open(input, true)
 if not map then
     error('Couldn\'t open map.')
@@ -153,3 +154,5 @@ do
             ))
     end
 end
+
+print(os.clock() - t)
