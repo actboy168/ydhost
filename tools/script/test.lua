@@ -72,11 +72,71 @@ do
     print('map_height = ' .. tohex(info['地形']['地图长度']))
     local n = info['玩家']['玩家数量']
     local closed = 0
+    local players = {}
     for i = 1, n do
-        if info['玩家'..i]['类型'] ~= 1 and info['玩家'..i]['类型'] ~= 2 then
+        local t = info['玩家'..i]
+        if t['类型'] ~= 1 and t['类型'] ~= 2 then
             closed = closed + 1
+        else
+            local ply = {}
+            ply.pid = 0
+            ply.download_status = 255
+            if t['类型'] == 1 then
+                ply.slot_status = 0
+                ply.computer = 0
+            elseif t['类型'] == 2 then
+                ply.slot_status = 2
+                ply.computer = 1
+            else
+                ply.slot_status = 1
+                ply.computer = 0
+            end
+            ply.colour = t['玩家']
+            if t['种族'] == 1 then
+                -- human
+                ply.race = 1
+            elseif t['种族'] == 2 then
+                -- orc
+                ply.race = 2
+            elseif t['种族'] == 3 then
+                -- undead
+                ply.race = 8
+            elseif t['种族'] == 4 then
+                -- nightelf
+                ply.race = 4
+            else
+                -- random
+                ply.race = 32
+            end
+            ply.computer_type = 1
+            ply.handicap = 100
+
+            table.insert(players, ply)
+        end
+    end
+    for i = 1, info['队伍']['队伍数量'] do
+        for _, c in ipairs(info['队伍'..i]['玩家列表']) do
+            for _, ply in ipairs(players) do
+                if ply.colour + 1 == c then
+                    ply.team = i - 1
+                    break
+                end
+            end
         end
     end
     print('map_numplayers = ' .. (n - closed))
     print('map_numteams = ' .. info['队伍']['队伍数量'])
+    for i, ply in ipairs(players) do
+        print(('map_slot%d = %d %d %d %d %d %d %d %d %d'):format(i
+            , ply.pid
+            , ply.download_status
+            , ply.slot_status
+            , ply.computer
+            , ply.team
+            , ply.colour
+            , ply.race
+            , ply.computer_type
+            , ply.handicap
+            ))
+    end
 end
