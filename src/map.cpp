@@ -94,87 +94,6 @@ BYTEARRAY CMap::GetMapGameFlags() const
   return CreateByteArray(GameFlags, false);
 }
 
-uint32_t CMap::GetMapGameType() const
-{
-  /* spec stolen from Strilanc as follows:
-
-    Public Enum GameTypes As UInteger
-        None = 0
-        Unknown0 = 1 << 0 '[always seems to be set?]
-
-        '''<summary>Setting this bit causes wc3 to check the map and disc if it is not signed by Blizzard</summary>
-        AuthenticatedMakerBlizzard = 1 << 3
-        OfficialMeleeGame = 1 << 5
-
-    SavedGame = 1 << 9
-        PrivateGame = 1 << 11
-
-        MakerUser = 1 << 13
-        MakerBlizzard = 1 << 14
-        TypeMelee = 1 << 15
-        TypeScenario = 1 << 16
-        SizeSmall = 1 << 17
-        SizeMedium = 1 << 18
-        SizeLarge = 1 << 19
-        ObsFull = 1 << 20
-        ObsOnDeath = 1 << 21
-        ObsNone = 1 << 22
-
-        MaskObs = ObsFull Or ObsOnDeath Or ObsNone
-        MaskMaker = MakerBlizzard Or MakerUser
-        MaskType = TypeMelee Or TypeScenario
-        MaskSize = SizeLarge Or SizeMedium Or SizeSmall
-        MaskFilterable = MaskObs Or MaskMaker Or MaskType Or MaskSize
-    End Enum
-
-   */
-
-  // note: we allow "conflicting" flags to be set at the same time (who knows if this is a good idea)
-  // we also don't set any flags this class is unaware of such as Unknown0, SavedGame, and PrivateGame
-
-  uint32_t GameType = 0;
-
-  // maker
-
-  if (m_MapFilterMaker & MAPFILTER_MAKER_USER)
-    GameType |= MAPGAMETYPE_MAKERUSER;
-
-  if (m_MapFilterMaker & MAPFILTER_MAKER_BLIZZARD)
-    GameType |= MAPGAMETYPE_MAKERBLIZZARD;
-
-  // type
-
-  if (m_MapFilterType & MAPFILTER_TYPE_MELEE)
-    GameType |= MAPGAMETYPE_TYPEMELEE;
-
-  if (m_MapFilterType & MAPFILTER_TYPE_SCENARIO)
-    GameType |= MAPGAMETYPE_TYPESCENARIO;
-
-  // size
-
-  if (m_MapFilterSize & MAPFILTER_SIZE_SMALL)
-    GameType |= MAPGAMETYPE_SIZESMALL;
-
-  if (m_MapFilterSize & MAPFILTER_SIZE_MEDIUM)
-    GameType |= MAPGAMETYPE_SIZEMEDIUM;
-
-  if (m_MapFilterSize & MAPFILTER_SIZE_LARGE)
-    GameType |= MAPGAMETYPE_SIZELARGE;
-
-  // obs
-
-  if (m_MapFilterObs & MAPFILTER_OBS_FULL)
-    GameType |= MAPGAMETYPE_OBSFULL;
-
-  if (m_MapFilterObs & MAPFILTER_OBS_ONDEATH)
-    GameType |= MAPGAMETYPE_OBSONDEATH;
-
-  if (m_MapFilterObs & MAPFILTER_OBS_NONE)
-    GameType |= MAPGAMETYPE_OBSNONE;
-
-  return GameType;
-}
-
 uint8_t CMap::GetMapLayoutStyle() const
 {
   // 0 = melee
@@ -210,15 +129,12 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
   m_MapOptions = MAP->GetInt("map_options", 0);
   m_MapWidth = ExtractNumbers(MAP->GetString("map_width", string()), 2);
   m_MapHeight = ExtractNumbers(MAP->GetString("map_height", string()), 2);
-  m_MapNumPlayers = MAP->GetInt("map_numplayers", 0);
-  m_MapNumTeams = MAP->GetInt("map_numteams", 0);
 
   Print("[MAP] map_options = " + to_string(m_MapOptions));
   Print("[MAP] map_width = " + ByteArrayToDecString(m_MapWidth));
   Print("[MAP] map_height = " + ByteArrayToDecString(m_MapHeight));
-  Print("[MAP] map_numplayers = " + to_string(m_MapNumPlayers));
-  Print("[MAP] map_numteams = " + to_string(m_MapNumTeams));
 
+  m_MapNumPlayers = MAP->GetInt("map_numplayers", 0);
   m_Slots.clear();
   for (uint32_t Slot = 1; Slot <= 12; ++Slot)
   {
@@ -229,14 +145,12 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 	  BYTEARRAY SlotData = ExtractNumbers(SlotString, 9);
 	  m_Slots.push_back(CGameSlot(SlotData));
   }
+  m_MapNumPlayers = m_Slots.size();
 
   m_MapSpeed = MAPSPEED_FAST;
   m_MapVisibility = MAPVIS_DEFAULT;
   m_MapObservers = MAPOBS_NONE;
   m_MapFlags = MAPFLAG_TEAMSTOGETHER | MAPFLAG_FIXEDTEAMS;
-  m_MapFilterMaker = MAPFILTER_MAKER_USER;
-  m_MapFilterSize = MAPFILTER_SIZE_LARGE;
-  m_MapFilterObs = MAPFILTER_OBS_NONE;
 
   if (m_MapOptions & MAPOPT_MELEE)
   {
@@ -246,11 +160,9 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 		  (Slot).SetTeam(Team++);
 		  (Slot).SetRace(SLOTRACE_RANDOM);
 	  }
-	  m_MapFilterType = MAPFILTER_TYPE_MELEE;
-  }
-  else
-  {
-	  m_MapFilterType = MAPFILTER_TYPE_SCENARIO;
+	  // force melee maps to have observer slots enabled by default
+	  if (m_MapObservers == MAPOBS_NONE)
+		  m_MapObservers = MAPOBS_ALLOWED;
   }
 
   if (!(m_MapOptions & MAPOPT_FIXEDPLAYERSETTINGS))
@@ -268,11 +180,6 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
     for (auto & slot : m_Slots)
       slot.SetRace(SLOTRACE_RANDOM);
   }
-
-  // force melee maps to have observer slots enabled by default
-
-  if (m_MapFilterType & MAPFILTER_TYPE_MELEE && m_MapObservers == MAPOBS_NONE)
-    m_MapObservers = MAPOBS_ALLOWED;
 
   // add observer slots
 
@@ -365,15 +272,15 @@ void CMap::CheckValid()
     Print("[MAP] invalid map_numplayers detected");
   }
 
-  if (m_MapNumTeams == 0 || m_MapNumTeams > 12)
-  {
-    m_Valid = false;
-    Print("[MAP] invalid map_numteams detected");
-  }
-
   if (m_Slots.empty() || m_Slots.size() > 12)
   {
     m_Valid = false;
     Print("[MAP] invalid map_slot<x> detected");
   }
+}
+
+std::string* CMap::GetMapData()
+{
+	// todo; 下载地图支持
+	return &m_MapData;
 }

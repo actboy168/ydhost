@@ -53,19 +53,8 @@
 #define MAPOPT_WATERWAVESONCLIFFSHORES    1 << 11
 #define MAPOPT_WATERWAVESONSLOPESHORES    1 << 12
 
-#define MAPFILTER_MAKER_USER              1
-#define MAPFILTER_MAKER_BLIZZARD          2
-
 #define MAPFILTER_TYPE_MELEE              1
 #define MAPFILTER_TYPE_SCENARIO           2
-
-#define MAPFILTER_SIZE_SMALL              1
-#define MAPFILTER_SIZE_MEDIUM             2
-#define MAPFILTER_SIZE_LARGE              4
-
-#define MAPFILTER_OBS_FULL                1
-#define MAPFILTER_OBS_ONDEATH             2
-#define MAPFILTER_OBS_NONE                4
 
 #define MAPGAMETYPE_UNKNOWN0              1       // always set except for saved games?
 #define MAPGAMETYPE_BLIZZARD              1 << 3
@@ -99,26 +88,21 @@ public:
   CAura *m_Aura;
 
 private:
+  std::string m_MapData;              // the map data itself, for sending the map to players
   BYTEARRAY m_MapSHA1;                // config value: map sha1 (20 bytes)
   BYTEARRAY m_MapSize;                // config value: map size (4 bytes)
   BYTEARRAY m_MapInfo;                // config value: map info (4 bytes) -> this is the real CRC
   BYTEARRAY m_MapCRC;                 // config value: map crc (4 bytes) -> this is not the real CRC, it's the "xoro" value
   BYTEARRAY m_MapWidth;               // config value: map width (2 bytes)
   BYTEARRAY m_MapHeight;              // config value: map height (2 bytes)
-  std::vector<CGameSlot> m_Slots;
   std::string m_MapPath;              // config value: map path
-  std::string m_MapData;              // the map data itself, for sending the map to players
+  std::vector<CGameSlot> m_Slots;
   uint32_t m_MapOptions;
-  uint32_t m_MapNumPlayers;           // config value: max map number of players
-  uint32_t m_MapNumTeams;             // config value: max map number of teams
+  uint32_t m_MapNumPlayers;
   uint8_t m_MapSpeed;
   uint8_t m_MapVisibility;
   uint8_t m_MapObservers;
   uint8_t m_MapFlags;
-  uint8_t m_MapFilterMaker;
-  uint8_t m_MapFilterType;
-  uint8_t m_MapFilterSize;
-  uint8_t m_MapFilterObs;
   bool m_Valid;
 
 public:
@@ -131,21 +115,17 @@ public:
   inline BYTEARRAY GetMapInfo() const                        { return m_MapInfo; }
   inline BYTEARRAY GetMapCRC() const                         { return m_MapCRC; }
   inline BYTEARRAY GetMapSHA1() const                        { return m_MapSHA1; }
-  inline uint8_t GetMapSpeed() const                   { return m_MapSpeed; }
-  inline uint8_t GetMapVisibility() const              { return m_MapVisibility; }
   inline uint8_t GetMapObservers() const               { return m_MapObservers; }
   inline uint8_t GetMapFlags() const                   { return m_MapFlags; }
-  BYTEARRAY GetMapGameFlags() const;
-  uint32_t GetMapGameType() const;
   inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
-  uint8_t GetMapLayoutStyle() const;
   inline BYTEARRAY GetMapWidth() const                       { return m_MapWidth; }
   inline BYTEARRAY GetMapHeight() const                      { return m_MapHeight; }
-  inline std::string *GetMapData()                                { return &m_MapData; }
   inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
-  inline uint32_t GetMapNumTeams() const                     { return m_MapNumTeams; }
   inline std::vector<CGameSlot> GetSlots() const                  { return m_Slots; }
 
+  BYTEARRAY GetMapGameFlags() const;
+  uint8_t GetMapLayoutStyle() const;
+  std::string *GetMapData();
   void Load(std::string const& MapPath, CConfig *MAP);
   void CheckValid();
 };
