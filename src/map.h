@@ -106,7 +106,6 @@ private:
   BYTEARRAY m_MapWidth;               // config value: map width (2 bytes)
   BYTEARRAY m_MapHeight;              // config value: map height (2 bytes)
   std::vector<CGameSlot> m_Slots;
-  std::string m_CFGFile;
   std::string m_MapPath;              // config value: map path
   std::string m_MapLocalPath;         // config value: map local path
   std::string m_MapData;              // the map data itself, for sending the map to players
@@ -124,11 +123,10 @@ private:
   bool m_Valid;
 
 public:
-  CMap(CAura *nAura, CConfig *CFG, const std::string &nCFGFile);
+  CMap(CAura *nAura, CConfig *CFG, CConfig *MAP);
   ~CMap();
 
   inline bool GetValid() const                               { return m_Valid; }
-  inline std::string GetCFGFile() const                           { return m_CFGFile; }
   inline std::string GetMapPath() const                           { return m_MapPath; }
   inline BYTEARRAY GetMapSize() const                        { return m_MapSize; }
   inline BYTEARRAY GetMapInfo() const                        { return m_MapInfo; }
@@ -150,9 +148,8 @@ public:
   inline uint32_t GetMapNumTeams() const                     { return m_MapNumTeams; }
   inline std::vector<CGameSlot> GetSlots() const                  { return m_Slots; }
 
-  void Load(CConfig *CFG, const std::string &nCFGFile);
+  void Load(CConfig *CFG, CConfig *MAP);
   void CheckValid();
-  uint32_t XORRotateLeft(uint8_t *data, uint32_t length);
 };
 
 #endif  // AURA_MAP_H_

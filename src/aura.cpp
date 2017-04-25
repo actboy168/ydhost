@@ -312,7 +312,9 @@ CAura::CAura(CConfig *CFG)
   m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
   m_AutoStart = CFG->GetInt("bot_autostart", 1);
 
-  m_Map = new CMap(this, CFG, "");
+  CConfig MAP;
+  MAP.Read(CFG->GetString("map_config_path", ""));
+  m_Map = new CMap(this, CFG, &MAP);
 
 }
 
