@@ -20,7 +20,6 @@
 
 #include "aura.h"
 #include "crc32.h"
-#include "sha1.h"
 #include "config.h"
 #include "socket.h"
 #include "map.h"
@@ -28,7 +27,6 @@
 #include "gameprotocol.h"
 #include "game.h"
 #include "util.h"
-#include "fileutil.h"
 
 #include <csignal>
 #include <cstdlib>
@@ -268,7 +266,6 @@ int main(int, char *argv[])
 CAura::CAura(CConfig *CFG)
   : m_UDPSocket(new CUDPSocket()),
     m_CRC(new CCRC32()),
-    m_SHA(new CSHA1()),
     m_CurrentGame(nullptr),
     m_Map(nullptr),
     m_HostCounter(1),
@@ -322,7 +319,6 @@ CAura::~CAura()
 {
   delete m_UDPSocket;
   delete m_CRC;
-  delete m_SHA;
 
   if (m_Map)
     delete m_Map;

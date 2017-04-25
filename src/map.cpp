@@ -21,17 +21,8 @@
 #include "map.h"
 #include "aura.h"
 #include "util.h"
-#include "fileutil.h"
-#include "crc32.h"
-#include "sha1.h"
 #include "config.h"
 #include "gameslot.h"
-
-#define __STORMLIB_SELF__
-#include <StormLib.h>
-
-#define ROTL(x,n) ((x)<<(n))|((x)>>(32-(n)))	// this won't work with signed types
-#define ROTR(x,n) ((x)>>(n))|((x)<<(32-(n)))	// this won't work with signed types
 
 using namespace std;
 
@@ -217,14 +208,6 @@ void CMap::Load(CConfig *CFG, CConfig *MAP)
   Print("[MAP] map_crc = " + ByteArrayToDecString(m_MapCRC));
   Print("[MAP] map_sha1 = " + ByteArrayToDecString(m_MapSHA1));
 
-  m_MapSpeed = MAP->GetInt("map_speed", MAPSPEED_FAST);
-  m_MapVisibility = MAP->GetInt("map_visibility", MAPVIS_DEFAULT);
-  m_MapObservers = MAP->GetInt("map_observers", MAPOBS_NONE);
-  m_MapFlags = MAP->GetInt("map_flags", MAPFLAG_TEAMSTOGETHER | MAPFLAG_FIXEDTEAMS);
-  m_MapFilterMaker = MAP->GetInt("map_filter_maker", MAPFILTER_MAKER_USER);
-  m_MapFilterSize = MAP->GetInt("map_filter_size", MAPFILTER_SIZE_LARGE);
-  m_MapFilterObs = MAP->GetInt("map_filter_obs", MAPFILTER_OBS_NONE);
-
   m_MapOptions = MAP->GetInt("map_options", 0);
   m_MapWidth = ExtractNumbers(MAP->GetString("map_width", string()), 2);
   m_MapHeight = ExtractNumbers(MAP->GetString("map_height", string()), 2);
@@ -247,6 +230,14 @@ void CMap::Load(CConfig *CFG, CConfig *MAP)
 	  BYTEARRAY SlotData = ExtractNumbers(SlotString, 9);
 	  m_Slots.push_back(CGameSlot(SlotData));
   }
+
+  m_MapSpeed = MAPSPEED_FAST;
+  m_MapVisibility = MAPVIS_DEFAULT;
+  m_MapObservers = MAPOBS_NONE;
+  m_MapFlags = MAPFLAG_TEAMSTOGETHER | MAPFLAG_FIXEDTEAMS;
+  m_MapFilterMaker = MAPFILTER_MAKER_USER;
+  m_MapFilterSize = MAPFILTER_SIZE_LARGE;
+  m_MapFilterObs = MAPFILTER_OBS_NONE;
 
   if (m_MapOptions & MAPOPT_MELEE)
   {

@@ -39,13 +39,7 @@
     <ClCompile Include="map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sha1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="socket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="fileutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="logging.cpp">
@@ -80,16 +74,10 @@
     <ClInclude Include="map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sha1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="fileutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="logging.h">
