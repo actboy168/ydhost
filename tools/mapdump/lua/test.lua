@@ -53,13 +53,10 @@ do
     write('map_width = ' .. tohex2(info['地形']['地图宽度']))
     write('map_height = ' .. tohex2(info['地形']['地图长度']))
     local n = info['玩家']['玩家数量']
-    local closed = 0
     local players = {}
     for i = 1, n do
         local t = info['玩家'..i]
-        if t['类型'] ~= 1 and t['类型'] ~= 2 then
-            closed = closed + 1
-        else
+        if t['类型'] == 1 or t['类型'] == 2 then
             local ply = {}
             ply.pid = 0
             ply.download_status = 255
@@ -106,8 +103,6 @@ do
             end
         end
     end
-    write('map_numplayers = ' .. (n - closed))
-    write('map_numteams = ' .. info['队伍']['队伍数量'])
     for i, ply in ipairs(players) do
         write(('map_slot%d = %d %d %d %d %d %d %d %d %d'):format(i
             , ply.pid
