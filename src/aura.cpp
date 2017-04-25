@@ -32,9 +32,6 @@
 #include <cstdlib>
 #include <ctime>
 
-#define __STORMLIB_SELF__
-#include <StormLib.h>
-
 #ifdef WIN32
 #include <ws2tcpip.h>
 #include <winsock.h>
