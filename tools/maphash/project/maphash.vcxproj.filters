@@ -10,10 +10,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main.cpp">
+    <ClCompile Include="..\src\sha1.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\sha1.cpp">
+    <ClCompile Include="..\src\luaopen_maphash.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
   </ItemGroup>
