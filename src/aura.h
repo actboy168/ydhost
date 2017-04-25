@@ -32,9 +32,7 @@ class CTCPSocket;
 class CTCPServer;
 class CGPSProtocol;
 class CCRC32;
-class CSHA1;
 class CGame;
-class CAuraDB;
 class CMap;
 class CConfig;
 

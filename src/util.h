@@ -189,23 +189,6 @@ inline void AssignLength(BYTEARRAY &content)
   content[3] = (uint8_t)(Size >> 8);
 }
 
-inline std::string AddPathSeparator(const std::string &path)
-{
-  if (path.empty())
-    return std::string();
-
-#ifdef WIN32
-  const char Separator = '\\';
-#else
-  const char Separator = '/';
-#endif
-
-  if (*(end(path) - 1) == Separator)
-    return path;
-  else
-    return path + std::string(1, Separator);
-}
-
 inline BYTEARRAY EncodeStatString(BYTEARRAY &data)
 {
   BYTEARRAY Result;

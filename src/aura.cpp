@@ -308,7 +308,7 @@ CAura::CAura(CConfig *CFG)
   m_AutoStart = CFG->GetInt("bot_autostart", 1);
 
   m_MapPath = CFG->GetString("bot_mappath", string());
-  m_MapCFGPath = AddPathSeparator(CFG->GetString("bot_mapcfgpath", string()));
+  m_MapCFGPath = CFG->GetString("bot_mapcfgpath", string());
   CConfig MAP;
   MAP.Read(m_MapCFGPath);
   m_Map = new CMap(this, m_MapPath, &MAP);
