@@ -107,7 +107,6 @@ private:
   BYTEARRAY m_MapHeight;              // config value: map height (2 bytes)
   std::vector<CGameSlot> m_Slots;
   std::string m_MapPath;              // config value: map path
-  std::string m_MapLocalPath;         // config value: map local path
   std::string m_MapData;              // the map data itself, for sending the map to players
   uint32_t m_MapOptions;
   uint32_t m_MapNumPlayers;           // config value: max map number of players
@@ -123,7 +122,7 @@ private:
   bool m_Valid;
 
 public:
-  CMap(CAura *nAura, CConfig *CFG, CConfig *MAP);
+  CMap(CAura *nAura, std::string const& MapPath, CConfig *MAP);
   ~CMap();
 
   inline bool GetValid() const                               { return m_Valid; }
@@ -142,13 +141,12 @@ public:
   uint8_t GetMapLayoutStyle() const;
   inline BYTEARRAY GetMapWidth() const                       { return m_MapWidth; }
   inline BYTEARRAY GetMapHeight() const                      { return m_MapHeight; }
-  inline std::string GetMapLocalPath() const                      { return m_MapLocalPath; }
   inline std::string *GetMapData()                                { return &m_MapData; }
   inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
   inline uint32_t GetMapNumTeams() const                     { return m_MapNumTeams; }
   inline std::vector<CGameSlot> GetSlots() const                  { return m_Slots; }
 
-  void Load(CConfig *CFG, CConfig *MAP);
+  void Load(std::string const& MapPath, CConfig *MAP);
   void CheckValid();
 };
 

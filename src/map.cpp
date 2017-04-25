@@ -30,10 +30,10 @@ using namespace std;
 // CMap
 //
 
-CMap::CMap(CAura *nAura, CConfig *CFG, CConfig *MAP)
+CMap::CMap(CAura *nAura, std::string const& MapPath, CConfig *MAP)
   : m_Aura(nAura)
 {
-  Load(CFG, MAP);
+  Load(MapPath, MAP);
 }
 
 CMap::~CMap()
@@ -191,12 +191,11 @@ uint8_t CMap::GetMapLayoutStyle() const
   return 3;
 }
 
-void CMap::Load(CConfig *CFG, CConfig *MAP)
+void CMap::Load(std::string const& MapPath, CConfig *MAP)
 {
   m_Valid = true;
 
-  m_MapLocalPath = CFG->GetString("map_localpath", string());
-  m_MapPath = CFG->GetString("map_path", string());
+  m_MapPath = MapPath;
 
   m_MapSize = ExtractNumbers(MAP->GetString("map_size", string()), 4);
   m_MapInfo = ExtractNumbers(MAP->GetString("map_info", string()), 4);

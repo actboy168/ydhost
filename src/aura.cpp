@@ -290,8 +290,6 @@ CAura::CAura(CConfig *CFG)
   m_BindAddress = CFG->GetString("bot_bindaddress", string());
   m_MaxGames = CFG->GetInt("bot_maxgames", 20);
 
-  m_MapCFGPath = AddPathSeparator(CFG->GetString("bot_mapcfgpath", string()));
-  m_MapPath = AddPathSeparator(CFG->GetString("bot_mappath", string()));
   m_VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
 
   if (m_VirtualHostName.size() > 15)
@@ -309,9 +307,11 @@ CAura::CAura(CConfig *CFG)
   m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
   m_AutoStart = CFG->GetInt("bot_autostart", 1);
 
+  m_MapPath = CFG->GetString("bot_mappath", string());
+  m_MapCFGPath = AddPathSeparator(CFG->GetString("bot_mapcfgpath", string()));
   CConfig MAP;
   MAP.Read(m_MapCFGPath);
-  m_Map = new CMap(this, CFG, &MAP);
+  m_Map = new CMap(this, m_MapPath, &MAP);
 
 }
 
