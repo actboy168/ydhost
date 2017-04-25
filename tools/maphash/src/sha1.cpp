@@ -161,15 +161,15 @@ namespace hash
 
 	void sha1::final(unsigned char* digest)
 	{
-		update((const unsigned char*)"\x80", 1);
-		while ((count[0] & 504) != 448)
-		{
-			update((const unsigned char*)"\x00", 1);
-		}
 		unsigned char finalcount[8];
 		for (unsigned i = 0; i < 8; i++)
 		{
 			finalcount[i] = (unsigned char)((count[(i >= 4 ? 0 : 1)] >> ((3 - (i & 3)) * 8)) & 255);
+		}
+		update((const unsigned char*)"\x80", 1);
+		while ((count[0] & 504) != 448)
+		{
+			update((const unsigned char*)"\x00", 1);
 		}
 		update(finalcount, 8);
 
