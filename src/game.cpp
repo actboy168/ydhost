@@ -51,7 +51,7 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, string &nGameName)
     m_Latency(nAura->m_Latency),
     m_SyncLimit(nAura->m_SyncLimit),
     m_SyncCounter(0), m_GameTicks(0),
-    m_LastPingTime(GetTime()),
+    m_LastPingTime(0),
     m_LastDownloadTicks(GetTime()),
     m_DownloadCounter(0),
     m_LastDownloadCounterResetTicks(GetTicks()),
