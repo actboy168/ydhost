@@ -156,7 +156,6 @@ public:
   void CloseSlot(uint8_t SID, bool kick);
   void ComputerSlot(uint8_t SID, uint8_t skill, bool kick);
   void ColourSlot(uint8_t SID, uint8_t colour);
-  bool IsDownloading();
   void StartCountDown();
   void StopLaggers(const std::string &reason);
   void CreateVirtualHost();

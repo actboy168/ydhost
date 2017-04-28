@@ -133,7 +133,6 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
     m_LastMapPartAcked(0),
     m_StartedLaggingTicks(0),
     m_PID(nPID),
-    m_DownloadAllowed(false),
     m_DownloadStarted(false),
     m_DownloadFinished(false),
     m_FinishedLoading(false),
@@ -148,26 +147,6 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
 CGamePlayer::~CGamePlayer()
 {
   delete m_Socket;
-}
-
-uint32_t CGamePlayer::GetPing(bool LCPing) const
-{
-  // just average all the pings in the vector, nothing fancy
-
-  if (m_Pings.empty())
-    return 0;
-
-  uint32_t AvgPing = 0;
-
-  for (const auto & ping : m_Pings)
-    AvgPing += ping;
-
-  AvgPing /= m_Pings.size();
-
-  if (LCPing)
-    return AvgPing / 2;
-  else
-    return AvgPing;
 }
 
 bool CGamePlayer::Update(void *fd)
@@ -195,7 +174,6 @@ bool CGamePlayer::Update(void *fd)
   CIncomingAction *Action;
   CIncomingChatPlayer *ChatPlayer;
   CIncomingMapSize *MapSize;
-  uint32_t Pong;
 
   while (Bytes.size() >= 4)
   {
@@ -274,29 +252,7 @@ bool CGamePlayer::Update(void *fd)
             break;
 
           case CGameProtocol::W3GS_PONG_TO_HOST:
-            Pong = m_Protocol->RECEIVE_W3GS_PONG_TO_HOST(Data);
-
-            // we discard pong values of 1
-            // the client sends one of these when connecting plus we return 1 on error to kill two birds with one stone
-
-            if (Pong != 1)
-            {
-              // we also discard pong values when we're downloading because they're almost certainly inaccurate
-              // this statement also gives the player a 5 second grace period after downloading the map to allow queued (i.e. delayed) ping packets to be ignored
-
-              if (!m_DownloadStarted || (m_DownloadFinished && GetTime() - m_FinishedDownloadingTime >= 5))
-              {
-                // we also discard pong values when anyone else is downloading if we're configured to
-
-                if (!m_Game->IsDownloading())
-                {
-                  m_Pings.push_back(GetTicks() - Pong);
-
-                  if (m_Pings.size() > 10)
-                    m_Pings.erase(begin(m_Pings));
-                }
-              }
-            }
+            m_Protocol->RECEIVE_W3GS_PONG_TO_HOST(Data);
             break;
         }
 

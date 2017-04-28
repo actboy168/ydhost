@@ -1104,8 +1104,6 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 
       if (!MapData->empty())
       {
-        if (m_Aura->m_AllowDownloads == 1 || (m_Aura->m_AllowDownloads == 2 && player->GetDownloadAllowed()))
-        {
           if (!player->GetDownloadStarted() && mapSize->GetSizeFlag() == 1)
           {
             // inform the client that we are willing to send the map
@@ -1117,7 +1115,6 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
           }
           else
             player->SetLastMapPartAcked(mapSize->GetMapSize());
-        }
       }
       else
       {
@@ -1521,19 +1518,6 @@ void CGame::ColourSlot(uint8_t SID, uint8_t colour)
       SendAllSlotInfo();
     }
   }
-}
-
-bool CGame::IsDownloading()
-{
-  // returns true if at least one player is downloading the map
-
-  for (auto & player : m_Players)
-  {
-    if (player->GetDownloadStarted() && !player->GetDownloadFinished())
-      return true;
-  }
-
-  return false;
 }
 
 void CGame::StartCountDown()

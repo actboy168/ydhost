@@ -83,7 +83,6 @@ protected:
 
 private:
   BYTEARRAY m_InternalIP;                   // the player's internal IP address as reported by the player when connecting
-  std::vector<uint32_t> m_Pings;            // store the last few (10) pings received so we can take an average
   std::queue<uint32_t> m_CheckSums;         // the last few checksums the player has sent (for detecting desyncs)
   std::string m_LeftReason;                 // the reason the player left the game
   std::string m_Name;                       // the player's name
@@ -98,7 +97,6 @@ private:
   uint32_t m_FinishedDownloadingTime;       // GetTime when the player finished downloading the map
   uint32_t m_StartedLaggingTicks;           // GetTicks when the player started laggin
   uint8_t m_PID;                            // the player's PID
-  bool m_DownloadAllowed;                   // if we're allowed to download the map or not (used with permission based map downloads)
   bool m_DownloadStarted;                   // if we've started downloading the map or not
   bool m_DownloadFinished;                  // if we've finished downloading the map or not
   bool m_FinishedLoading;                   // if the player has finished loading or not
@@ -113,7 +111,6 @@ public:
   CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nName, const BYTEARRAY &nInternalIP);
   ~CGamePlayer();
 
-  uint32_t GetPing(bool LCPing) const;
   inline CTCPSocket *GetSocket() const                                { return m_Socket; }
   inline BYTEARRAY GetExternalIP() const                              { return m_Socket->GetIP(); }
   inline std::string GetExternalIPString() const                      { return m_Socket->GetIPString(); }
@@ -121,7 +118,6 @@ public:
   inline uint8_t GetPID() const                                       { return m_PID; }
   inline std::string GetName() const                                  { return m_Name; }
   inline BYTEARRAY GetInternalIP() const                              { return m_InternalIP; }
-  inline uint32_t GetNumPings() const                                 { return m_Pings.size(); }
   inline uint32_t GetNumCheckSums() const                             { return m_CheckSums.size(); }
   inline std::queue<uint32_t> *GetCheckSums()                         { return &m_CheckSums; }
   inline std::string GetLeftReason() const                            { return m_LeftReason; }
@@ -133,7 +129,6 @@ public:
   inline uint32_t GetStartedDownloadingTicks() const                  { return m_StartedDownloadingTicks; }
   inline uint32_t GetFinishedDownloadingTime() const                  { return m_FinishedDownloadingTime; }
   inline uint32_t GetStartedLaggingTicks() const                      { return m_StartedLaggingTicks; }
-  inline bool GetDownloadAllowed() const                              { return m_DownloadAllowed; }
   inline bool GetDownloadStarted() const                              { return m_DownloadStarted; }
   inline bool GetDownloadFinished() const                             { return m_DownloadFinished; }
   inline bool GetFinishedLoading() const                              { return m_FinishedLoading; }
@@ -151,7 +146,6 @@ public:
   inline void SetStartedDownloadingTicks(uint32_t nStartedDownloadingTicks)            { m_StartedDownloadingTicks = nStartedDownloadingTicks; }
   inline void SetFinishedDownloadingTime(uint32_t nFinishedDownloadingTime)            { m_FinishedDownloadingTime = nFinishedDownloadingTime; }
   inline void SetStartedLaggingTicks(uint32_t nStartedLaggingTicks)                    { m_StartedLaggingTicks = nStartedLaggingTicks; }
-  inline void SetDownloadAllowed(bool nDownloadAllowed)                                { m_DownloadAllowed = nDownloadAllowed; }
   inline void SetDownloadStarted(bool nDownloadStarted)                                { m_DownloadStarted = nDownloadStarted; }
   inline void SetDownloadFinished(bool nDownloadFinished)                              { m_DownloadFinished = nDownloadFinished; }
   inline void SetLagging(bool nLagging)                                                { m_Lagging = nLagging; }
