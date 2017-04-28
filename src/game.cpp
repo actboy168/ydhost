@@ -49,21 +49,18 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, string &nGameName)
     m_EntryKey(rand()),
     m_Latency(nAura->m_Latency),
     m_SyncLimit(nAura->m_SyncLimit),
-    m_SyncCounter(0), m_GameTicks(0),
+    m_SyncCounter(0),
     m_LastPingTime(0),
     m_LastDownloadTicks(GetTime()),
     m_DownloadCounter(0),
     m_LastDownloadCounterResetTicks(GetTicks()),
     m_LastCountDownTicks(0),
     m_CountDownCounter(0),
-    m_StartedLoadingTicks(0),
     m_LastLagScreenResetTime(0),
     m_LastActionSentTicks(0),
     m_LastActionLateBy(0),
     m_StartedLaggingTime(0),
     m_LastLagScreenTime(0),
-    m_LastReservedSeen(GetTime()),
-    m_LastPlayerLeaveTicks(0),
     m_HostPort(nHostPort),
     m_VirtualHostPID(255),
     m_Exiting(false),
@@ -586,7 +583,6 @@ void CGame::SendVirtualHostPlayerInfo(CGamePlayer *player)
 
 void CGame::SendAllActions()
 {
-  m_GameTicks += m_Latency;
   ++m_SyncCounter;
 
   // we aren't allowed to send more than 1460 bytes in a single packet but it's possible we might have more than that many bytes waiting in the queue
@@ -664,8 +660,6 @@ void CGame::SendAllActions()
 void CGame::EventPlayerDeleted(CGamePlayer *player)
 {
   Print("[GAME: " + m_GameName + "] deleting player [" + player->GetName() + "]: " + player->GetLeftReason());
-
-  m_LastPlayerLeaveTicks = GetTicks();
 
   // in some cases we're forced to send the left message early so don't send it again
 
@@ -1208,7 +1202,6 @@ void CGame::EventGameStarted()
   if (m_SlotInfoChanged)
     SendAllSlotInfo();
 
-  m_StartedLoadingTicks = GetTicks();
   m_LastLagScreenResetTime = GetTime();
   m_GameLoading = true;
 
