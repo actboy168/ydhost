@@ -124,11 +124,8 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string
     m_Socket(potential->GetSocket()),
     m_InternalIP(nInternalIP),
     m_Name(nName),
-    m_TotalPacketsSent(0),
-    m_TotalPacketsReceived(1),
     m_LeftCode(PLAYERLEAVE_LOBBY),
     m_SyncCounter(0),
-    m_JoinTime(GetTime()),
     m_LastMapPartSent(0),
     m_LastMapPartAcked(0),
     m_StartedLaggingTicks(0),
@@ -184,8 +181,6 @@ bool CGamePlayer::Update(void *fd)
 
     if (Bytes[0] == W3GS_HEADER_CONSTANT)
     {
-      ++m_TotalPacketsReceived;
-
       if (Bytes.size() >= Length)
       {
         // byte 1 contains the packet ID
@@ -288,6 +283,5 @@ bool CGamePlayer::Update(void *fd)
 
 void CGamePlayer::Send(const BYTEARRAY &data)
 {
-  ++m_TotalPacketsSent;
   m_Socket->PutBytes(data);
 }

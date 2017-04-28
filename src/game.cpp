@@ -445,14 +445,6 @@ bool CGame::Update(void *fd, void *send_fd)
 
         while (player->GetLastMapPartSent() < player->GetLastMapPartAcked() + 1442 * 100 && player->GetLastMapPartSent() < MapSize)
         {
-          if (player->GetLastMapPartSent() == 0)
-          {
-            // overwrite the "started download ticks" since this is the first time we've sent any map data to the player
-            // prior to this we've only determined if the player needs to download the map but it's possible we could have delayed sending any data due to download limits
-
-            player->SetStartedDownloadingTicks(Ticks);
-          }
-
           // limit the download speed if we're sending too much data
           // the download counter is the # of map bytes downloaded in the last second (it's reset once per second)
 
@@ -1111,7 +1103,6 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
             Print("[GAME: " + m_GameName + "] map download started for player [" + player->GetName() + "]");
             Send(player, m_Protocol->SEND_W3GS_STARTDOWNLOAD(GetHostPID()));
             player->SetDownloadStarted(true);
-            player->SetStartedDownloadingTicks(GetTicks());
           }
           else
             player->SetLastMapPartAcked(mapSize->GetMapSize());
@@ -1134,14 +1125,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
   }
   else if (player->GetDownloadStarted())
   {
-    // calculate download rate
-
-    const float Seconds = (float)(GetTicks() - player->GetStartedDownloadingTicks()) / 1000.f;
-    const float Rate = (float) MapSize / 1024.f / Seconds;
-    Print("[GAME: " + m_GameName + "] map download finished for player [" + player->GetName() + "] in " + to_string(Seconds) + " seconds");
-    SendAllChat("Player [" + player->GetName() + "] downloaded the map in " + to_string(Seconds) + " seconds (" + to_string(Rate) + " KB/sec)");
-    player->SetDownloadFinished(true);
-    player->SetFinishedDownloadingTime(GetTime());
+	  player->SetDownloadFinished(true);
   }
 
   uint8_t NewDownloadStatus = (uint8_t)((float) mapSize->GetMapSize() / MapSize * 100.f);
