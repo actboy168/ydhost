@@ -47,7 +47,6 @@
 using namespace std;
 
 static CAura *gAura = nullptr;
-bool gRestart = false;
 
 uint32_t GetTime()
 {
@@ -242,17 +241,6 @@ int main(int, char *argv[])
   timeEndPeriod(TimerResolution);
 #endif
 
-  // restart the program
-
-  if (gRestart)
-  {
-#ifdef WIN32
-    _spawnl(_P_OVERLAY, argv[0], argv[0], nullptr);
-#else
-    execl(argv[0], argv[0], nullptr);
-#endif
-  }
-
   return 0;
 }
 
@@ -359,8 +347,6 @@ bool CAura::Update()
     MILLISLEEP(200);
   }
 
-  bool Exit = false;
-
   // update running games
 
   for (auto i = begin(m_Games); i != end(m_Games);)
@@ -368,7 +354,6 @@ bool CAura::Update()
     if ((*i)->Update(&fd, &send_fd))
     {
       Print("[AURA] deleting game [" + (*i)->GetGameName() + "]");
-      EventGameDeleted(*i);
       delete *i;
       i = m_Games.erase(i);
     }
@@ -379,12 +364,7 @@ bool CAura::Update()
     }
   }
 
-  return m_Exiting || Exit;
-}
-
-void CAura::EventGameDeleted(CGame *game)
-{
-	ExitProcess(-1);
+  return m_Exiting || m_Games.size() == 0;
 }
 
 void CAura::CreateGame(CMap *map, string gameName)

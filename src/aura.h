@@ -65,10 +65,6 @@ public:
 
   bool Update();
 
-  // events
-
-  void EventGameDeleted(CGame *game);
-
   // other functions
   void CreateGame(CMap *map, std::string gameName);
 };
