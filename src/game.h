@@ -74,7 +74,6 @@ protected:
   uint32_t m_StartedLaggingTime;                // GetTime when the last lag screen started
   uint32_t m_LastLagScreenTime;                 // GetTime when the last lag screen was active (continuously updated)
   uint32_t m_LastReservedSeen;                  // GetTime when the last reserved player was seen in the lobby
-  uint32_t m_GameOverTime;                      // GetTime when the game was over
   uint32_t m_LastPlayerLeaveTicks;              // GetTicks when the most recent player left the game
   uint16_t m_HostPort;                          // the port to host games on
   uint8_t m_VirtualHostPID;                     // host's PID
@@ -171,7 +170,6 @@ public:
   void ColourSlot(uint8_t SID, uint8_t colour);
   bool IsDownloading();
   void StartCountDown();
-  void StopPlayers(const std::string &reason);
   void StopLaggers(const std::string &reason);
   void CreateVirtualHost();
   void DeleteVirtualHost();

@@ -64,7 +64,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, string &nGameName)
     m_StartedLaggingTime(0),
     m_LastLagScreenTime(0),
     m_LastReservedSeen(GetTime()),
-    m_GameOverTime(0),
     m_LastPlayerLeaveTicks(0),
     m_HostPort(nHostPort),
     m_VirtualHostPID(255),
@@ -412,29 +411,6 @@ bool CGame::Update(void *fd, void *send_fd)
       m_LastActionSentTicks = Ticks;
       m_GameLoading = false;
       m_GameLoaded = true;
-    }
-  }
-
-  // start the gameover timer if there's only one player left
-
-  if (m_Players.size() == 1 && m_GameOverTime == 0 && (m_GameLoading || m_GameLoaded))
-  {
-    Print("[GAME: " + m_GameName + "] gameover timer started (one player left)");
-    m_GameOverTime = Time;
-  }
-
-  // finish the gameover timer
-
-  if (m_GameOverTime != 0 && Time - m_GameOverTime >= 60)
-  {
-    for (auto & player : m_Players)
-    {
-      if (!player->GetDeleteMe())
-      {
-        Print("[GAME: " + m_GameName + "] is over (gameover timer finished)");
-        StopPlayers("was disconnected (gameover timer finished)");
-        break;
-      }
     }
   }
 
@@ -1610,21 +1586,6 @@ void CGame::StartCountDown()
   {
 	  m_CountDownStarted = true;
 	  m_CountDownCounter = 5;
-  }
-}
-
-void CGame::StopPlayers(const string &reason)
-{
-  // disconnect every player and set their left reason to the passed string
-  // we use this function when we want the code in the Update function to run before the destructor (e.g. saving players to the database)
-  // therefore calling this function when m_GameLoading || m_GameLoaded is roughly equivalent to setting m_Exiting = true
-  // the only difference is whether the code in the Update function is executed or not
-
-  for (auto & player : m_Players)
-  {
-    player->SetDeleteMe(true);
-    player->SetLeftReason(reason);
-    player->SetLeftCode(PLAYERLEAVE_LOST);
   }
 }
 
