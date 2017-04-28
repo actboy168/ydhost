@@ -53,7 +53,6 @@ protected:
   CMap *m_Map;                                  // map data
   std::string m_GameName;                       // game name
   std::string m_VirtualHostName;                // host's name
-  std::string m_MapPath;                        // store the map path to save in the database on game end
   uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
   uint32_t m_HostCounter;                       // a unique game number
   uint32_t m_EntryKey;                          // random entry key for LAN, used to prove that a player is actually joining from LAN
@@ -97,14 +96,8 @@ public:
   inline std::string GetGameName() const            { return m_GameName; }
   inline std::string GetVirtualHostName() const     { return m_VirtualHostName; }
   inline uint32_t GetHostCounter() const            { return m_HostCounter; }
-  inline uint32_t GetLastLagScreenTime() const      { return m_LastLagScreenTime; }
-  inline bool GetCountDownStarted() const           { return m_CountDownStarted; }
-  inline bool GetGameLoading() const                { return m_GameLoading; }
-  inline bool GetGameLoaded() const                 { return m_GameLoaded; }
-  inline bool GetLagging() const                    { return m_Lagging; }
 
   uint32_t GetNextTimedActionTicks() const;
-  uint32_t GetSlotsOpen() const;
   uint32_t GetNumPlayers() const;
 
   inline void SetExiting(bool nExiting)                      { m_Exiting = nExiting; }

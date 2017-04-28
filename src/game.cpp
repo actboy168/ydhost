@@ -44,7 +44,6 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, string &nGameName)
     m_Map(new CMap(*nMap)),
     m_GameName(nGameName),
     m_VirtualHostName(nAura->m_VirtualHostName),
-    m_MapPath(nMap->GetMapPath()),
     m_RandomSeed(GetTicks()),
     m_HostCounter(nAura->m_HostCounter++),
     m_EntryKey(rand()),
@@ -124,19 +123,6 @@ uint32_t CGame::GetNextTimedActionTicks() const
     return 0;
   else
     return m_Latency - m_LastActionLateBy - TicksSinceLastUpdate;
-}
-
-uint32_t CGame::GetSlotsOpen() const
-{
-  uint32_t NumSlotsOpen = 0;
-
-  for (const auto & slot : m_Slots)
-  {
-    if (slot.GetSlotStatus() == SLOTSTATUS_OPEN)
-      ++NumSlotsOpen;
-  }
-
-  return NumSlotsOpen;
 }
 
 uint32_t CGame::GetNumPlayers() const
