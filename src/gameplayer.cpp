@@ -297,8 +297,6 @@ bool CGamePlayer::Update(void *fd)
                 }
               }
             }
-
-            m_Game->EventPlayerPongToHost(this);
             break;
         }
 

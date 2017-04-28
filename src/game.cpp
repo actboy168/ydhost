@@ -1171,24 +1171,6 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
   }
 }
 
-void CGame::EventPlayerPongToHost(CGamePlayer *player)
-{
-  // autokick players with excessive pings but only if they're not reserved and we've received at least 3 pings from them
-  // also don't kick anyone if the game is loading or loaded - this could happen because we send pings during loading but we stop sending them after the game is loaded
-  // see the Update function for where we send pings
-
-  if (!m_GameLoading && !m_GameLoaded && !player->GetDeleteMe() && player->GetNumPings() >= 3 && player->GetPing(m_Aura->m_LCPings) > m_Aura->m_AutoKickPing)
-  {
-    // send a chat message because we don't normally do so when a player leaves the lobby
-
-    SendAllChat("Autokicking player [" + player->GetName()  + "] for excessive ping of " + to_string(player->GetPing(m_Aura->m_LCPings)));
-    player->SetDeleteMe(true);
-    player->SetLeftReason("was autokicked for excessive ping of " + to_string(player->GetPing(m_Aura->m_LCPings)));
-    player->SetLeftCode(PLAYERLEAVE_LOBBY);
-    OpenSlot(GetSIDFromPID(player->GetPID()), false);
-  }
-}
-
 void CGame::EventGameStarted()
 {
   Print("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumPlayers()) + " players");

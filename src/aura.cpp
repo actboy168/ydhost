@@ -298,8 +298,6 @@ CAura::CAura(CConfig *CFG)
   m_AllowDownloads = CFG->GetInt("bot_allowdownloads", 0);
   m_MaxDownloaders = CFG->GetInt("bot_maxdownloaders", 3);
   m_MaxDownloadSpeed = CFG->GetInt("bot_maxdownloadspeed", 100);
-  m_LCPings = CFG->GetInt("bot_lcpings", 1) == 0 ? false : true;
-  m_AutoKickPing = CFG->GetInt("bot_autokickping", 300);
   m_Latency = CFG->GetInt("bot_latency", 100);
   m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
   m_AutoStart = CFG->GetInt("bot_autostart", 1);

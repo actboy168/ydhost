@@ -53,13 +53,11 @@ public:
   uint32_t m_AllowDownloads;                    // config value: allow map downloads or not
   uint32_t m_MaxDownloaders;                    // config value: maximum number of map downloaders at the same time
   uint32_t m_MaxDownloadSpeed;                  // config value: maximum total map download speed in KB/sec
-  uint32_t m_AutoKickPing;                      // config value: auto kick players with ping higher than this
   uint32_t m_Latency;                           // config value: the latency (by default)
   uint32_t m_SyncLimit;                         // config value: the maximum number of packets a player can fall out of sync before starting the lag screen (by default)
   uint16_t m_HostPort;                          // config value: the port to host games on
   uint8_t m_LANWar3Version;                     // config value: LAN warcraft 3 version
   bool m_Exiting;                               // set to true to force aura to shutdown next update (used by SignalCatcher)
-  bool m_LCPings;                               // config value: use LC style pings (divide actual pings by two)
   uint32_t m_AutoStart;
 
   explicit CAura(CConfig *CFG);

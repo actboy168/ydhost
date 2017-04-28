@@ -136,7 +136,6 @@ public:
   void EventPlayerChangeHandicap(CGamePlayer *player, uint8_t handicap);
   void EventPlayerDropRequest(CGamePlayer *player);
   void EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize);
-  void EventPlayerPongToHost(CGamePlayer *player);
 
   // these events are called outside of any iterations
 
