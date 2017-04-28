@@ -263,7 +263,6 @@ int main(int, char *argv[])
 CAura::CAura(CConfig *CFG)
   : m_UDPSocket(new CUDPSocket()),
     m_CRC(new CCRC32()),
-    m_CurrentGame(nullptr),
     m_Map(nullptr),
     m_HostCounter(1),
     m_Exiting(false)
@@ -305,8 +304,6 @@ CAura::~CAura()
   if (m_Map)
     delete m_Map;
 
-  delete m_CurrentGame;
-
   for (auto & game : m_Games)
     delete game;
 }
@@ -321,11 +318,6 @@ bool CAura::Update()
   fd_set fd, send_fd;
   FD_ZERO(&fd);
   FD_ZERO(&send_fd);
-
-  // 1. the current game's server and player sockets
-
-  if (m_CurrentGame)
-    NumFDs += m_CurrentGame->SetFD(&fd, &send_fd, &nfds);
 
   // 2. all running games' player sockets
 
@@ -387,20 +379,6 @@ bool CAura::Update()
     }
   }
 
-  // update current game
-
-  if (m_CurrentGame)
-  {
-    if (m_CurrentGame->Update(&fd, &send_fd))
-    {
-      Print("[AURA] deleting current game [" + m_CurrentGame->GetGameName() + "]");
-      delete m_CurrentGame;
-      m_CurrentGame = nullptr;
-    }
-    else if (m_CurrentGame)
-      m_CurrentGame->UpdatePost(&send_fd);
-  }
-
   return m_Exiting || Exit;
 }
 
@@ -421,12 +399,7 @@ void CAura::CreateGame(CMap *map, string gameName)
     return;
   }
 
-  if (m_CurrentGame)
-  {
-    return;
-  }
-
   Print("[AURA] creating game [" + gameName + "]");
 
-  m_CurrentGame = new CGame(this, map, gameName);
+  m_Games.push_back(new CGame(this, map, gameName));
 }

@@ -1216,11 +1216,6 @@ void CGame::EventGameStarted()
 
   delete m_Map;
   m_Map = nullptr;
-
-  // move the game to the games in progress vector
-
-  m_Aura->m_CurrentGame = nullptr;
-  m_Aura->m_Games.push_back(this);
 }
 
 uint8_t CGame::GetSIDFromPID(uint8_t PID) const

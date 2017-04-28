@@ -41,7 +41,6 @@ class CAura
 public:
   CUDPSocket *m_UDPSocket;                      // a UDP socket for sending broadcasts and other junk (used with !sendlan)
   CCRC32 *m_CRC;                                // for calculating CRC's
-  CGame *m_CurrentGame;                         // this game is still in the lobby state
   std::vector<CGame *> m_Games;                 // these games are in progress
   CMap *m_Map;                                  // the currently loaded map
   std::string m_MapCFGPath;                     // config value: map cfg path
