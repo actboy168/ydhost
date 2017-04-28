@@ -81,7 +81,7 @@ protected:
   bool m_Desynced;                              // if the game has desynced or not
 
 public:
-  CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, std::string &nGameName);
+  CGame(CAura *nAura, CMap *nMap, std::string &nGameName);
   ~CGame();
   CGame(CGame &) = delete;
 

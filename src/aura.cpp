@@ -269,26 +269,13 @@ CAura::CAura(CConfig *CFG)
     m_Exiting(false)
 {
   Print("[AURA] Aura++ version 1.24");
-
-  // get the general configuration variables
-
-  m_UDPSocket->SetBroadcastTarget(CFG->GetString("udp_broadcasttarget", string()));
-  m_UDPSocket->SetDontRoute(CFG->GetInt("udp_dontroute", 0) == 0 ? false : true);
-
   m_CRC->Initialize();
-  m_HostPort = CFG->GetInt("bot_hostport", 0);
+
+  m_UDPSocket->SetBroadcastTarget(string());
+  m_UDPSocket->SetDontRoute(false);
+  m_BindAddress = string();
   m_LANWar3Version = CFG->GetInt("lan_war3version", 26);
-
-  // read the rest of the general configuration
-
-  // this doesn't set EVERY config value since that would potentially require reconfiguring the battle.net connections
-  // it just set the easily reloadable values
-
-  m_BindAddress = CFG->GetString("bot_bindaddress", string());
-  m_MaxGames = CFG->GetInt("bot_maxgames", 20);
-
   m_VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
-
   if (m_VirtualHostName.size() > 15)
   {
 	  m_VirtualHostName = "|cFF4080C0YDWE";
@@ -439,12 +426,7 @@ void CAura::CreateGame(CMap *map, string gameName)
     return;
   }
 
-  if (m_Games.size() >= m_MaxGames)
-  {
-    return;
-  }
-
   Print("[AURA] creating game [" + gameName + "]");
 
-  m_CurrentGame = new CGame(this, map, m_HostPort, gameName);
+  m_CurrentGame = new CGame(this, map, gameName);
 }

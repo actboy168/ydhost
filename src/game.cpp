@@ -36,7 +36,7 @@ using namespace std;
 // CGame
 //
 
-CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, string &nGameName)
+CGame::CGame(CAura *nAura, CMap *nMap, string &nGameName)
   : m_Aura(nAura),
     m_Socket(new CTCPServer()),
     m_Protocol(new CGameProtocol(nAura)),
@@ -61,7 +61,7 @@ CGame::CGame(CAura *nAura, CMap *nMap, uint16_t nHostPort, string &nGameName)
     m_LastActionLateBy(0),
     m_StartedLaggingTime(0),
     m_LastLagScreenTime(0),
-    m_HostPort(nHostPort),
+    m_HostPort(0),
     m_VirtualHostPID(255),
     m_Exiting(false),
     m_SlotInfoChanged(false),
