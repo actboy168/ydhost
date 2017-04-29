@@ -40,7 +40,6 @@ typedef std::pair<uint8_t, std::string> PIDPlayer;
 
 // time
 
-uint32_t GetTime();   // seconds
 uint32_t GetTicks();  // milliseconds
 
 #ifdef WIN32

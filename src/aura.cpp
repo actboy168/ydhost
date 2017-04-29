@@ -47,35 +47,6 @@ using namespace std;
 
 static CAura *gAura = nullptr;
 
-uint32_t GetTime()
-{
-#ifdef WIN32
-	// don't use GetTickCount anymore because it's not accurate enough (~16ms resolution)
-	// don't use QueryPerformanceCounter anymore because it isn't guaranteed to be strictly increasing on some systems and thus requires "smoothing" code
-	// use timeGetTime instead, which typically has a high resolution (5ms or more) but we request a lower resolution on startup
-
-	return timeGetTime() / 1000;
-#elif __APPLE__
-	const uint64_t current = mach_absolute_time();
-	static mach_timebase_info_data_t info = { 0, 0 };
-
-	// get timebase info
-
-	if (info.denom == 0)
-		mach_timebase_info(&info);
-
-	const uint64_t elapsednano = current * (info.numer / info.denom);
-
-	// convert ns to s
-
-	return elapsednano / 1000000000;
-#else
-	static struct timespec t;
-	clock_gettime(CLOCK_MONOTONIC, &t);
-	return t.tv_sec;
-#endif
-}
-
 uint32_t GetTicks()
 {
 #ifdef WIN32

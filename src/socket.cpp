@@ -151,7 +151,7 @@ void CSocket::Reset()
 
 CTCPSocket::CTCPSocket()
 	: CSocket(),
-	m_LastRecv(GetTime()),
+	m_LastRecv(GetTicks()),
 	m_Connected(false)
 {
 	Allocate(SOCK_STREAM);
@@ -173,7 +173,7 @@ CTCPSocket::CTCPSocket()
 
 CTCPSocket::CTCPSocket(SOCKET nSocket, struct sockaddr_in nSIN)
 	: CSocket(nSocket, nSIN),
-	m_LastRecv(GetTime()),
+	m_LastRecv(GetTicks()),
 	m_Connected(true)
 {
 	// make socket non blocking
@@ -200,7 +200,7 @@ void CTCPSocket::Reset()
 	m_Connected = false;
 	m_RecvBuffer.clear();
 	m_SendBuffer.clear();
-	m_LastRecv = GetTime();
+	m_LastRecv = GetTicks();
 
 	// make socket non blocking
 
@@ -229,7 +229,7 @@ void CTCPSocket::DoRecv(fd_set *fd)
 			// success! add the received data to the buffer
 
 			m_RecvBuffer += string(buffer, c);
-			m_LastRecv = GetTime();
+			m_LastRecv = GetTicks();
 		}
 		else if (c == SOCKET_ERROR && GetLastError() != EWOULDBLOCK)
 		{

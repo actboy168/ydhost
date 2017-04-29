@@ -50,16 +50,16 @@ CGame::CGame(CAura *nAura, const CMap *nMap, string &nGameName)
 	m_Latency(nAura->m_Latency),
 	m_SyncLimit(nAura->m_SyncLimit),
 	m_SyncCounter(0),
-	m_LastPingTime(0),
-	m_LastDownloadTicks(GetTime()),
+	m_LastPingTicks(0),
+	m_LastDownloadTicks(GetTicks()),
 	m_LastDownloadCounterResetTicks(GetTicks()),
 	m_LastCountDownTicks(0),
 	m_CountDownCounter(0),
-	m_LastLagScreenResetTime(0),
+	m_LastLagScreenResetTicks(0),
 	m_LastActionSentTicks(0),
 	m_LastActionLateBy(0),
-	m_StartedLaggingTime(0),
-	m_LastLagScreenTime(0),
+	m_StartedLaggingTicks(0),
+	m_LastLagScreenTicks(0),
 	m_HostPort(0),
 	m_VirtualHostPID(255),
 	m_Exiting(false),
@@ -163,13 +163,13 @@ uint32_t CGame::SetFD(void *fd, void *send_fd, int32_t *nfds)
 
 bool CGame::Update(void *fd, void *send_fd)
 {
-	const uint32_t Time = GetTime(), Ticks = GetTicks();
+	const uint32_t Ticks = GetTicks();
 
 	// ping every 5 seconds
 	// changed this to ping during game loading as well to hopefully fix some problems with people disconnecting during loading
 	// changed this to ping during the game as well
 
-	if (Time - m_LastPingTime >= 5)
+	if (Ticks - m_LastPingTicks >= 5000)
 	{
 		// note: we must send pings to players who are downloading the map because Warcraft III disconnects from the lobby if it doesn't receive a ping every ~90 seconds
 		// so if the player takes longer than 90 seconds to download the map they would be disconnected unless we keep sending pings
@@ -204,7 +204,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			m_Aura->m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Aura->m_LANWar3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
 		}
 
-		m_LastPingTime = Time;
+		m_LastPingTicks = Ticks;
 	}
 
 	// update players
@@ -256,7 +256,7 @@ bool CGame::Update(void *fd, void *send_fd)
 					player->SetLagging(true);
 					player->SetStartedLaggingTicks(Ticks);
 					m_Lagging = true;
-					m_StartedLaggingTime = Time;
+					m_StartedLaggingTicks = Ticks;
 
 					if (LaggingString.empty())
 						LaggingString = player->GetName();
@@ -277,22 +277,20 @@ bool CGame::Update(void *fd, void *send_fd)
 				for (auto & player : m_Players)
 					player->SetDropVote(false);
 
-				m_LastLagScreenResetTime = Time;
+				m_LastLagScreenResetTicks = Ticks;
 			}
 		}
 
 		if (m_Lagging)
 		{
-			uint32_t WaitTime = 60;
-
-			if (Time - m_StartedLaggingTime >= WaitTime)
-				StopLaggers("was automatically dropped after " + to_string(WaitTime) + " seconds");
+			if (Ticks - m_StartedLaggingTicks >= 600000)
+				StopLaggers("was automatically dropped after 60 seconds");
 
 			// we cannot allow the lag screen to stay up for more than ~65 seconds because Warcraft III disconnects if it doesn't receive an action packet at least this often
 			// one (easy) solution is to simply drop all the laggers if they lag for more than 60 seconds
 			// another solution is to reset the lag screen the same way we reset it when using load-in-game
 
-			if (Time - m_LastLagScreenResetTime >= 60)
+			if (Ticks - m_LastLagScreenResetTicks >= 60000)
 			{
 				for (auto & _i : m_Players)
 				{
@@ -313,7 +311,7 @@ bool CGame::Update(void *fd, void *send_fd)
 
 				// Warcraft III doesn't seem to respond to empty actions
 
-				m_LastLagScreenResetTime = Time;
+				m_LastLagScreenResetTicks = Ticks;
 			}
 
 			// check if anyone has stopped lagging normally
@@ -353,7 +351,7 @@ bool CGame::Update(void *fd, void *send_fd)
 
 			// keep track of the last lag screen time so we can avoid timing out players
 
-			m_LastLagScreenTime = Time;
+			m_LastLagScreenTicks = Ticks;
 		}
 	}
 
@@ -666,7 +664,7 @@ void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 	// this is because Warcraft 3 stops sending packets during the lag screen
 	// so when the lag screen finishes we would immediately disconnect everyone if we didn't give them some extra time
 
-	if (GetTime() - m_LastLagScreenTime >= 10)
+	if (GetTicks() - m_LastLagScreenTicks >= 10000)
 	{
 		player->SetDeleteMe(true);
 		player->SetLeftReason("has lost the connection (timed out)");
@@ -1138,7 +1136,7 @@ void CGame::EventGameStarted()
 	if (m_SlotInfoChanged)
 		SendAllSlotInfo();
 
-	m_LastLagScreenResetTime = GetTime();
+	m_LastLagScreenResetTicks = GetTicks();
 	m_GameLoading = true;
 
 	// since we use a fake countdown to deal with leavers during countdown the COUNTDOWN_START and COUNTDOWN_END packets are sent in quick succession

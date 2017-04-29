@@ -148,14 +148,14 @@ CGamePlayer::~CGamePlayer()
 
 bool CGamePlayer::Update(void *fd)
 {
-	const uint32_t Time = GetTime();
+	const uint32_t Ticks = GetTicks();
 
 	// check for socket timeouts
 	// if we don't receive anything from a player for 30 seconds we can assume they've dropped
 	// this works because in the lobby we send pings every 5 seconds and expect a response to each one
 	// and in the game the Warcraft 3 client sends keepalives frequently (at least once per second it looks like)
 
-	if (Time - m_Socket->GetLastRecv() >= 30)
+	if (Ticks - m_Socket->GetLastRecv() >= 30000)
 		m_Game->EventPlayerDisconnectTimedOut(this);
 
 	m_Socket->DoRecv((fd_set *)fd);
