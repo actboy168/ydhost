@@ -50,12 +50,12 @@ CGame::CGame(CAura *nAura, const CMap *nMap, string &nGameName)
 	m_Latency(nAura->m_Latency),
 	m_SyncLimit(nAura->m_SyncLimit),
 	m_SyncCounter(0),
-	m_LastPingTicks(0),
-	m_LastDownloadTicks(GetTicks()),
-	m_LastDownloadCounterResetTicks(GetTicks()),
-	m_LastCountDownTicks(0),
+	m_PingTimer(),
+	m_DownloadTimer(),
+	m_DownloadCounterResetTimer(),
+	m_CountDownTimer(),
 	m_CountDownCounter(0),
-	m_LastLagScreenResetTicks(0),
+	m_LagScreenResetTimer(),
 	m_LastActionSentTicks(0),
 	m_LastActionLateBy(0),
 	m_StartedLaggingTicks(0),
@@ -169,7 +169,7 @@ bool CGame::Update(void *fd, void *send_fd)
 	// changed this to ping during game loading as well to hopefully fix some problems with people disconnecting during loading
 	// changed this to ping during the game as well
 
-	if (Ticks - m_LastPingTicks >= 5000)
+	if (m_PingTimer.update(Ticks, 5000))
 	{
 		// note: we must send pings to players who are downloading the map because Warcraft III disconnects from the lobby if it doesn't receive a ping every ~90 seconds
 		// so if the player takes longer than 90 seconds to download the map they would be disconnected unless we keep sending pings
@@ -203,8 +203,6 @@ bool CGame::Update(void *fd, void *send_fd)
 
 			m_Aura->m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Aura->m_LANWar3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
 		}
-
-		m_LastPingTicks = Ticks;
 	}
 
 	// update players
@@ -277,7 +275,7 @@ bool CGame::Update(void *fd, void *send_fd)
 				for (auto & player : m_Players)
 					player->SetDropVote(false);
 
-				m_LastLagScreenResetTicks = Ticks;
+				m_LagScreenResetTimer.reset(Ticks);
 			}
 		}
 
@@ -290,7 +288,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			// one (easy) solution is to simply drop all the laggers if they lag for more than 60 seconds
 			// another solution is to reset the lag screen the same way we reset it when using load-in-game
 
-			if (Ticks - m_LastLagScreenResetTicks >= 60000)
+			if (m_LagScreenResetTimer.update(Ticks, 60000))
 			{
 				for (auto & _i : m_Players)
 				{
@@ -310,8 +308,6 @@ bool CGame::Update(void *fd, void *send_fd)
 				}
 
 				// Warcraft III doesn't seem to respond to empty actions
-
-				m_LastLagScreenResetTicks = Ticks;
 			}
 
 			// check if anyone has stopped lagging normally
@@ -398,18 +394,16 @@ bool CGame::Update(void *fd, void *send_fd)
 
 	// send more map data
 
-	if (!m_GameLoading && !m_GameLoaded && Ticks - m_LastDownloadCounterResetTicks >= 1000)
+	if (!m_GameLoading && !m_GameLoaded && m_DownloadCounterResetTimer.update(Ticks, 1000))
 	{
 		// hackhack: another timer hijack is in progress here
 		// since the download counter is reset once per second it's a great place to update the slot info if necessary
 
 		if (m_SlotInfoChanged)
 			SendAllSlotInfo();
-
-		m_LastDownloadCounterResetTicks = Ticks;
 	}
 
-	if (!m_GameLoading && Ticks - m_LastDownloadTicks >= 100)
+	if (!m_GameLoading && m_DownloadTimer.update(Ticks, 100))
 	{
 		for (auto & player : m_Players)
 		{
@@ -438,13 +432,11 @@ bool CGame::Update(void *fd, void *send_fd)
 				}
 			}
 		}
-
-		m_LastDownloadTicks = Ticks;
 	}
 
 	// countdown every 500 ms
 
-	if (m_CountDownStarted && Ticks - m_LastCountDownTicks >= 500)
+	if (m_CountDownStarted && m_CountDownTimer.update(Ticks, 500))
 	{
 		if (m_CountDownCounter > 0)
 		{
@@ -455,9 +447,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			SendAllChat(to_string(m_CountDownCounter--) + ". . .");
 		}
 		else if (!m_GameLoading && !m_GameLoaded)
-			EventGameStarted();
-
-		m_LastCountDownTicks = Ticks;
+			EventGameStarted(Ticks);
 	}
 
 	// create the virtual host player
@@ -1123,7 +1113,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 	}
 }
 
-void CGame::EventGameStarted()
+void CGame::EventGameStarted(uint32_t Ticks)
 {
 	Print("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumPlayers()) + " players");
 
@@ -1136,7 +1126,7 @@ void CGame::EventGameStarted()
 	if (m_SlotInfoChanged)
 		SendAllSlotInfo();
 
-	m_LastLagScreenResetTicks = GetTicks();
+	m_LagScreenResetTimer.reset(Ticks);
 	m_GameLoading = true;
 
 	// since we use a fake countdown to deal with leavers during countdown the COUNTDOWN_START and COUNTDOWN_END packets are sent in quick succession

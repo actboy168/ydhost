@@ -38,6 +38,32 @@ class CIncomingAction;
 class CIncomingChatPlayer;
 class CIncomingMapSize;
 
+class CTimer
+{
+public:
+	CTimer()
+		: m_Ticks(0)
+	{ }
+
+	bool update(uint32_t CurTicks, uint32_t Timeout)
+	{
+		if (CurTicks - m_Ticks < Timeout)
+		{
+			return false;
+		}
+		reset(CurTicks);
+		return true;
+	}
+
+	void reset(uint32_t CurTicks)
+	{
+		m_Ticks = CurTicks;
+	}
+
+private:
+	uint32_t m_Ticks;
+};
+
 class CGame
 {
 public:
@@ -59,16 +85,18 @@ protected:
 	uint32_t m_Latency;                           // the number of ms to wait between sending action packets (we queue any received during this time)
 	uint32_t m_SyncLimit;                         // the maximum number of packets a player can fall out of sync before starting the lag screen
 	uint32_t m_SyncCounter;                       // the number of actions sent so far (for determining if anyone is lagging)
-	uint32_t m_LastPingTicks;                     // GetTicks when the last ping was sent
-	uint32_t m_LastDownloadTicks;                 // GetTicks when the last map download cycle was performed
-	uint32_t m_LastDownloadCounterResetTicks;     // GetTicks when the download counter was last reset
-	uint32_t m_LastCountDownTicks;                // GetTicks when the last countdown message was sent
 	uint32_t m_CountDownCounter;                  // the countdown is finished when this reaches zero
-	uint32_t m_LastLagScreenResetTicks;           // GetTicks when the "lag" screen was last reset
-	uint32_t m_LastActionSentTicks;               // GetTicks when the last action packet was sent
 	uint32_t m_LastActionLateBy;                  // the number of ticks we were late sending the last action packet by
 	uint32_t m_StartedLaggingTicks;               // GetTicks when the last lag screen started
 	uint32_t m_LastLagScreenTicks;                // GetTicks when the last lag screen was active (continuously updated)
+	uint32_t m_LastActionSentTicks;               // GetTicks when the last action packet was sent
+
+	CTimer m_PingTimer;                           // GetTicks when the last ping was sent
+	CTimer m_DownloadTimer;                       // GetTicks when the last map download cycle was performed
+	CTimer m_DownloadCounterResetTimer;           // GetTicks when the download counter was last reset
+	CTimer m_CountDownTimer;                      // GetTicks when the last countdown message was sent
+	CTimer m_LagScreenResetTimer;                 // GetTicks when the "lag" screen was last reset
+
 	uint16_t m_HostPort;                          // the port to host games on
 	uint8_t m_VirtualHostPID;                     // host's PID
 	bool m_Exiting;                               // set to true and this class will be deleted next update
@@ -138,7 +166,7 @@ public:
 
 	// these events are called outside of any iterations
 
-	void EventGameStarted();
+	void EventGameStarted(uint32_t Ticks);
 
 	// other functions
 

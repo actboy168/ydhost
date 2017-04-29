@@ -36,7 +36,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include <cstdint>
 
 typedef std::vector<uint8_t> BYTEARRAY;
-typedef std::pair<uint8_t, std::string> PIDPlayer;
 
 // time
 
