@@ -627,33 +627,18 @@ void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 
 	if (GetTicks() - m_LastLagScreenTicks >= 10000)
 	{
-		player->SetDeleteMe(true);
-		player->SetLeftReason("has lost the connection (timed out)");
-		player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
-
-		if (m_State == State::Waiting || m_State == State::CountDown)
-			OpenSlot(GetSIDFromPID(player->GetPID()));
+		DeletePlayer(player, PLAYERLEAVE_DISCONNECT, "has lost the connection (timed out)");
 	}
 }
 
 void CGame::EventPlayerDisconnectSocketError(CGamePlayer *player)
 {
-	player->SetDeleteMe(true);
-	player->SetLeftReason("has lost the connection (connection error - " + player->GetSocket()->GetErrorString() + ")");
-	player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
-
-	if (m_State == State::Waiting || m_State == State::CountDown)
-		OpenSlot(GetSIDFromPID(player->GetPID()));
+	DeletePlayer(player, PLAYERLEAVE_DISCONNECT, "has lost the connection (connection error - " + player->GetSocket()->GetErrorString() + ")");
 }
 
 void CGame::EventPlayerDisconnectConnectionClosed(CGamePlayer *player)
 {
-	player->SetDeleteMe(true);
-	player->SetLeftReason("has lost the connection (connection closed by remote host)");
-	player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
-
-	if (m_State == State::Waiting || m_State == State::CountDown)
-		OpenSlot(GetSIDFromPID(player->GetPID()));
+	DeletePlayer(player, PLAYERLEAVE_DISCONNECT, "has lost the connection (connection closed by remote host)");
 }
 
 void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *joinPlayer)
@@ -800,13 +785,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 void CGame::EventPlayerLeft(CGamePlayer *player, uint32_t reason)
 {
 	// this function is only called when a player leave packet is received, not when there's a socket error, kick, etc...
-
-	player->SetDeleteMe(true);
-	player->SetLeftReason("has left the game voluntarily");
-	player->SetLeftCode(PLAYERLEAVE_LOST);
-
-	if (m_State == State::Waiting || m_State == State::CountDown)
-		OpenSlot(GetSIDFromPID(player->GetPID()));
+	DeletePlayer(player, PLAYERLEAVE_LOST, "has left the game voluntarily");
 }
 
 void CGame::EventPlayerLoaded(CGamePlayer *player)
@@ -1049,10 +1028,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 		}
 		else
 		{
-			player->SetDeleteMe(true);
-			player->SetLeftReason("doesn't have the map and there is no local copy of the map to send");
-			player->SetLeftCode(PLAYERLEAVE_LOBBY);
-			OpenSlot(GetSIDFromPID(player->GetPID()));
+			DeletePlayer(player, PLAYERLEAVE_LOBBY, "doesn't have the map and there is no local copy of the map to send");
 		}
 	}
 	else if (player->GetDownloadStarted())
@@ -1326,13 +1302,27 @@ void CGame::SwapSlots(uint8_t SID1, uint8_t SID2)
 	}
 }
 
-void CGame::OpenSlot(uint8_t SID)
+void CGame::DeletePlayer(CGamePlayer* player, uint32_t nLeftCode, const std::string &nLeftReason)
 {
-	if (SID < m_Slots.size())
+	player->SetDeleteMe(true);
+	player->SetLeftReason(nLeftReason);
+	player->SetLeftCode(nLeftCode);
+
+	if (m_State == State::CountDown)
 	{
-		CGameSlot Slot = m_Slots[SID];
-		m_Slots[SID] = CGameSlot(0, 255, SLOTSTATUS_OPEN, 0, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace());
-		SendAllSlotInfo();
+		SendAllChat("Countdown aborted!");
+		m_State = State::Waiting;
+	}
+
+	if (m_State == State::Waiting)
+	{
+		uint8_t SID = GetSIDFromPID(player->GetPID());
+		if (SID < m_Slots.size())
+		{
+			CGameSlot Slot = m_Slots[SID];
+			m_Slots[SID] = CGameSlot(0, 255, SLOTSTATUS_OPEN, 0, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace());
+			SendAllSlotInfo();
+		}
 	}
 }
 
@@ -1390,9 +1380,7 @@ void CGame::StopLaggers(const string &reason)
 	{
 		if (player->GetLagging())
 		{
-			player->SetDeleteMe(true);
-			player->SetLeftReason(reason);
-			player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
+			DeletePlayer(player, PLAYERLEAVE_DISCONNECT, reason);
 		}
 	}
 }
