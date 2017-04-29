@@ -1,22 +1,22 @@
 /*
 
-   Copyright [2010] [Josko Nikolic]
+Copyright [2010] [Josko Nikolic]
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
-   CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
+CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
- */
+*/
 
 #ifndef AURA_MAP_H_
 #define AURA_MAP_H_
@@ -85,49 +85,49 @@ class CConfig;
 class CMap
 {
 public:
-  CAura *m_Aura;
+	CAura *m_Aura;
 
 private:
-  std::string m_MapData;              // the map data itself, for sending the map to players
-  BYTEARRAY m_MapSHA1;                // config value: map sha1 (20 bytes)
-  BYTEARRAY m_MapSize;                // config value: map size (4 bytes)
-  BYTEARRAY m_MapInfo;                // config value: map info (4 bytes) -> this is the real CRC
-  BYTEARRAY m_MapCRC;                 // config value: map crc (4 bytes) -> this is not the real CRC, it's the "xoro" value
-  BYTEARRAY m_MapWidth;               // config value: map width (2 bytes)
-  BYTEARRAY m_MapHeight;              // config value: map height (2 bytes)
-  std::string m_MapPath;              // config value: map path
-  std::vector<CGameSlot> m_Slots;
-  uint32_t m_MapOptions;
-  uint32_t m_MapNumPlayers;
-  uint8_t m_MapSpeed;
-  uint8_t m_MapVisibility;
-  uint8_t m_MapObservers;
-  uint8_t m_MapFlags;
-  bool m_Valid;
+	std::string m_MapData;              // the map data itself, for sending the map to players
+	BYTEARRAY m_MapSHA1;                // config value: map sha1 (20 bytes)
+	BYTEARRAY m_MapSize;                // config value: map size (4 bytes)
+	BYTEARRAY m_MapInfo;                // config value: map info (4 bytes) -> this is the real CRC
+	BYTEARRAY m_MapCRC;                 // config value: map crc (4 bytes) -> this is not the real CRC, it's the "xoro" value
+	BYTEARRAY m_MapWidth;               // config value: map width (2 bytes)
+	BYTEARRAY m_MapHeight;              // config value: map height (2 bytes)
+	std::string m_MapPath;              // config value: map path
+	std::vector<CGameSlot> m_Slots;
+	uint32_t m_MapOptions;
+	uint32_t m_MapNumPlayers;
+	uint8_t m_MapSpeed;
+	uint8_t m_MapVisibility;
+	uint8_t m_MapObservers;
+	uint8_t m_MapFlags;
+	bool m_Valid;
 
 public:
-  CMap(CAura *nAura, std::string const& MapPath, CConfig *MAP);
-  ~CMap();
+	CMap(CAura *nAura, std::string const& MapPath, CConfig *MAP);
+	~CMap();
 
-  inline bool GetValid() const                               { return m_Valid; }
-  inline std::string GetMapPath() const                      { return m_MapPath; }
-  inline BYTEARRAY GetMapSize() const                        { return m_MapSize; }
-  inline BYTEARRAY GetMapInfo() const                        { return m_MapInfo; }
-  inline BYTEARRAY GetMapCRC() const                         { return m_MapCRC; }
-  inline BYTEARRAY GetMapSHA1() const                        { return m_MapSHA1; }
-  inline uint8_t GetMapObservers() const                     { return m_MapObservers; }
-  inline uint8_t GetMapFlags() const                         { return m_MapFlags; }
-  inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
-  inline BYTEARRAY GetMapWidth() const                       { return m_MapWidth; }
-  inline BYTEARRAY GetMapHeight() const                      { return m_MapHeight; }
-  inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
-  inline std::vector<CGameSlot> GetSlots() const             { return m_Slots; }
+	inline bool GetValid() const                               { return m_Valid; }
+	inline std::string GetMapPath() const                      { return m_MapPath; }
+	inline BYTEARRAY GetMapSize() const                        { return m_MapSize; }
+	inline BYTEARRAY GetMapInfo() const                        { return m_MapInfo; }
+	inline BYTEARRAY GetMapCRC() const                         { return m_MapCRC; }
+	inline BYTEARRAY GetMapSHA1() const                        { return m_MapSHA1; }
+	inline uint8_t GetMapObservers() const                     { return m_MapObservers; }
+	inline uint8_t GetMapFlags() const                         { return m_MapFlags; }
+	inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
+	inline BYTEARRAY GetMapWidth() const                       { return m_MapWidth; }
+	inline BYTEARRAY GetMapHeight() const                      { return m_MapHeight; }
+	inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
+	inline std::vector<CGameSlot> GetSlots() const             { return m_Slots; }
 
-  BYTEARRAY GetMapGameFlags() const;
-  uint8_t GetMapLayoutStyle() const;
-  const std::string *GetMapData() const;
-  void Load(std::string const& MapPath, CConfig *MAP);
-  void CheckValid();
+	BYTEARRAY GetMapGameFlags() const;
+	uint8_t GetMapLayoutStyle() const;
+	const std::string *GetMapData() const;
+	void Load(std::string const& MapPath, CConfig *MAP);
+	void CheckValid();
 };
 
 #endif  // AURA_MAP_H_

@@ -1,22 +1,22 @@
 /*
 
-   Copyright [2010] [Josko Nikolic]
+Copyright [2010] [Josko Nikolic]
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
-   CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
+CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
- */
+*/
 
 #include "game.h"
 #include "aura.h"
@@ -37,1480 +37,1480 @@ using namespace std;
 //
 
 CGame::CGame(CAura *nAura, const CMap *nMap, string &nGameName)
-  : m_Aura(nAura),
-    m_Socket(new CTCPServer()),
-    m_Protocol(new CGameProtocol(nAura)),
-    m_Slots(nMap->GetSlots()),
-    m_Map(nMap),
-    m_GameName(nGameName),
-    m_VirtualHostName(nAura->m_VirtualHostName),
-    m_RandomSeed(GetTicks()),
-    m_HostCounter(nAura->m_HostCounter++),
-    m_EntryKey(rand()),
-    m_Latency(nAura->m_Latency),
-    m_SyncLimit(nAura->m_SyncLimit),
-    m_SyncCounter(0),
-    m_LastPingTime(0),
-    m_LastDownloadTicks(GetTime()),
-    m_LastDownloadCounterResetTicks(GetTicks()),
-    m_LastCountDownTicks(0),
-    m_CountDownCounter(0),
-    m_LastLagScreenResetTime(0),
-    m_LastActionSentTicks(0),
-    m_LastActionLateBy(0),
-    m_StartedLaggingTime(0),
-    m_LastLagScreenTime(0),
-    m_HostPort(0),
-    m_VirtualHostPID(255),
-    m_Exiting(false),
-    m_SlotInfoChanged(false),
-    m_CountDownStarted(false),
-    m_GameLoading(false),
-    m_GameLoaded(false),
-    m_Lagging(false),
-    m_Desynced(false)
+	: m_Aura(nAura),
+	m_Socket(new CTCPServer()),
+	m_Protocol(new CGameProtocol(nAura)),
+	m_Slots(nMap->GetSlots()),
+	m_Map(nMap),
+	m_GameName(nGameName),
+	m_VirtualHostName(nAura->m_VirtualHostName),
+	m_RandomSeed(GetTicks()),
+	m_HostCounter(nAura->m_HostCounter++),
+	m_EntryKey(rand()),
+	m_Latency(nAura->m_Latency),
+	m_SyncLimit(nAura->m_SyncLimit),
+	m_SyncCounter(0),
+	m_LastPingTime(0),
+	m_LastDownloadTicks(GetTime()),
+	m_LastDownloadCounterResetTicks(GetTicks()),
+	m_LastCountDownTicks(0),
+	m_CountDownCounter(0),
+	m_LastLagScreenResetTime(0),
+	m_LastActionSentTicks(0),
+	m_LastActionLateBy(0),
+	m_StartedLaggingTime(0),
+	m_LastLagScreenTime(0),
+	m_HostPort(0),
+	m_VirtualHostPID(255),
+	m_Exiting(false),
+	m_SlotInfoChanged(false),
+	m_CountDownStarted(false),
+	m_GameLoading(false),
+	m_GameLoaded(false),
+	m_Lagging(false),
+	m_Desynced(false)
 {
-  // start listening for connections
+	// start listening for connections
 
-  if (!m_Aura->m_BindAddress.empty())
-    Print("[GAME: " + m_GameName + "] attempting to bind to address [" + m_Aura->m_BindAddress + "]");
+	if (!m_Aura->m_BindAddress.empty())
+		Print("[GAME: " + m_GameName + "] attempting to bind to address [" + m_Aura->m_BindAddress + "]");
 
-  if (m_Socket->Listen(m_Aura->m_BindAddress, m_HostPort))
-    Print("[GAME: " + m_GameName + "] listening on port " + to_string(m_HostPort));
-  else
-  {
-    Print("[GAME: " + m_GameName + "] error listening on port " + to_string(m_HostPort));
-    m_Exiting = true;
-  }
+	if (m_Socket->Listen(m_Aura->m_BindAddress, m_HostPort))
+		Print("[GAME: " + m_GameName + "] listening on port " + to_string(m_HostPort));
+	else
+	{
+		Print("[GAME: " + m_GameName + "] error listening on port " + to_string(m_HostPort));
+		m_Exiting = true;
+	}
 }
 
 CGame::~CGame()
 {
-  delete m_Socket;
-  delete m_Protocol;
+	delete m_Socket;
+	delete m_Protocol;
 
-  for (auto & potential : m_Potentials)
-    delete potential;
+	for (auto & potential : m_Potentials)
+		delete potential;
 
-  for (auto & player : m_Players)
-    delete player;
+	for (auto & player : m_Players)
+		delete player;
 
-  while (!m_Actions.empty())
-  {
-    delete m_Actions.front();
-    m_Actions.pop();
-  }
+	while (!m_Actions.empty())
+	{
+		delete m_Actions.front();
+		m_Actions.pop();
+	}
 }
 
 uint32_t CGame::GetNextTimedActionTicks() const
 {
-  // return the number of ticks (ms) until the next "timed action", which for our purposes is the next game update
-  // the main Aura++ loop will make sure the next loop update happens at or before this value
-  // note: there's no reason this function couldn't take into account the game's other timers too but they're far less critical
-  // warning: this function must take into account when actions are not being sent (e.g. during loading or lagging)
+	// return the number of ticks (ms) until the next "timed action", which for our purposes is the next game update
+	// the main Aura++ loop will make sure the next loop update happens at or before this value
+	// note: there's no reason this function couldn't take into account the game's other timers too but they're far less critical
+	// warning: this function must take into account when actions are not being sent (e.g. during loading or lagging)
 
-  if (!m_GameLoaded || m_Lagging)
-    return 50;
+	if (!m_GameLoaded || m_Lagging)
+		return 50;
 
-  const uint32_t TicksSinceLastUpdate = GetTicks() - m_LastActionSentTicks;
+	const uint32_t TicksSinceLastUpdate = GetTicks() - m_LastActionSentTicks;
 
-  if (TicksSinceLastUpdate > m_Latency - m_LastActionLateBy)
-    return 0;
-  else
-    return m_Latency - m_LastActionLateBy - TicksSinceLastUpdate;
+	if (TicksSinceLastUpdate > m_Latency - m_LastActionLateBy)
+		return 0;
+	else
+		return m_Latency - m_LastActionLateBy - TicksSinceLastUpdate;
 }
 
 uint32_t CGame::GetNumPlayers() const
 {
-  uint32_t NumPlayers = 0;
+	uint32_t NumPlayers = 0;
 
-  for (const auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent())
-      ++NumPlayers;
-  }
+	for (const auto & player : m_Players)
+	{
+		if (!player->GetLeftMessageSent())
+			++NumPlayers;
+	}
 
-  return NumPlayers;
+	return NumPlayers;
 }
 
 uint32_t CGame::SetFD(void *fd, void *send_fd, int32_t *nfds)
 {
-  uint32_t NumFDs = 0;
+	uint32_t NumFDs = 0;
 
-  if (m_Socket)
-  {
-    m_Socket->SetFD((fd_set *) fd, (fd_set *) send_fd, nfds);
-    ++NumFDs;
-  }
+	if (m_Socket)
+	{
+		m_Socket->SetFD((fd_set *)fd, (fd_set *)send_fd, nfds);
+		++NumFDs;
+	}
 
-  for (auto & player : m_Players)
-  {
-    player->GetSocket()->SetFD((fd_set *) fd, (fd_set *) send_fd, nfds);
-    ++NumFDs;
-  }
+	for (auto & player : m_Players)
+	{
+		player->GetSocket()->SetFD((fd_set *)fd, (fd_set *)send_fd, nfds);
+		++NumFDs;
+	}
 
-  for (auto & potential : m_Potentials)
-  {
-    if (potential->GetSocket())
-    {
-      potential->GetSocket()->SetFD((fd_set *) fd, (fd_set *) send_fd, nfds);
-      ++NumFDs;
-    }
-  }
+	for (auto & potential : m_Potentials)
+	{
+		if (potential->GetSocket())
+		{
+			potential->GetSocket()->SetFD((fd_set *)fd, (fd_set *)send_fd, nfds);
+			++NumFDs;
+		}
+	}
 
-  return NumFDs;
+	return NumFDs;
 }
 
 bool CGame::Update(void *fd, void *send_fd)
 {
-  const uint32_t Time = GetTime(), Ticks = GetTicks();
-
-  // ping every 5 seconds
-  // changed this to ping during game loading as well to hopefully fix some problems with people disconnecting during loading
-  // changed this to ping during the game as well
-
-  if (Time - m_LastPingTime >= 5)
-  {
-    // note: we must send pings to players who are downloading the map because Warcraft III disconnects from the lobby if it doesn't receive a ping every ~90 seconds
-    // so if the player takes longer than 90 seconds to download the map they would be disconnected unless we keep sending pings
-
-    SendAll(m_Protocol->SEND_W3GS_PING_FROM_HOST());
-
-    // we also broadcast the game to the local network every 5 seconds so we hijack this timer for our nefarious purposes
-    // however we only want to broadcast if the countdown hasn't started
-    // see the !sendlan code later in this file for some more information about how this works
-
-    if (!m_CountDownStarted)
-    {
-      // construct a fixed host counter which will be used to identify players from this "realm" (i.e. LAN)
-      // the fixed host counter's 4 most significant bits will contain a 4 bit ID (0-15)
-      // the rest of the fixed host counter will contain the 28 least significant bits of the actual host counter
-      // since we're destroying 4 bits of information here the actual host counter should not be greater than 2^28 which is a reasonable assumption
-      // when a player joins a game we can obtain the ID from the received host counter
-      // note: LAN broadcasts use an ID of 0, battle.net refreshes use an ID of 1-10, the rest are unused
-
-      // we send 12 for SlotsTotal because this determines how many PID's Warcraft 3 allocates
-      // we need to make sure Warcraft 3 allocates at least SlotsTotal + 1 but at most 12 PID's
-      // this is because we need an extra PID for the virtual host player (but we always delete the virtual host player when the 12th person joins)
-      // however, we can't send 13 for SlotsTotal because this causes Warcraft 3 to crash when sharing control of units
-      // nor can we send SlotsTotal because then Warcraft 3 crashes when playing maps with less than 12 PID's (because of the virtual host player taking an extra PID)
-      // we also send 12 for SlotsOpen because Warcraft 3 assumes there's always at least one player in the game (the host)
-      // so if we try to send accurate numbers it'll always be off by one and results in Warcraft 3 assuming the game is full when it still needs one more player
-      // the easiest solution is to simply send 12 for both so the game will always show up as (1/12) players
-
-      // note: the PrivateGame flag is not set when broadcasting to LAN (as you might expect)
-      // note: we do not use m_Map->GetMapGameType because none of the filters are set when broadcasting to LAN (also as you might expect)
-
-      m_Aura->m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Aura->m_LANWar3Version, CreateByteArray((uint32_t) MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
-    }
-
-    m_LastPingTime = Time;
-  }
-
-  // update players
-
-  for (auto i = begin(m_Players); i != end(m_Players);)
-  {
-    if ((*i)->Update(fd))
-    {
-      EventPlayerDeleted(*i);
-      delete *i;
-      i = m_Players.erase(i);
-    }
-    else
-      ++i;
-  }
-
-  for (auto i = begin(m_Potentials); i != end(m_Potentials);)
-  {
-    if ((*i)->Update(fd))
-    {
-      // flush the socket (e.g. in case a rejection message is queued)
-
-      if ((*i)->GetSocket())
-        (*i)->GetSocket()->DoSend((fd_set *) send_fd);
-
-      delete *i;
-      i = m_Potentials.erase(i);
-    }
-    else
-      ++i;
-  }
-
-  // keep track of the largest sync counter (the number of keepalive packets received by each player)
-  // if anyone falls behind by more than m_SyncLimit keepalives we start the lag screen
-
-  if (m_GameLoaded)
-  {
-    // check if anyone has started lagging
-    // we consider a player to have started lagging if they're more than m_SyncLimit keepalives behind
-
-    if (!m_Lagging)
-    {
-      string LaggingString;
-
-      for (auto & player : m_Players)
-      {
-        if (m_SyncCounter - player->GetSyncCounter() > m_SyncLimit)
-        {
-          player->SetLagging(true);
-          player->SetStartedLaggingTicks(Ticks);
-          m_Lagging = true;
-          m_StartedLaggingTime = Time;
-
-          if (LaggingString.empty())
-            LaggingString = player->GetName();
-          else
-            LaggingString += ", " + player->GetName();
-        }
-      }
+	const uint32_t Time = GetTime(), Ticks = GetTicks();
+
+	// ping every 5 seconds
+	// changed this to ping during game loading as well to hopefully fix some problems with people disconnecting during loading
+	// changed this to ping during the game as well
+
+	if (Time - m_LastPingTime >= 5)
+	{
+		// note: we must send pings to players who are downloading the map because Warcraft III disconnects from the lobby if it doesn't receive a ping every ~90 seconds
+		// so if the player takes longer than 90 seconds to download the map they would be disconnected unless we keep sending pings
+
+		SendAll(m_Protocol->SEND_W3GS_PING_FROM_HOST());
+
+		// we also broadcast the game to the local network every 5 seconds so we hijack this timer for our nefarious purposes
+		// however we only want to broadcast if the countdown hasn't started
+		// see the !sendlan code later in this file for some more information about how this works
+
+		if (!m_CountDownStarted)
+		{
+			// construct a fixed host counter which will be used to identify players from this "realm" (i.e. LAN)
+			// the fixed host counter's 4 most significant bits will contain a 4 bit ID (0-15)
+			// the rest of the fixed host counter will contain the 28 least significant bits of the actual host counter
+			// since we're destroying 4 bits of information here the actual host counter should not be greater than 2^28 which is a reasonable assumption
+			// when a player joins a game we can obtain the ID from the received host counter
+			// note: LAN broadcasts use an ID of 0, battle.net refreshes use an ID of 1-10, the rest are unused
+
+			// we send 12 for SlotsTotal because this determines how many PID's Warcraft 3 allocates
+			// we need to make sure Warcraft 3 allocates at least SlotsTotal + 1 but at most 12 PID's
+			// this is because we need an extra PID for the virtual host player (but we always delete the virtual host player when the 12th person joins)
+			// however, we can't send 13 for SlotsTotal because this causes Warcraft 3 to crash when sharing control of units
+			// nor can we send SlotsTotal because then Warcraft 3 crashes when playing maps with less than 12 PID's (because of the virtual host player taking an extra PID)
+			// we also send 12 for SlotsOpen because Warcraft 3 assumes there's always at least one player in the game (the host)
+			// so if we try to send accurate numbers it'll always be off by one and results in Warcraft 3 assuming the game is full when it still needs one more player
+			// the easiest solution is to simply send 12 for both so the game will always show up as (1/12) players
+
+			// note: the PrivateGame flag is not set when broadcasting to LAN (as you might expect)
+			// note: we do not use m_Map->GetMapGameType because none of the filters are set when broadcasting to LAN (also as you might expect)
+
+			m_Aura->m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Aura->m_LANWar3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
+		}
+
+		m_LastPingTime = Time;
+	}
+
+	// update players
+
+	for (auto i = begin(m_Players); i != end(m_Players);)
+	{
+		if ((*i)->Update(fd))
+		{
+			EventPlayerDeleted(*i);
+			delete *i;
+			i = m_Players.erase(i);
+		}
+		else
+			++i;
+	}
+
+	for (auto i = begin(m_Potentials); i != end(m_Potentials);)
+	{
+		if ((*i)->Update(fd))
+		{
+			// flush the socket (e.g. in case a rejection message is queued)
+
+			if ((*i)->GetSocket())
+				(*i)->GetSocket()->DoSend((fd_set *)send_fd);
+
+			delete *i;
+			i = m_Potentials.erase(i);
+		}
+		else
+			++i;
+	}
+
+	// keep track of the largest sync counter (the number of keepalive packets received by each player)
+	// if anyone falls behind by more than m_SyncLimit keepalives we start the lag screen
+
+	if (m_GameLoaded)
+	{
+		// check if anyone has started lagging
+		// we consider a player to have started lagging if they're more than m_SyncLimit keepalives behind
+
+		if (!m_Lagging)
+		{
+			string LaggingString;
+
+			for (auto & player : m_Players)
+			{
+				if (m_SyncCounter - player->GetSyncCounter() > m_SyncLimit)
+				{
+					player->SetLagging(true);
+					player->SetStartedLaggingTicks(Ticks);
+					m_Lagging = true;
+					m_StartedLaggingTime = Time;
+
+					if (LaggingString.empty())
+						LaggingString = player->GetName();
+					else
+						LaggingString += ", " + player->GetName();
+				}
+			}
 
-      if (m_Lagging)
-      {
-        // start the lag screen
+			if (m_Lagging)
+			{
+				// start the lag screen
 
-        Print("[GAME: " + m_GameName + "] started lagging on [" + LaggingString + "]");
-        SendAll(m_Protocol->SEND_W3GS_START_LAG(m_Players));
+				Print("[GAME: " + m_GameName + "] started lagging on [" + LaggingString + "]");
+				SendAll(m_Protocol->SEND_W3GS_START_LAG(m_Players));
 
-        // reset everyone's drop vote
+				// reset everyone's drop vote
 
-        for (auto & player : m_Players)
-          player->SetDropVote(false);
+				for (auto & player : m_Players)
+					player->SetDropVote(false);
 
-        m_LastLagScreenResetTime = Time;
-      }
-    }
+				m_LastLagScreenResetTime = Time;
+			}
+		}
 
-    if (m_Lagging)
-    {
-      uint32_t WaitTime = 60;
+		if (m_Lagging)
+		{
+			uint32_t WaitTime = 60;
 
-      if (Time - m_StartedLaggingTime >= WaitTime)
-        StopLaggers("was automatically dropped after " + to_string(WaitTime) + " seconds");
+			if (Time - m_StartedLaggingTime >= WaitTime)
+				StopLaggers("was automatically dropped after " + to_string(WaitTime) + " seconds");
 
-      // we cannot allow the lag screen to stay up for more than ~65 seconds because Warcraft III disconnects if it doesn't receive an action packet at least this often
-      // one (easy) solution is to simply drop all the laggers if they lag for more than 60 seconds
-      // another solution is to reset the lag screen the same way we reset it when using load-in-game
+			// we cannot allow the lag screen to stay up for more than ~65 seconds because Warcraft III disconnects if it doesn't receive an action packet at least this often
+			// one (easy) solution is to simply drop all the laggers if they lag for more than 60 seconds
+			// another solution is to reset the lag screen the same way we reset it when using load-in-game
 
-      if (Time - m_LastLagScreenResetTime >= 60)
-      {
-        for (auto & _i : m_Players)
-        {
-          // stop the lag screen
+			if (Time - m_LastLagScreenResetTime >= 60)
+			{
+				for (auto & _i : m_Players)
+				{
+					// stop the lag screen
 
-          for (auto & player : m_Players)
-          {
-            if (player->GetLagging())
-              Send(_i, m_Protocol->SEND_W3GS_STOP_LAG(player));
-          }
+					for (auto & player : m_Players)
+					{
+						if (player->GetLagging())
+							Send(_i, m_Protocol->SEND_W3GS_STOP_LAG(player));
+					}
 
-          Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(queue<CIncomingAction *>(), 0));
+					Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(queue<CIncomingAction *>(), 0));
 
-          // start the lag screen
+					// start the lag screen
 
-          Send(_i, m_Protocol->SEND_W3GS_START_LAG(m_Players));
-        }
+					Send(_i, m_Protocol->SEND_W3GS_START_LAG(m_Players));
+				}
 
-        // Warcraft III doesn't seem to respond to empty actions
+				// Warcraft III doesn't seem to respond to empty actions
 
-        m_LastLagScreenResetTime = Time;
-      }
+				m_LastLagScreenResetTime = Time;
+			}
 
-      // check if anyone has stopped lagging normally
-      // we consider a player to have stopped lagging if they're less than half m_SyncLimit keepalives behind
+			// check if anyone has stopped lagging normally
+			// we consider a player to have stopped lagging if they're less than half m_SyncLimit keepalives behind
 
-      for (auto & player : m_Players)
-      {
-        if (player->GetLagging() && m_SyncCounter - player->GetSyncCounter() < m_SyncLimit / 2)
-        {
-          // stop the lag screen for this player
+			for (auto & player : m_Players)
+			{
+				if (player->GetLagging() && m_SyncCounter - player->GetSyncCounter() < m_SyncLimit / 2)
+				{
+					// stop the lag screen for this player
 
-          Print("[GAME: " + m_GameName + "] stopped lagging on [" + player->GetName() + "]");
-          SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player));
-          player->SetLagging(false);
-          player->SetStartedLaggingTicks(0);
-        }
-      }
+					Print("[GAME: " + m_GameName + "] stopped lagging on [" + player->GetName() + "]");
+					SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player));
+					player->SetLagging(false);
+					player->SetStartedLaggingTicks(0);
+				}
+			}
 
-      // check if everyone has stopped lagging
+			// check if everyone has stopped lagging
 
-      bool Lagging = false;
+			bool Lagging = false;
 
-      for (auto & player : m_Players)
-      {
-        if (player->GetLagging())
-        {
-          Lagging = true;
-          break;
-        }
-      }
+			for (auto & player : m_Players)
+			{
+				if (player->GetLagging())
+				{
+					Lagging = true;
+					break;
+				}
+			}
 
-      m_Lagging = Lagging;
+			m_Lagging = Lagging;
 
-      // reset m_LastActionSentTicks because we want the game to stop running while the lag screen is up
+			// reset m_LastActionSentTicks because we want the game to stop running while the lag screen is up
 
-      m_LastActionSentTicks = Ticks;
+			m_LastActionSentTicks = Ticks;
 
-      // keep track of the last lag screen time so we can avoid timing out players
-
-      m_LastLagScreenTime = Time;
-    }
-  }
-
-  // send actions every m_Latency milliseconds
-  // actions are at the heart of every Warcraft 3 game but luckily we don't need to know their contents to relay them
-  // we queue player actions in EventPlayerAction then just resend them in batches to all players here
-
-  if (m_GameLoaded && !m_Lagging && Ticks - m_LastActionSentTicks >= m_Latency - m_LastActionLateBy)
-    SendAllActions();
+			// keep track of the last lag screen time so we can avoid timing out players
+
+			m_LastLagScreenTime = Time;
+		}
+	}
+
+	// send actions every m_Latency milliseconds
+	// actions are at the heart of every Warcraft 3 game but luckily we don't need to know their contents to relay them
+	// we queue player actions in EventPlayerAction then just resend them in batches to all players here
+
+	if (m_GameLoaded && !m_Lagging && Ticks - m_LastActionSentTicks >= m_Latency - m_LastActionLateBy)
+		SendAllActions();
 
-  // end the game if there aren't any players left
+	// end the game if there aren't any players left
 
-  if (m_Players.empty() && (m_GameLoading || m_GameLoaded))
-  {
-    Print("[GAME: " + m_GameName + "] is over (no players left)");
+	if (m_Players.empty() && (m_GameLoading || m_GameLoaded))
+	{
+		Print("[GAME: " + m_GameName + "] is over (no players left)");
 
-    return true;
-  }
+		return true;
+	}
 
-  // check if the game is loaded
+	// check if the game is loaded
 
-  if (m_GameLoading)
-  {
-    bool FinishedLoading = true;
+	if (m_GameLoading)
+	{
+		bool FinishedLoading = true;
 
-    for (auto & player : m_Players)
-    {
-      FinishedLoading = player->GetFinishedLoading();
+		for (auto & player : m_Players)
+		{
+			FinishedLoading = player->GetFinishedLoading();
 
-      if (!FinishedLoading)
-        break;
-    }
+			if (!FinishedLoading)
+				break;
+		}
 
-    if (FinishedLoading)
-    {
-      m_LastActionSentTicks = Ticks;
-      m_GameLoading = false;
-      m_GameLoaded = true;
-    }
-  }
+		if (FinishedLoading)
+		{
+			m_LastActionSentTicks = Ticks;
+			m_GameLoading = false;
+			m_GameLoaded = true;
+		}
+	}
 
-  if (m_GameLoaded)
-    return m_Exiting;
+	if (m_GameLoaded)
+		return m_Exiting;
 
-  // send more map data
+	// send more map data
 
-  if (!m_GameLoading && !m_GameLoaded && Ticks - m_LastDownloadCounterResetTicks >= 1000)
-  {
-    // hackhack: another timer hijack is in progress here
-    // since the download counter is reset once per second it's a great place to update the slot info if necessary
+	if (!m_GameLoading && !m_GameLoaded && Ticks - m_LastDownloadCounterResetTicks >= 1000)
+	{
+		// hackhack: another timer hijack is in progress here
+		// since the download counter is reset once per second it's a great place to update the slot info if necessary
 
-    if (m_SlotInfoChanged)
-      SendAllSlotInfo();
+		if (m_SlotInfoChanged)
+			SendAllSlotInfo();
 
-    m_LastDownloadCounterResetTicks = Ticks;
-  }
+		m_LastDownloadCounterResetTicks = Ticks;
+	}
 
-  if (!m_GameLoading && Ticks - m_LastDownloadTicks >= 100)
-  {
-    for (auto & player : m_Players)
-    {
-      if (player->GetDownloadStarted() && !player->GetDownloadFinished())
-      {
-        // send up to 100 pieces of the map at once so that the download goes faster
-        // if we wait for each MAPPART packet to be acknowledged by the client it'll take a long time to download
-        // this is because we would have to wait the round trip time (the ping time) between sending every 1442 bytes of map data
-        // doing it this way allows us to send at least 140 KB in each round trip int32_terval which is much more reasonable
-        // the theoretical throughput is [140 KB * 1000 / ping] in KB/sec so someone with 100 ping (round trip ping, not LC ping) could download at 1400 KB/sec
-        // note: this creates a queue of map data which clogs up the connection when the client is on a slower connection (e.g. dialup)
-        // in this case any changes to the lobby are delayed by the amount of time it takes to send the queued data (i.e. 140 KB, which could be 30 seconds or more)
-        // for example, players joining and leaving, slot changes, chat messages would all appear to happen much later for the low bandwidth player
-        // note: the throughput is also limited by the number of times this code is executed each second
-        // e.g. if we send the maximum amount (140 KB) 10 times per second the theoretical throughput is 1400 KB/sec
-        // therefore the maximum throughput is 1400 KB/sec regardless of ping and this value slowly diminishes as the player's ping increases
-        // in addition to this, the throughput is limited by the configuration value bot_maxdownloadspeed
-        // in summary: the actual throughput is MIN( 140 * 1000 / ping, 1400, bot_maxdownloadspeed ) in KB/sec assuming only one player is downloading the map
+	if (!m_GameLoading && Ticks - m_LastDownloadTicks >= 100)
+	{
+		for (auto & player : m_Players)
+		{
+			if (player->GetDownloadStarted() && !player->GetDownloadFinished())
+			{
+				// send up to 100 pieces of the map at once so that the download goes faster
+				// if we wait for each MAPPART packet to be acknowledged by the client it'll take a long time to download
+				// this is because we would have to wait the round trip time (the ping time) between sending every 1442 bytes of map data
+				// doing it this way allows us to send at least 140 KB in each round trip int32_terval which is much more reasonable
+				// the theoretical throughput is [140 KB * 1000 / ping] in KB/sec so someone with 100 ping (round trip ping, not LC ping) could download at 1400 KB/sec
+				// note: this creates a queue of map data which clogs up the connection when the client is on a slower connection (e.g. dialup)
+				// in this case any changes to the lobby are delayed by the amount of time it takes to send the queued data (i.e. 140 KB, which could be 30 seconds or more)
+				// for example, players joining and leaving, slot changes, chat messages would all appear to happen much later for the low bandwidth player
+				// note: the throughput is also limited by the number of times this code is executed each second
+				// e.g. if we send the maximum amount (140 KB) 10 times per second the theoretical throughput is 1400 KB/sec
+				// therefore the maximum throughput is 1400 KB/sec regardless of ping and this value slowly diminishes as the player's ping increases
+				// in addition to this, the throughput is limited by the configuration value bot_maxdownloadspeed
+				// in summary: the actual throughput is MIN( 140 * 1000 / ping, 1400, bot_maxdownloadspeed ) in KB/sec assuming only one player is downloading the map
 
-        const uint32_t MapSize = ByteArrayToUInt32(m_Map->GetMapSize(), false);
+				const uint32_t MapSize = ByteArrayToUInt32(m_Map->GetMapSize(), false);
 
-        while (player->GetLastMapPartSent() < player->GetLastMapPartAcked() + 1442 * 100 && player->GetLastMapPartSent() < MapSize)
-        {
-          Send(player, m_Protocol->SEND_W3GS_MAPPART(GetHostPID(), player->GetPID(), player->GetLastMapPartSent(), m_Map->GetMapData()));
-          player->SetLastMapPartSent(player->GetLastMapPartSent() + 1442);
-        }
-      }
-    }
+				while (player->GetLastMapPartSent() < player->GetLastMapPartAcked() + 1442 * 100 && player->GetLastMapPartSent() < MapSize)
+				{
+					Send(player, m_Protocol->SEND_W3GS_MAPPART(GetHostPID(), player->GetPID(), player->GetLastMapPartSent(), m_Map->GetMapData()));
+					player->SetLastMapPartSent(player->GetLastMapPartSent() + 1442);
+				}
+			}
+		}
 
-    m_LastDownloadTicks = Ticks;
-  }
+		m_LastDownloadTicks = Ticks;
+	}
 
-  // countdown every 500 ms
+	// countdown every 500 ms
 
-  if (m_CountDownStarted && Ticks - m_LastCountDownTicks >= 500)
-  {
-    if (m_CountDownCounter > 0)
-    {
-      // we use a countdown counter rather than a "finish countdown time" here because it might alternately round up or down the count
-      // this sometimes resulted in a countdown of e.g. "6 5 3 2 1" during my testing which looks pretty dumb
-      // doing it this way ensures it's always "5 4 3 2 1" but each int32_terval might not be *exactly* the same length
+	if (m_CountDownStarted && Ticks - m_LastCountDownTicks >= 500)
+	{
+		if (m_CountDownCounter > 0)
+		{
+			// we use a countdown counter rather than a "finish countdown time" here because it might alternately round up or down the count
+			// this sometimes resulted in a countdown of e.g. "6 5 3 2 1" during my testing which looks pretty dumb
+			// doing it this way ensures it's always "5 4 3 2 1" but each int32_terval might not be *exactly* the same length
 
-      SendAllChat(to_string(m_CountDownCounter--) + ". . .");
-    }
-    else if (!m_GameLoading && !m_GameLoaded)
-      EventGameStarted();
+			SendAllChat(to_string(m_CountDownCounter--) + ". . .");
+		}
+		else if (!m_GameLoading && !m_GameLoaded)
+			EventGameStarted();
 
-    m_LastCountDownTicks = Ticks;
-  }
+		m_LastCountDownTicks = Ticks;
+	}
 
-  // create the virtual host player
+	// create the virtual host player
 
-  if (!m_GameLoading && !m_GameLoaded && GetNumPlayers() < 12)
-    CreateVirtualHost();
+	if (!m_GameLoading && !m_GameLoaded && GetNumPlayers() < 12)
+		CreateVirtualHost();
 
-  // accept new connections
+	// accept new connections
 
-  if (m_Socket)
-  {
-    CTCPSocket *NewSocket = m_Socket->Accept((fd_set *) fd);
+	if (m_Socket)
+	{
+		CTCPSocket *NewSocket = m_Socket->Accept((fd_set *)fd);
 
-    if (NewSocket)
-      m_Potentials.push_back(new CPotentialPlayer(m_Protocol, this, NewSocket));
+		if (NewSocket)
+			m_Potentials.push_back(new CPotentialPlayer(m_Protocol, this, NewSocket));
 
-    if (m_Socket->HasError())
-      return true;
-  }
+		if (m_Socket->HasError())
+			return true;
+	}
 
-  return m_Exiting;
+	return m_Exiting;
 }
 
 void CGame::UpdatePost(void *send_fd)
 {
-  // we need to manually call DoSend on each player now because CGamePlayer :: Update doesn't do it
-  // this is in case player 2 generates a packet for player 1 during the update but it doesn't get sent because player 1 already finished updating
-  // in reality since we're queueing actions it might not make a big difference but oh well
+	// we need to manually call DoSend on each player now because CGamePlayer :: Update doesn't do it
+	// this is in case player 2 generates a packet for player 1 during the update but it doesn't get sent because player 1 already finished updating
+	// in reality since we're queueing actions it might not make a big difference but oh well
 
-  for (auto & player : m_Players)
-    player->GetSocket()->DoSend((fd_set *) send_fd);
+	for (auto & player : m_Players)
+		player->GetSocket()->DoSend((fd_set *)send_fd);
 
-  for (auto & potential : m_Potentials)
-  {
-    if (potential->GetSocket())
-      potential->GetSocket()->DoSend((fd_set *) send_fd);
-  }
+	for (auto & potential : m_Potentials)
+	{
+		if (potential->GetSocket())
+			potential->GetSocket()->DoSend((fd_set *)send_fd);
+	}
 }
 
 void CGame::Send(CGamePlayer *player, const BYTEARRAY &data)
 {
-  if (player)
-    player->Send(data);
+	if (player)
+		player->Send(data);
 }
 
 void CGame::SendAll(const BYTEARRAY &data)
 {
-  for (auto & player : m_Players)
-    player->Send(data);
+	for (auto & player : m_Players)
+		player->Send(data);
 }
 
 void CGame::SendAllChat(const string &message)
 {
 	uint8_t fromPID = GetHostPID();
-  // send a public message to all players - it'll be marked [All] in Warcraft 3
+	// send a public message to all players - it'll be marked [All] in Warcraft 3
 
-  if (GetNumPlayers() > 0)
-  {
-    Print("[GAME: " + m_GameName + "] [Local] " + message);
+	if (GetNumPlayers() > 0)
+	{
+		Print("[GAME: " + m_GameName + "] [Local] " + message);
 
-    if (!m_GameLoading && !m_GameLoaded)
-    {
-      if (message.size() > 254)
-        SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, BYTEARRAY(), message.substr(0, 254)));
-      else
-        SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, BYTEARRAY(), message));
-    }
-    else
-    {
-      if (message.size() > 127)
-        SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, CreateByteArray((uint32_t) 0, false), message.substr(0, 127)));
-      else
-        SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, CreateByteArray((uint32_t) 0, false), message));
-    }
-  }
+		if (!m_GameLoading && !m_GameLoaded)
+		{
+			if (message.size() > 254)
+				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, BYTEARRAY(), message.substr(0, 254)));
+			else
+				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, BYTEARRAY(), message));
+		}
+		else
+		{
+			if (message.size() > 127)
+				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, CreateByteArray((uint32_t)0, false), message.substr(0, 127)));
+			else
+				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, CreateByteArray((uint32_t)0, false), message));
+		}
+	}
 }
 
 void CGame::SendAllSlotInfo()
 {
-  if (!m_GameLoading && !m_GameLoaded)
-  {
-    SendAll(m_Protocol->SEND_W3GS_SLOTINFO(m_Slots, m_RandomSeed, m_Map->GetMapLayoutStyle(), m_Map->GetMapNumPlayers()));
-    m_SlotInfoChanged = false;
-  }
+	if (!m_GameLoading && !m_GameLoaded)
+	{
+		SendAll(m_Protocol->SEND_W3GS_SLOTINFO(m_Slots, m_RandomSeed, m_Map->GetMapLayoutStyle(), m_Map->GetMapNumPlayers()));
+		m_SlotInfoChanged = false;
+	}
 }
 
 void CGame::SendVirtualHostPlayerInfo(CGamePlayer *player)
 {
-  if (m_VirtualHostPID == 255)
-    return;
+	if (m_VirtualHostPID == 255)
+		return;
 
-  const BYTEARRAY IP = {0, 0, 0, 0};
+	const BYTEARRAY IP = { 0, 0, 0, 0 };
 
-  Send(player, m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, m_VirtualHostName, IP, IP));
+	Send(player, m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, m_VirtualHostName, IP, IP));
 }
 
 void CGame::SendAllActions()
 {
-  ++m_SyncCounter;
+	++m_SyncCounter;
 
-  // we aren't allowed to send more than 1460 bytes in a single packet but it's possible we might have more than that many bytes waiting in the queue
+	// we aren't allowed to send more than 1460 bytes in a single packet but it's possible we might have more than that many bytes waiting in the queue
 
-  if (!m_Actions.empty())
-  {
-    // we use a "sub actions queue" which we keep adding actions to until we reach the size limit
-    // start by adding one action to the sub actions queue
+	if (!m_Actions.empty())
+	{
+		// we use a "sub actions queue" which we keep adding actions to until we reach the size limit
+		// start by adding one action to the sub actions queue
 
-    queue<CIncomingAction *> SubActions;
-    CIncomingAction *Action = m_Actions.front();
-    m_Actions.pop();
-    SubActions.push(Action);
-    uint32_t SubActionsLength = Action->GetLength();
+		queue<CIncomingAction *> SubActions;
+		CIncomingAction *Action = m_Actions.front();
+		m_Actions.pop();
+		SubActions.push(Action);
+		uint32_t SubActionsLength = Action->GetLength();
 
-    while (!m_Actions.empty())
-    {
-      Action = m_Actions.front();
-      m_Actions.pop();
+		while (!m_Actions.empty())
+		{
+			Action = m_Actions.front();
+			m_Actions.pop();
 
-      // check if adding the next action to the sub actions queue would put us over the limit (1452 because the INCOMING_ACTION and INCOMING_ACTION2 packets use an extra 8 bytes)
+			// check if adding the next action to the sub actions queue would put us over the limit (1452 because the INCOMING_ACTION and INCOMING_ACTION2 packets use an extra 8 bytes)
 
-      if (SubActionsLength + Action->GetLength() > 1452)
-      {
-        // we'd be over the limit if we added the next action to the sub actions queue
-        // so send everything already in the queue and then clear it out
-        // the W3GS_INCOMING_ACTION2 packet handles the overflow but it must be sent *before* the corresponding W3GS_INCOMING_ACTION packet
+			if (SubActionsLength + Action->GetLength() > 1452)
+			{
+				// we'd be over the limit if we added the next action to the sub actions queue
+				// so send everything already in the queue and then clear it out
+				// the W3GS_INCOMING_ACTION2 packet handles the overflow but it must be sent *before* the corresponding W3GS_INCOMING_ACTION packet
 
-        SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION2(SubActions));
+				SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION2(SubActions));
 
-        while (!SubActions.empty())
-        {
-          delete SubActions.front();
-          SubActions.pop();
-        }
+				while (!SubActions.empty())
+				{
+					delete SubActions.front();
+					SubActions.pop();
+				}
 
-        SubActionsLength = 0;
-      }
+				SubActionsLength = 0;
+			}
 
-      SubActions.push(Action);
-      SubActionsLength += Action->GetLength();
-    }
+			SubActions.push(Action);
+			SubActionsLength += Action->GetLength();
+		}
 
-    SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(SubActions, m_Latency));
+		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(SubActions, m_Latency));
 
-    while (!SubActions.empty())
-    {
-      delete SubActions.front();
-      SubActions.pop();
-    }
-  }
-  else
-    SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(m_Actions, m_Latency));
+		while (!SubActions.empty())
+		{
+			delete SubActions.front();
+			SubActions.pop();
+		}
+	}
+	else
+		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(m_Actions, m_Latency));
 
-  const uint32_t Ticks = GetTicks();
-  const uint32_t ActualSendInterval = Ticks - m_LastActionSentTicks;
-  const uint32_t ExpectedSendInterval = m_Latency - m_LastActionLateBy;
-  m_LastActionLateBy = ActualSendInterval - ExpectedSendInterval;
+	const uint32_t Ticks = GetTicks();
+	const uint32_t ActualSendInterval = Ticks - m_LastActionSentTicks;
+	const uint32_t ExpectedSendInterval = m_Latency - m_LastActionLateBy;
+	m_LastActionLateBy = ActualSendInterval - ExpectedSendInterval;
 
-  if (m_LastActionLateBy > m_Latency)
-  {
-    // something is going terribly wrong - Aura++ is probably starved of resources
-    // print a message because even though this will take more resources it should provide some information to the administrator for future reference
-    // other solutions - dynamically modify the latency, request higher priority, terminate other games, ???
+	if (m_LastActionLateBy > m_Latency)
+	{
+		// something is going terribly wrong - Aura++ is probably starved of resources
+		// print a message because even though this will take more resources it should provide some information to the administrator for future reference
+		// other solutions - dynamically modify the latency, request higher priority, terminate other games, ???
 
-    // this program is SO FAST, I've yet to see this happen *coolface*
+		// this program is SO FAST, I've yet to see this happen *coolface*
 
-    Print("[GAME: " + m_GameName + "] warning - the latency is " + to_string(m_Latency) + "ms but the last update was late by " + to_string(m_LastActionLateBy) + "ms");
-    m_LastActionLateBy = m_Latency;
-  }
+		Print("[GAME: " + m_GameName + "] warning - the latency is " + to_string(m_Latency) + "ms but the last update was late by " + to_string(m_LastActionLateBy) + "ms");
+		m_LastActionLateBy = m_Latency;
+	}
 
-  m_LastActionSentTicks = Ticks;
+	m_LastActionSentTicks = Ticks;
 }
 
 void CGame::EventPlayerDeleted(CGamePlayer *player)
 {
-  Print("[GAME: " + m_GameName + "] deleting player [" + player->GetName() + "]: " + player->GetLeftReason());
+	Print("[GAME: " + m_GameName + "] deleting player [" + player->GetName() + "]: " + player->GetLeftReason());
 
-  // in some cases we're forced to send the left message early so don't send it again
+	// in some cases we're forced to send the left message early so don't send it again
 
-  if (player->GetLeftMessageSent())
-    return;
+	if (player->GetLeftMessageSent())
+		return;
 
-  if (m_GameLoaded)
-    SendAllChat(player->GetName() + " " + player->GetLeftReason() + ".");
+	if (m_GameLoaded)
+		SendAllChat(player->GetName() + " " + player->GetLeftReason() + ".");
 
-  if (player->GetLagging())
-    SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player));
+	if (player->GetLagging())
+		SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player));
 
-  // tell everyone about the player leaving
+	// tell everyone about the player leaving
 
-  SendAll(m_Protocol->SEND_W3GS_PLAYERLEAVE_OTHERS(player->GetPID(), player->GetLeftCode()));
+	SendAll(m_Protocol->SEND_W3GS_PLAYERLEAVE_OTHERS(player->GetPID(), player->GetLeftCode()));
 
-  // abort the countdown if there was one in progress
+	// abort the countdown if there was one in progress
 
-  if (m_CountDownStarted && !m_GameLoading && !m_GameLoaded)
-  {
-    SendAllChat("Countdown aborted!");
-    m_CountDownStarted = false;
-  }
+	if (m_CountDownStarted && !m_GameLoading && !m_GameLoaded)
+	{
+		SendAllChat("Countdown aborted!");
+		m_CountDownStarted = false;
+	}
 }
 
 void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 {
-  // not only do we not do any timeouts if the game is lagging, we allow for an additional grace period of 10 seconds
-  // this is because Warcraft 3 stops sending packets during the lag screen
-  // so when the lag screen finishes we would immediately disconnect everyone if we didn't give them some extra time
+	// not only do we not do any timeouts if the game is lagging, we allow for an additional grace period of 10 seconds
+	// this is because Warcraft 3 stops sending packets during the lag screen
+	// so when the lag screen finishes we would immediately disconnect everyone if we didn't give them some extra time
 
-  if (GetTime() - m_LastLagScreenTime >= 10)
-  {
-    player->SetDeleteMe(true);
-    player->SetLeftReason("has lost the connection (timed out)");
-    player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
+	if (GetTime() - m_LastLagScreenTime >= 10)
+	{
+		player->SetDeleteMe(true);
+		player->SetLeftReason("has lost the connection (timed out)");
+		player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
-    if (!m_GameLoading && !m_GameLoaded)
-      OpenSlot(GetSIDFromPID(player->GetPID()), false);
-  }
+		if (!m_GameLoading && !m_GameLoaded)
+			OpenSlot(GetSIDFromPID(player->GetPID()), false);
+	}
 }
 
 void CGame::EventPlayerDisconnectSocketError(CGamePlayer *player)
 {
-  player->SetDeleteMe(true);
-  player->SetLeftReason("has lost the connection (connection error - " + player->GetSocket()->GetErrorString() + ")");
-  player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
+	player->SetDeleteMe(true);
+	player->SetLeftReason("has lost the connection (connection error - " + player->GetSocket()->GetErrorString() + ")");
+	player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
-  if (!m_GameLoading && !m_GameLoaded)
-    OpenSlot(GetSIDFromPID(player->GetPID()), false);
+	if (!m_GameLoading && !m_GameLoaded)
+		OpenSlot(GetSIDFromPID(player->GetPID()), false);
 }
 
 void CGame::EventPlayerDisconnectConnectionClosed(CGamePlayer *player)
 {
-  player->SetDeleteMe(true);
-  player->SetLeftReason("has lost the connection (connection closed by remote host)");
-  player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
+	player->SetDeleteMe(true);
+	player->SetLeftReason("has lost the connection (connection closed by remote host)");
+	player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
-  if (!m_GameLoading && !m_GameLoaded)
-    OpenSlot(GetSIDFromPID(player->GetPID()), false);
+	if (!m_GameLoading && !m_GameLoaded)
+		OpenSlot(GetSIDFromPID(player->GetPID()), false);
 }
 
 void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *joinPlayer)
 {
-  // check the new player's name
+	// check the new player's name
 
-  if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == m_VirtualHostName || joinPlayer->GetName().find(" ") != string::npos || joinPlayer->GetName().find("|") != string::npos)
-  {
-    Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] invalid name (taken, invalid char, spoofer, too long)");
-    potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
-    potential->SetDeleteMe(true);
-    return;
-  }
+	if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == m_VirtualHostName || joinPlayer->GetName().find(" ") != string::npos || joinPlayer->GetName().find("|") != string::npos)
+	{
+		Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] invalid name (taken, invalid char, spoofer, too long)");
+		potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
+		potential->SetDeleteMe(true);
+		return;
+	}
 
-  const uint32_t HostCounterID = joinPlayer->GetHostCounter() >> 28;
+	const uint32_t HostCounterID = joinPlayer->GetHostCounter() >> 28;
 
-  // we use an ID value of 0 to denote joining via LAN, we don't have to set their joined realm.
+	// we use an ID value of 0 to denote joining via LAN, we don't have to set their joined realm.
 
-  if (HostCounterID == 0)
-  {
-    // check if the player joining via LAN knows the entry key
+	if (HostCounterID == 0)
+	{
+		// check if the player joining via LAN knows the entry key
 
-    if (joinPlayer->GetEntryKey() != m_EntryKey)
-    {
-      Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] is trying to join the game over LAN but used an incorrect entry key");
-      potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_WRONGPASSWORD));
-      potential->SetDeleteMe(true);
-      return;
-    }
-  }
+		if (joinPlayer->GetEntryKey() != m_EntryKey)
+		{
+			Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] is trying to join the game over LAN but used an incorrect entry key");
+			potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_WRONGPASSWORD));
+			potential->SetDeleteMe(true);
+			return;
+		}
+	}
 
-  // try to find an empty slot
-  uint8_t SID = GetEmptySlot();
-  if (SID >= m_Slots.size())
-  {
-    potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
-    potential->SetDeleteMe(true);
-    return;
-  }
+	// try to find an empty slot
+	uint8_t SID = GetEmptySlot();
+	if (SID >= m_Slots.size())
+	{
+		potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
+		potential->SetDeleteMe(true);
+		return;
+	}
 
-  // we have a slot for the new player
-  // make room for them by deleting the virtual host player if we have to
+	// we have a slot for the new player
+	// make room for them by deleting the virtual host player if we have to
 
-  if (GetNumPlayers() >= 11)
-    DeleteVirtualHost();
+	if (GetNumPlayers() >= 11)
+		DeleteVirtualHost();
 
-  // turning the CPotentialPlayer into a CGamePlayer is a bit of a pain because we have to be careful not to close the socket
-  // this problem is solved by setting the socket to nullptr before deletion and handling the nullptr case in the destructor
-  // we also have to be careful to not modify the m_Potentials vector since we're currently looping through it
+	// turning the CPotentialPlayer into a CGamePlayer is a bit of a pain because we have to be careful not to close the socket
+	// this problem is solved by setting the socket to nullptr before deletion and handling the nullptr case in the destructor
+	// we also have to be careful to not modify the m_Potentials vector since we're currently looping through it
 
-  Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] joined the game");
-  CGamePlayer *Player = new CGamePlayer(potential, GetNewPID(), joinPlayer->GetName(), joinPlayer->GetInternalIP());
+	Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] joined the game");
+	CGamePlayer *Player = new CGamePlayer(potential, GetNewPID(), joinPlayer->GetName(), joinPlayer->GetInternalIP());
 
-  m_Players.push_back(Player);
-  potential->SetSocket(nullptr);
-  potential->SetDeleteMe(true);
+	m_Players.push_back(Player);
+	potential->SetSocket(nullptr);
+	potential->SetDeleteMe(true);
 
-  if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
-    m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, m_Slots[SID].GetTeam(), m_Slots[SID].GetColour(), m_Slots[SID].GetRace());
-  else
-  {
-    if (m_Map->GetMapFlags() & MAPFLAG_RANDOMRACES)
-      m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, 12, 12, SLOTRACE_RANDOM);
-    else
-      m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, 12, 12, SLOTRACE_RANDOM | SLOTRACE_SELECTABLE);
+	if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
+		m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, m_Slots[SID].GetTeam(), m_Slots[SID].GetColour(), m_Slots[SID].GetRace());
+	else
+	{
+		if (m_Map->GetMapFlags() & MAPFLAG_RANDOMRACES)
+			m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, 12, 12, SLOTRACE_RANDOM);
+		else
+			m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, 12, 12, SLOTRACE_RANDOM | SLOTRACE_SELECTABLE);
 
-    // try to pick a team and colour
-    // make sure there aren't too many other players already
+		// try to pick a team and colour
+		// make sure there aren't too many other players already
 
-    uint8_t NumOtherPlayers = 0;
+		uint8_t NumOtherPlayers = 0;
 
-    for (auto & slot : m_Slots)
-    {
-      if (slot.GetSlotStatus() == SLOTSTATUS_OCCUPIED && slot.GetTeam() != 12)
-        ++NumOtherPlayers;
-    }
+		for (auto & slot : m_Slots)
+		{
+			if (slot.GetSlotStatus() == SLOTSTATUS_OCCUPIED && slot.GetTeam() != 12)
+				++NumOtherPlayers;
+		}
 
-    if (NumOtherPlayers < m_Map->GetMapNumPlayers())
-    {
-      if (SID < m_Map->GetMapNumPlayers())
-        m_Slots[SID].SetTeam(SID);
-      else
-        m_Slots[SID].SetTeam(0);
+		if (NumOtherPlayers < m_Map->GetMapNumPlayers())
+		{
+			if (SID < m_Map->GetMapNumPlayers())
+				m_Slots[SID].SetTeam(SID);
+			else
+				m_Slots[SID].SetTeam(0);
 
-      m_Slots[SID].SetColour(GetNewColour());
-    }
-  }
+			m_Slots[SID].SetColour(GetNewColour());
+		}
+	}
 
-  // send slot info to the new player
-  // the SLOTINFOJOIN packet also tells the client their assigned PID and that the join was successful
+	// send slot info to the new player
+	// the SLOTINFOJOIN packet also tells the client their assigned PID and that the join was successful
 
-  Player->Send(m_Protocol->SEND_W3GS_SLOTINFOJOIN(Player->GetPID(), Player->GetSocket()->GetPort(), Player->GetExternalIP(), m_Slots, m_RandomSeed, m_Map->GetMapLayoutStyle(), m_Map->GetMapNumPlayers()));
+	Player->Send(m_Protocol->SEND_W3GS_SLOTINFOJOIN(Player->GetPID(), Player->GetSocket()->GetPort(), Player->GetExternalIP(), m_Slots, m_RandomSeed, m_Map->GetMapLayoutStyle(), m_Map->GetMapNumPlayers()));
 
-  // send virtual host info and fake player info (if present) to the new player
+	// send virtual host info and fake player info (if present) to the new player
 
-  SendVirtualHostPlayerInfo(Player);
+	SendVirtualHostPlayerInfo(Player);
 
-  for (auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent() && player != Player)
-    {
-      // send info about the new player to every other player
+	for (auto & player : m_Players)
+	{
+		if (!player->GetLeftMessageSent() && player != Player)
+		{
+			// send info about the new player to every other player
 
-      player->Send(m_Protocol->SEND_W3GS_PLAYERINFO(Player->GetPID(), Player->GetName(), Player->GetExternalIP(), Player->GetInternalIP()));
+			player->Send(m_Protocol->SEND_W3GS_PLAYERINFO(Player->GetPID(), Player->GetName(), Player->GetExternalIP(), Player->GetInternalIP()));
 
-      // send info about every other player to the new player
-      Player->Send(m_Protocol->SEND_W3GS_PLAYERINFO(player->GetPID(), player->GetName(), player->GetExternalIP(), player->GetInternalIP()));
-    }
-  }
+			// send info about every other player to the new player
+			Player->Send(m_Protocol->SEND_W3GS_PLAYERINFO(player->GetPID(), player->GetName(), player->GetExternalIP(), player->GetInternalIP()));
+		}
+	}
 
-  // send a map check packet to the new player
+	// send a map check packet to the new player
 
-  Player->Send(m_Protocol->SEND_W3GS_MAPCHECK(m_Map->GetMapPath(), m_Map->GetMapSize(), m_Map->GetMapInfo(), m_Map->GetMapCRC(), m_Map->GetMapSHA1()));
+	Player->Send(m_Protocol->SEND_W3GS_MAPCHECK(m_Map->GetMapPath(), m_Map->GetMapSize(), m_Map->GetMapInfo(), m_Map->GetMapCRC(), m_Map->GetMapSHA1()));
 
-  // send slot info to everyone, so the new player gets this info twice but everyone else still needs to know the new slot layout
+	// send slot info to everyone, so the new player gets this info twice but everyone else still needs to know the new slot layout
 
-  SendAllSlotInfo();
+	SendAllSlotInfo();
 
-  // abort the countdown if there was one in progress
+	// abort the countdown if there was one in progress
 
-  if (m_CountDownStarted && !m_GameLoading && !m_GameLoaded)
-  {
-    SendAllChat("Countdown aborted!");
-    m_CountDownStarted = false;
-  }
+	if (m_CountDownStarted && !m_GameLoading && !m_GameLoaded)
+	{
+		SendAllChat("Countdown aborted!");
+		m_CountDownStarted = false;
+	}
 
-  if (!m_CountDownStarted)
-  {
-	  switch (m_Aura->m_AutoStart)
-	  {
-	  case 1:
-		  StartCountDown();
-		  break;
-	  case 2:
-		  if (GetEmptySlot() == 255)
-		  {
-			  StartCountDown();
-		  }
-		  break;
-	  }
-  }
+	if (!m_CountDownStarted)
+	{
+		switch (m_Aura->m_AutoStart)
+		{
+		case 1:
+			StartCountDown();
+			break;
+		case 2:
+			if (GetEmptySlot() == 255)
+			{
+				StartCountDown();
+			}
+			break;
+		}
+	}
 }
 
 void CGame::EventPlayerLeft(CGamePlayer *player, uint32_t reason)
 {
-  // this function is only called when a player leave packet is received, not when there's a socket error, kick, etc...
+	// this function is only called when a player leave packet is received, not when there's a socket error, kick, etc...
 
-  player->SetDeleteMe(true);
-  player->SetLeftReason("has left the game voluntarily");
-  player->SetLeftCode(PLAYERLEAVE_LOST);
+	player->SetDeleteMe(true);
+	player->SetLeftReason("has left the game voluntarily");
+	player->SetLeftCode(PLAYERLEAVE_LOST);
 
-  if (!m_GameLoading && !m_GameLoaded)
-    OpenSlot(GetSIDFromPID(player->GetPID()), false);
+	if (!m_GameLoading && !m_GameLoaded)
+		OpenSlot(GetSIDFromPID(player->GetPID()), false);
 }
 
 void CGame::EventPlayerLoaded(CGamePlayer *player)
 {
-  SendAll(m_Protocol->SEND_W3GS_GAMELOADED_OTHERS(player->GetPID()));
+	SendAll(m_Protocol->SEND_W3GS_GAMELOADED_OTHERS(player->GetPID()));
 }
 
 void CGame::EventPlayerAction(CGamePlayer *player, CIncomingAction *action)
 {
-  m_Actions.push(action);
+	m_Actions.push(action);
 
-  // check for players saving the game and notify everyone
+	// check for players saving the game and notify everyone
 
-  if (!action->GetAction()->empty() && (*action->GetAction())[0] == 6)
-  {
-    Print("[GAME: " + m_GameName + "] player [" + player->GetName() + "] is saving the game");
-    SendAllChat("Player [" + player->GetName() + "] is saving the game");
-  }
+	if (!action->GetAction()->empty() && (*action->GetAction())[0] == 6)
+	{
+		Print("[GAME: " + m_GameName + "] player [" + player->GetName() + "] is saving the game");
+		SendAllChat("Player [" + player->GetName() + "] is saving the game");
+	}
 }
 
 void CGame::EventPlayerKeepAlive(CGamePlayer *player)
 {
-  // check for desyncs
+	// check for desyncs
 
-  const uint32_t FirstCheckSum = player->GetCheckSums()->front();
+	const uint32_t FirstCheckSum = player->GetCheckSums()->front();
 
-  for (auto & player : m_Players)
-  {
-    if (player->GetCheckSums()->empty())
-      return;
+	for (auto & player : m_Players)
+	{
+		if (player->GetCheckSums()->empty())
+			return;
 
-    if (!m_Desynced && player->GetCheckSums()->front() != FirstCheckSum)
-    {
-      m_Desynced = true;
-      Print("[GAME: " + m_GameName + "] desync detected");
-      SendAllChat("Warning! Desync detected!");
-      SendAllChat("Warning! Desync detected!");
-      SendAllChat("Warning! Desync detected!");
-    }
-  }
+		if (!m_Desynced && player->GetCheckSums()->front() != FirstCheckSum)
+		{
+			m_Desynced = true;
+			Print("[GAME: " + m_GameName + "] desync detected");
+			SendAllChat("Warning! Desync detected!");
+			SendAllChat("Warning! Desync detected!");
+			SendAllChat("Warning! Desync detected!");
+		}
+	}
 
-  for (auto & player : m_Players)
-    player->GetCheckSums()->pop();
+	for (auto & player : m_Players)
+		player->GetCheckSums()->pop();
 }
 
 void CGame::EventPlayerChatToHost(CGamePlayer *player, CIncomingChatPlayer *chatPlayer)
 {
-  if (chatPlayer->GetFromPID() == player->GetPID())
-  {
-	  if (!m_CountDownStarted)
-	  {
-		  if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_TEAMCHANGE)
-			  EventPlayerChangeTeam(player, chatPlayer->GetByte());
-		  else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_COLOURCHANGE)
-			  EventPlayerChangeColour(player, chatPlayer->GetByte());
-		  else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_RACECHANGE)
-			  EventPlayerChangeRace(player, chatPlayer->GetByte());
-		  else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_HANDICAPCHANGE)
-			  EventPlayerChangeHandicap(player, chatPlayer->GetByte());
-	  }
-  }
+	if (chatPlayer->GetFromPID() == player->GetPID())
+	{
+		if (!m_CountDownStarted)
+		{
+			if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_TEAMCHANGE)
+				EventPlayerChangeTeam(player, chatPlayer->GetByte());
+			else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_COLOURCHANGE)
+				EventPlayerChangeColour(player, chatPlayer->GetByte());
+			else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_RACECHANGE)
+				EventPlayerChangeRace(player, chatPlayer->GetByte());
+			else if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_HANDICAPCHANGE)
+				EventPlayerChangeHandicap(player, chatPlayer->GetByte());
+		}
+	}
 }
 
 void CGame::EventPlayerChangeTeam(CGamePlayer *player, uint8_t team)
 {
-  // player is requesting a team change
+	// player is requesting a team change
 
-  if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
-  {
-    uint8_t oldSID = GetSIDFromPID(player->GetPID());
-    uint8_t newSID = GetEmptySlot(team, player->GetPID());
-    SwapSlots(oldSID, newSID);
-  }
-  else
-  {
-    if (team > 12)
-      return;
+	if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
+	{
+		uint8_t oldSID = GetSIDFromPID(player->GetPID());
+		uint8_t newSID = GetEmptySlot(team, player->GetPID());
+		SwapSlots(oldSID, newSID);
+	}
+	else
+	{
+		if (team > 12)
+			return;
 
-    if (team == 12)
-    {
-      if (m_Map->GetMapObservers() != MAPOBS_ALLOWED && m_Map->GetMapObservers() != MAPOBS_REFEREES)
-        return;
-    }
-    else
-    {
-      if (team >= m_Map->GetMapNumPlayers())
-        return;
+		if (team == 12)
+		{
+			if (m_Map->GetMapObservers() != MAPOBS_ALLOWED && m_Map->GetMapObservers() != MAPOBS_REFEREES)
+				return;
+		}
+		else
+		{
+			if (team >= m_Map->GetMapNumPlayers())
+				return;
 
-      // make sure there aren't too many other players already
+			// make sure there aren't too many other players already
 
-      uint8_t NumOtherPlayers = 0;
+			uint8_t NumOtherPlayers = 0;
 
-      for (auto & slot : m_Slots)
-      {
-        if (slot.GetSlotStatus() == SLOTSTATUS_OCCUPIED && slot.GetTeam() != 12 && slot.GetPID() != player->GetPID())
-          ++NumOtherPlayers;
-      }
+			for (auto & slot : m_Slots)
+			{
+				if (slot.GetSlotStatus() == SLOTSTATUS_OCCUPIED && slot.GetTeam() != 12 && slot.GetPID() != player->GetPID())
+					++NumOtherPlayers;
+			}
 
-      if (NumOtherPlayers >= m_Map->GetMapNumPlayers())
-        return;
-    }
+			if (NumOtherPlayers >= m_Map->GetMapNumPlayers())
+				return;
+		}
 
-    uint8_t SID = GetSIDFromPID(player->GetPID());
+		uint8_t SID = GetSIDFromPID(player->GetPID());
 
-    if (SID < m_Slots.size())
-    {
-      m_Slots[SID].SetTeam(team);
+		if (SID < m_Slots.size())
+		{
+			m_Slots[SID].SetTeam(team);
 
-      if (team == 12)
-      {
-        // if they're joining the observer team give them the observer colour
+			if (team == 12)
+			{
+				// if they're joining the observer team give them the observer colour
 
-        m_Slots[SID].SetColour(12);
-      }
-      else if (m_Slots[SID].GetColour() == 12)
-      {
-        // if they're joining a regular team give them an unused colour
+				m_Slots[SID].SetColour(12);
+			}
+			else if (m_Slots[SID].GetColour() == 12)
+			{
+				// if they're joining a regular team give them an unused colour
 
-        m_Slots[SID].SetColour(GetNewColour());
-      }
+				m_Slots[SID].SetColour(GetNewColour());
+			}
 
-      SendAllSlotInfo();
-    }
-  }
+			SendAllSlotInfo();
+		}
+	}
 }
 
 void CGame::EventPlayerChangeColour(CGamePlayer *player, uint8_t colour)
 {
-  // player is requesting a colour change
+	// player is requesting a colour change
 
-  if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
-    return;
+	if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
+		return;
 
-  if (colour > 11)
-    return;
+	if (colour > 11)
+		return;
 
-  uint8_t SID = GetSIDFromPID(player->GetPID());
+	uint8_t SID = GetSIDFromPID(player->GetPID());
 
-  if (SID < m_Slots.size())
-  {
-    // make sure the player isn't an observer
+	if (SID < m_Slots.size())
+	{
+		// make sure the player isn't an observer
 
-    if (m_Slots[SID].GetTeam() == 12)
-      return;
+		if (m_Slots[SID].GetTeam() == 12)
+			return;
 
-    ColourSlot(SID, colour);
-  }
+		ColourSlot(SID, colour);
+	}
 }
 
 void CGame::EventPlayerChangeRace(CGamePlayer *player, uint8_t race)
 {
-  // player is requesting a race change
+	// player is requesting a race change
 
-  if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
-    return;
+	if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
+		return;
 
-  if (m_Map->GetMapFlags() & MAPFLAG_RANDOMRACES)
-    return;
+	if (m_Map->GetMapFlags() & MAPFLAG_RANDOMRACES)
+		return;
 
-  if (race != SLOTRACE_HUMAN && race != SLOTRACE_ORC && race != SLOTRACE_NIGHTELF && race != SLOTRACE_UNDEAD && race != SLOTRACE_RANDOM)
-    return;
+	if (race != SLOTRACE_HUMAN && race != SLOTRACE_ORC && race != SLOTRACE_NIGHTELF && race != SLOTRACE_UNDEAD && race != SLOTRACE_RANDOM)
+		return;
 
-  uint8_t SID = GetSIDFromPID(player->GetPID());
+	uint8_t SID = GetSIDFromPID(player->GetPID());
 
-  if (SID < m_Slots.size())
-  {
-    m_Slots[SID].SetRace(race | SLOTRACE_SELECTABLE);
-    SendAllSlotInfo();
-  }
+	if (SID < m_Slots.size())
+	{
+		m_Slots[SID].SetRace(race | SLOTRACE_SELECTABLE);
+		SendAllSlotInfo();
+	}
 }
 
 void CGame::EventPlayerChangeHandicap(CGamePlayer *player, uint8_t handicap)
 {
-  // player is requesting a handicap change
+	// player is requesting a handicap change
 
-  if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
-    return;
+	if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
+		return;
 
-  if (handicap != 50 && handicap != 60 && handicap != 70 && handicap != 80 && handicap != 90 && handicap != 100)
-    return;
+	if (handicap != 50 && handicap != 60 && handicap != 70 && handicap != 80 && handicap != 90 && handicap != 100)
+		return;
 
-  uint8_t SID = GetSIDFromPID(player->GetPID());
+	uint8_t SID = GetSIDFromPID(player->GetPID());
 
-  if (SID < m_Slots.size())
-  {
-    m_Slots[SID].SetHandicap(handicap);
-    SendAllSlotInfo();
-  }
+	if (SID < m_Slots.size())
+	{
+		m_Slots[SID].SetHandicap(handicap);
+		SendAllSlotInfo();
+	}
 }
 
 void CGame::EventPlayerDropRequest(CGamePlayer *player)
 {
-  // TODO: check that we've waited the full 45 seconds
+	// TODO: check that we've waited the full 45 seconds
 
-  if (m_Lagging)
-  {
-    Print("[GAME: " + m_GameName + "] player [" + player->GetName() + "] voted to drop laggers");
-    SendAllChat("Player [" + player->GetName() + "] voted to drop laggers");
+	if (m_Lagging)
+	{
+		Print("[GAME: " + m_GameName + "] player [" + player->GetName() + "] voted to drop laggers");
+		SendAllChat("Player [" + player->GetName() + "] voted to drop laggers");
 
-    // check if at least half the players voted to drop
+		// check if at least half the players voted to drop
 
-    int32_t Votes = 0;
+		int32_t Votes = 0;
 
-    for (auto & player : m_Players)
-    {
-      if (player->GetDropVote())
-        ++Votes;
-    }
+		for (auto & player : m_Players)
+		{
+			if (player->GetDropVote())
+				++Votes;
+		}
 
-    if ((float) Votes / m_Players.size() > 0.50f)
-      StopLaggers("lagged out (dropped by vote)");
-  }
+		if ((float)Votes / m_Players.size() > 0.50f)
+			StopLaggers("lagged out (dropped by vote)");
+	}
 }
 
 void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 {
-  if (m_GameLoading || m_GameLoaded)
-    return;
+	if (m_GameLoading || m_GameLoaded)
+		return;
 
-  uint32_t MapSize = ByteArrayToUInt32(m_Map->GetMapSize(), false);
+	uint32_t MapSize = ByteArrayToUInt32(m_Map->GetMapSize(), false);
 
-  if (mapSize->GetSizeFlag() != 1 || mapSize->GetMapSize() != MapSize)
-  {
-    // the player doesn't have the map
+	if (mapSize->GetSizeFlag() != 1 || mapSize->GetMapSize() != MapSize)
+	{
+		// the player doesn't have the map
 
-	  const string *MapData = m_Map->GetMapData();
+		const string *MapData = m_Map->GetMapData();
 
-      if (!MapData->empty())
-      {
-          if (!player->GetDownloadStarted() && mapSize->GetSizeFlag() == 1)
-          {
-            // inform the client that we are willing to send the map
+		if (!MapData->empty())
+		{
+			if (!player->GetDownloadStarted() && mapSize->GetSizeFlag() == 1)
+			{
+				// inform the client that we are willing to send the map
 
-            Print("[GAME: " + m_GameName + "] map download started for player [" + player->GetName() + "]");
-            Send(player, m_Protocol->SEND_W3GS_STARTDOWNLOAD(GetHostPID()));
-            player->SetDownloadStarted(true);
-          }
-          else
-            player->SetLastMapPartAcked(mapSize->GetMapSize());
-      }
-      else
-      {
-        player->SetDeleteMe(true);
-        player->SetLeftReason("doesn't have the map and there is no local copy of the map to send");
-        player->SetLeftCode(PLAYERLEAVE_LOBBY);
-        OpenSlot(GetSIDFromPID(player->GetPID()), false);
-      }
-  }
-  else if (player->GetDownloadStarted())
-  {
-	  player->SetDownloadFinished(true);
-  }
+				Print("[GAME: " + m_GameName + "] map download started for player [" + player->GetName() + "]");
+				Send(player, m_Protocol->SEND_W3GS_STARTDOWNLOAD(GetHostPID()));
+				player->SetDownloadStarted(true);
+			}
+			else
+				player->SetLastMapPartAcked(mapSize->GetMapSize());
+		}
+		else
+		{
+			player->SetDeleteMe(true);
+			player->SetLeftReason("doesn't have the map and there is no local copy of the map to send");
+			player->SetLeftCode(PLAYERLEAVE_LOBBY);
+			OpenSlot(GetSIDFromPID(player->GetPID()), false);
+		}
+	}
+	else if (player->GetDownloadStarted())
+	{
+		player->SetDownloadFinished(true);
+	}
 
-  uint8_t NewDownloadStatus = (uint8_t)((float) mapSize->GetMapSize() / MapSize * 100.f);
-  const uint8_t SID = GetSIDFromPID(player->GetPID());
+	uint8_t NewDownloadStatus = (uint8_t)((float)mapSize->GetMapSize() / MapSize * 100.f);
+	const uint8_t SID = GetSIDFromPID(player->GetPID());
 
-  if (NewDownloadStatus > 100)
-    NewDownloadStatus = 100;
+	if (NewDownloadStatus > 100)
+		NewDownloadStatus = 100;
 
-  if (SID < m_Slots.size())
-  {
-    // only send the slot info if the download status changed
+	if (SID < m_Slots.size())
+	{
+		// only send the slot info if the download status changed
 
-    if (m_Slots[SID].GetDownloadStatus() != NewDownloadStatus)
-    {
-      m_Slots[SID].SetDownloadStatus(NewDownloadStatus);
+		if (m_Slots[SID].GetDownloadStatus() != NewDownloadStatus)
+		{
+			m_Slots[SID].SetDownloadStatus(NewDownloadStatus);
 
-      // we don't actually send the new slot info here
-      // this is an optimization because it's possible for a player to download a map very quickly
-      // if we send a new slot update for every percentage change in their download status it adds up to a lot of data
-      // instead, we mark the slot info as "out of date" and update it only once in awhile (once per second when this comment was made)
+			// we don't actually send the new slot info here
+			// this is an optimization because it's possible for a player to download a map very quickly
+			// if we send a new slot update for every percentage change in their download status it adds up to a lot of data
+			// instead, we mark the slot info as "out of date" and update it only once in awhile (once per second when this comment was made)
 
-      m_SlotInfoChanged = true;
-    }
-  }
+			m_SlotInfoChanged = true;
+		}
+	}
 }
 
 void CGame::EventGameStarted()
 {
-  Print("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumPlayers()) + " players");
+	Print("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumPlayers()) + " players");
 
-  // send a final slot info update if necessary
-  // this typically won't happen because we prevent the !start command from completing while someone is downloading the map
-  // however, if someone uses !start force while a player is downloading the map this could trigger
-  // this is because we only permit slot info updates to be flagged when it's just a change in download status, all others are sent immediately
-  // it might not be necessary but let's clean up the mess anyway
+	// send a final slot info update if necessary
+	// this typically won't happen because we prevent the !start command from completing while someone is downloading the map
+	// however, if someone uses !start force while a player is downloading the map this could trigger
+	// this is because we only permit slot info updates to be flagged when it's just a change in download status, all others are sent immediately
+	// it might not be necessary but let's clean up the mess anyway
 
-  if (m_SlotInfoChanged)
-    SendAllSlotInfo();
+	if (m_SlotInfoChanged)
+		SendAllSlotInfo();
 
-  m_LastLagScreenResetTime = GetTime();
-  m_GameLoading = true;
+	m_LastLagScreenResetTime = GetTime();
+	m_GameLoading = true;
 
-  // since we use a fake countdown to deal with leavers during countdown the COUNTDOWN_START and COUNTDOWN_END packets are sent in quick succession
-  // send a start countdown packet
+	// since we use a fake countdown to deal with leavers during countdown the COUNTDOWN_START and COUNTDOWN_END packets are sent in quick succession
+	// send a start countdown packet
 
-  SendAll(m_Protocol->SEND_W3GS_COUNTDOWN_START());
+	SendAll(m_Protocol->SEND_W3GS_COUNTDOWN_START());
 
-  // remove the virtual host player
+	// remove the virtual host player
 
-  DeleteVirtualHost();
+	DeleteVirtualHost();
 
-  // send an end countdown packet
+	// send an end countdown packet
 
-  SendAll(m_Protocol->SEND_W3GS_COUNTDOWN_END());
+	SendAll(m_Protocol->SEND_W3GS_COUNTDOWN_END());
 
-  // close the listening socket
+	// close the listening socket
 
-  delete m_Socket;
-  m_Socket = nullptr;
+	delete m_Socket;
+	m_Socket = nullptr;
 
-  // delete any potential players that are still hanging around
+	// delete any potential players that are still hanging around
 
-  for (auto & potential : m_Potentials)
-    delete potential;
+	for (auto & potential : m_Potentials)
+		delete potential;
 
-  m_Potentials.clear();
+	m_Potentials.clear();
 }
 
 uint8_t CGame::GetSIDFromPID(uint8_t PID) const
 {
-  if (m_Slots.size() > 255)
-    return 255;
+	if (m_Slots.size() > 255)
+		return 255;
 
-  for (uint8_t i = 0; i < m_Slots.size(); ++i)
-  {
-    if (m_Slots[i].GetPID() == PID)
-      return i;
-  }
+	for (uint8_t i = 0; i < m_Slots.size(); ++i)
+	{
+		if (m_Slots[i].GetPID() == PID)
+			return i;
+	}
 
-  return 255;
+	return 255;
 }
 
 CGamePlayer *CGame::GetPlayerFromSID(uint8_t SID)
 {
-  if (SID >= m_Slots.size())
-    return nullptr;
+	if (SID >= m_Slots.size())
+		return nullptr;
 
-  const uint8_t PID = m_Slots[SID].GetPID();
+	const uint8_t PID = m_Slots[SID].GetPID();
 
-  for (auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent() && player->GetPID() == PID)
-      return player;
-  }
+	for (auto & player : m_Players)
+	{
+		if (!player->GetLeftMessageSent() && player->GetPID() == PID)
+			return player;
+	}
 
-  return nullptr;
+	return nullptr;
 }
 
 uint8_t CGame::GetNewPID()
 {
-  // find an unused PID for a new player to use
+	// find an unused PID for a new player to use
 
-  for (uint8_t TestPID = 1; TestPID < 255; ++TestPID)
-  {
-    if (TestPID == m_VirtualHostPID)
-      continue;
+	for (uint8_t TestPID = 1; TestPID < 255; ++TestPID)
+	{
+		if (TestPID == m_VirtualHostPID)
+			continue;
 
-    bool InUse = false;
-    for (auto & player : m_Players)
-    {
-      if (!player->GetLeftMessageSent() && player->GetPID() == TestPID)
-      {
-        InUse = true;
-        break;
-      }
-    }
+		bool InUse = false;
+		for (auto & player : m_Players)
+		{
+			if (!player->GetLeftMessageSent() && player->GetPID() == TestPID)
+			{
+				InUse = true;
+				break;
+			}
+		}
 
-    if (!InUse)
-      return TestPID;
-  }
+		if (!InUse)
+			return TestPID;
+	}
 
-  // this should never happen
+	// this should never happen
 
-  return 255;
+	return 255;
 }
 
 uint8_t CGame::GetNewColour()
 {
-  // find an unused colour for a player to use
+	// find an unused colour for a player to use
 
-  for (uint8_t TestColour = 0; TestColour < 12; ++TestColour)
-  {
-    bool InUse = false;
+	for (uint8_t TestColour = 0; TestColour < 12; ++TestColour)
+	{
+		bool InUse = false;
 
-    for (auto & slot : m_Slots)
-    {
-      if (slot.GetColour() == TestColour)
-      {
-        InUse = true;
-        break;
-      }
-    }
+		for (auto & slot : m_Slots)
+		{
+			if (slot.GetColour() == TestColour)
+			{
+				InUse = true;
+				break;
+			}
+		}
 
-    if (!InUse)
-      return TestColour;
-  }
+		if (!InUse)
+			return TestColour;
+	}
 
-  // this should never happen
+	// this should never happen
 
-  return 12;
+	return 12;
 }
 
 BYTEARRAY CGame::GetPIDs()
 {
-  BYTEARRAY result;
+	BYTEARRAY result;
 
-  for (auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent())
-      result.push_back(player->GetPID());
-  }
+	for (auto & player : m_Players)
+	{
+		if (!player->GetLeftMessageSent())
+			result.push_back(player->GetPID());
+	}
 
-  return result;
+	return result;
 }
 
 uint8_t CGame::GetHostPID()
 {
-  // return the player to be considered the host (it can be any player) - mainly used for sending text messages from the bot
-  // try to find the virtual host player first
+	// return the player to be considered the host (it can be any player) - mainly used for sending text messages from the bot
+	// try to find the virtual host player first
 
-  if (m_VirtualHostPID != 255)
-    return m_VirtualHostPID;
+	if (m_VirtualHostPID != 255)
+		return m_VirtualHostPID;
 
-  // okay then, just use the first available player
+	// okay then, just use the first available player
 
-  for (auto & player : m_Players)
-  {
-    if (!player->GetLeftMessageSent())
-      return player->GetPID();
-  }
+	for (auto & player : m_Players)
+	{
+		if (!player->GetLeftMessageSent())
+			return player->GetPID();
+	}
 
-  return 255;
+	return 255;
 }
 
 uint8_t CGame::GetEmptySlot()
 {
-  if (m_Slots.size() > 255)
-    return 255;
-  for (uint8_t i = 0; i < m_Slots.size(); ++i)
-  {
-    if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_OPEN)
-      return i;
-  }
-  return 255;
+	if (m_Slots.size() > 255)
+		return 255;
+	for (uint8_t i = 0; i < m_Slots.size(); ++i)
+	{
+		if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_OPEN)
+			return i;
+	}
+	return 255;
 }
 
 uint8_t CGame::GetEmptySlot(uint8_t team, uint8_t PID)
 {
-  if (m_Slots.size() > 255)
-    return 255;
+	if (m_Slots.size() > 255)
+		return 255;
 
-  // find an empty slot based on player's current slot
+	// find an empty slot based on player's current slot
 
-  uint8_t StartSlot = GetSIDFromPID(PID);
+	uint8_t StartSlot = GetSIDFromPID(PID);
 
-  if (StartSlot < m_Slots.size())
-  {
-    if (m_Slots[StartSlot].GetTeam() != team)
-    {
-      // player is trying to move to another team so start looking from the first slot on that team
-      // we actually just start looking from the very first slot since the next few loops will check the team for us
+	if (StartSlot < m_Slots.size())
+	{
+		if (m_Slots[StartSlot].GetTeam() != team)
+		{
+			// player is trying to move to another team so start looking from the first slot on that team
+			// we actually just start looking from the very first slot since the next few loops will check the team for us
 
-      StartSlot = 0;
-    }
+			StartSlot = 0;
+		}
 
-    // find an empty slot on the correct team starting from StartSlot
+		// find an empty slot on the correct team starting from StartSlot
 
-    for (uint8_t i = StartSlot; i < m_Slots.size(); ++i)
-    {
-      if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_OPEN && m_Slots[i].GetTeam() == team)
-        return i;
-    }
+		for (uint8_t i = StartSlot; i < m_Slots.size(); ++i)
+		{
+			if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_OPEN && m_Slots[i].GetTeam() == team)
+				return i;
+		}
 
-    // didn't find an empty slot, but we could have missed one with SID < StartSlot
-    // e.g. in the DotA case where I am in slot 4 (yellow), slot 5 (orange) is occupied, and slot 1 (blue) is open and I am trying to move to another slot
+		// didn't find an empty slot, but we could have missed one with SID < StartSlot
+		// e.g. in the DotA case where I am in slot 4 (yellow), slot 5 (orange) is occupied, and slot 1 (blue) is open and I am trying to move to another slot
 
-    for (uint8_t i = 0; i < StartSlot; ++i)
-    {
-      if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_OPEN && m_Slots[i].GetTeam() == team)
-        return i;
-    }
-  }
+		for (uint8_t i = 0; i < StartSlot; ++i)
+		{
+			if (m_Slots[i].GetSlotStatus() == SLOTSTATUS_OPEN && m_Slots[i].GetTeam() == team)
+				return i;
+		}
+	}
 
-  return 255;
+	return 255;
 }
 
 void CGame::SwapSlots(uint8_t SID1, uint8_t SID2)
 {
-  if (SID1 < m_Slots.size() && SID2 < m_Slots.size() && SID1 != SID2)
-  {
-    CGameSlot Slot1 = m_Slots[SID1];
-    CGameSlot Slot2 = m_Slots[SID2];
+	if (SID1 < m_Slots.size() && SID2 < m_Slots.size() && SID1 != SID2)
+	{
+		CGameSlot Slot1 = m_Slots[SID1];
+		CGameSlot Slot2 = m_Slots[SID2];
 
-    if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
-    {
-      // don't swap the team, colour, race, or handicap
-      m_Slots[SID1] = CGameSlot(Slot2.GetPID(), Slot2.GetDownloadStatus(), Slot2.GetSlotStatus(), Slot2.GetComputer(), Slot1.GetTeam(), Slot1.GetColour(), Slot1.GetRace(), Slot2.GetComputerType(), Slot1.GetHandicap());
-      m_Slots[SID2] = CGameSlot(Slot1.GetPID(), Slot1.GetDownloadStatus(), Slot1.GetSlotStatus(), Slot1.GetComputer(), Slot2.GetTeam(), Slot2.GetColour(), Slot2.GetRace(), Slot1.GetComputerType(), Slot2.GetHandicap());
-    }
-    else
-    {
-      // swap everything
+		if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
+		{
+			// don't swap the team, colour, race, or handicap
+			m_Slots[SID1] = CGameSlot(Slot2.GetPID(), Slot2.GetDownloadStatus(), Slot2.GetSlotStatus(), Slot2.GetComputer(), Slot1.GetTeam(), Slot1.GetColour(), Slot1.GetRace(), Slot2.GetComputerType(), Slot1.GetHandicap());
+			m_Slots[SID2] = CGameSlot(Slot1.GetPID(), Slot1.GetDownloadStatus(), Slot1.GetSlotStatus(), Slot1.GetComputer(), Slot2.GetTeam(), Slot2.GetColour(), Slot2.GetRace(), Slot1.GetComputerType(), Slot2.GetHandicap());
+		}
+		else
+		{
+			// swap everything
 
-      if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
-      {
-        // except if custom forces is set, then we don't swap teams...
-        Slot1.SetTeam(m_Slots[SID2].GetTeam());
-        Slot2.SetTeam(m_Slots[SID1].GetTeam());
-      }
+			if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
+			{
+				// except if custom forces is set, then we don't swap teams...
+				Slot1.SetTeam(m_Slots[SID2].GetTeam());
+				Slot2.SetTeam(m_Slots[SID1].GetTeam());
+			}
 
-      m_Slots[SID1] = Slot2;
-      m_Slots[SID2] = Slot1;
-    }
+			m_Slots[SID1] = Slot2;
+			m_Slots[SID2] = Slot1;
+		}
 
-    SendAllSlotInfo();
-  }
+		SendAllSlotInfo();
+	}
 }
 
 void CGame::OpenSlot(uint8_t SID, bool kick)
 {
-  if (SID < m_Slots.size())
-  {
-    if (kick)
-    {
-      CGamePlayer *Player = GetPlayerFromSID(SID);
+	if (SID < m_Slots.size())
+	{
+		if (kick)
+		{
+			CGamePlayer *Player = GetPlayerFromSID(SID);
 
-      if (Player)
-      {
-        Player->SetDeleteMe(true);
-        Player->SetLeftReason("was kicked when opening a slot");
-        Player->SetLeftCode(PLAYERLEAVE_LOBBY);
-      }
-    }
+			if (Player)
+			{
+				Player->SetDeleteMe(true);
+				Player->SetLeftReason("was kicked when opening a slot");
+				Player->SetLeftCode(PLAYERLEAVE_LOBBY);
+			}
+		}
 
-    CGameSlot Slot = m_Slots[SID];
-    m_Slots[SID] = CGameSlot(0, 255, SLOTSTATUS_OPEN, 0, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace());
-    SendAllSlotInfo();
-  }
+		CGameSlot Slot = m_Slots[SID];
+		m_Slots[SID] = CGameSlot(0, 255, SLOTSTATUS_OPEN, 0, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace());
+		SendAllSlotInfo();
+	}
 }
 
 void CGame::CloseSlot(uint8_t SID, bool kick)
 {
-  if (SID < m_Slots.size())
-  {
-    if (kick)
-    {
-      CGamePlayer *Player = GetPlayerFromSID(SID);
+	if (SID < m_Slots.size())
+	{
+		if (kick)
+		{
+			CGamePlayer *Player = GetPlayerFromSID(SID);
 
-      if (Player)
-      {
-        Player->SetDeleteMe(true);
-        Player->SetLeftReason("was kicked when closing a slot");
-        Player->SetLeftCode(PLAYERLEAVE_LOBBY);
-      }
-    }
+			if (Player)
+			{
+				Player->SetDeleteMe(true);
+				Player->SetLeftReason("was kicked when closing a slot");
+				Player->SetLeftCode(PLAYERLEAVE_LOBBY);
+			}
+		}
 
-    CGameSlot Slot = m_Slots[SID];
-    m_Slots[SID] = CGameSlot(0, 255, SLOTSTATUS_CLOSED, 0, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace());
-    SendAllSlotInfo();
-  }
+		CGameSlot Slot = m_Slots[SID];
+		m_Slots[SID] = CGameSlot(0, 255, SLOTSTATUS_CLOSED, 0, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace());
+		SendAllSlotInfo();
+	}
 }
 
 void CGame::ComputerSlot(uint8_t SID, uint8_t skill, bool kick)
 {
-  if (SID < m_Slots.size() && skill < 3)
-  {
-    if (kick)
-    {
-      CGamePlayer *Player = GetPlayerFromSID(SID);
+	if (SID < m_Slots.size() && skill < 3)
+	{
+		if (kick)
+		{
+			CGamePlayer *Player = GetPlayerFromSID(SID);
 
-      if (Player)
-      {
-        Player->SetDeleteMe(true);
-        Player->SetLeftReason("was kicked when creating a computer in a slot");
-        Player->SetLeftCode(PLAYERLEAVE_LOBBY);
-      }
-    }
+			if (Player)
+			{
+				Player->SetDeleteMe(true);
+				Player->SetLeftReason("was kicked when creating a computer in a slot");
+				Player->SetLeftCode(PLAYERLEAVE_LOBBY);
+			}
+		}
 
-    CGameSlot Slot = m_Slots[SID];
-    m_Slots[SID] = CGameSlot(0, 100, SLOTSTATUS_OCCUPIED, 1, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace(), skill);
-    SendAllSlotInfo();
-  }
+		CGameSlot Slot = m_Slots[SID];
+		m_Slots[SID] = CGameSlot(0, 100, SLOTSTATUS_OCCUPIED, 1, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace(), skill);
+		SendAllSlotInfo();
+	}
 }
 
 void CGame::ColourSlot(uint8_t SID, uint8_t colour)
 {
-  if (SID < m_Slots.size() && colour < 12)
-  {
-    // make sure the requested colour isn't already taken
+	if (SID < m_Slots.size() && colour < 12)
+	{
+		// make sure the requested colour isn't already taken
 
-    bool Taken = false;
-    uint8_t TakenSID = 0;
+		bool Taken = false;
+		uint8_t TakenSID = 0;
 
-    for (uint8_t i = 0; i < m_Slots.size(); ++i)
-    {
-      if (m_Slots[i].GetColour() == colour)
-      {
-        TakenSID = i;
-        Taken = true;
-      }
-    }
+		for (uint8_t i = 0; i < m_Slots.size(); ++i)
+		{
+			if (m_Slots[i].GetColour() == colour)
+			{
+				TakenSID = i;
+				Taken = true;
+			}
+		}
 
-    if (Taken && m_Slots[TakenSID].GetSlotStatus() != SLOTSTATUS_OCCUPIED)
-    {
-      // the requested colour is currently "taken" by an unused (open or closed) slot
-      // but we allow the colour to persist within a slot so if we only update the existing player's colour the unused slot will have the same colour
-      // this isn't really a problem except that if someone then joins the game they'll receive the unused slot's colour resulting in a duplicate
-      // one way to solve this (which we do here) is to swap the player's current colour into the unused slot
+		if (Taken && m_Slots[TakenSID].GetSlotStatus() != SLOTSTATUS_OCCUPIED)
+		{
+			// the requested colour is currently "taken" by an unused (open or closed) slot
+			// but we allow the colour to persist within a slot so if we only update the existing player's colour the unused slot will have the same colour
+			// this isn't really a problem except that if someone then joins the game they'll receive the unused slot's colour resulting in a duplicate
+			// one way to solve this (which we do here) is to swap the player's current colour into the unused slot
 
-      m_Slots[TakenSID].SetColour(m_Slots[SID].GetColour());
-      m_Slots[SID].SetColour(colour);
-      SendAllSlotInfo();
-    }
-    else if (!Taken)
-    {
-      // the requested colour isn't used by ANY slot
+			m_Slots[TakenSID].SetColour(m_Slots[SID].GetColour());
+			m_Slots[SID].SetColour(colour);
+			SendAllSlotInfo();
+		}
+		else if (!Taken)
+		{
+			// the requested colour isn't used by ANY slot
 
-      m_Slots[SID].SetColour(colour);
-      SendAllSlotInfo();
-    }
-  }
+			m_Slots[SID].SetColour(colour);
+			SendAllSlotInfo();
+		}
+	}
 }
 
 void CGame::StartCountDown()
 {
-  if (!m_CountDownStarted)
-  {
-	  m_CountDownStarted = true;
-	  m_CountDownCounter = 5;
-  }
+	if (!m_CountDownStarted)
+	{
+		m_CountDownStarted = true;
+		m_CountDownCounter = 5;
+	}
 }
 
 void CGame::StopLaggers(const string &reason)
 {
-  for (auto & player : m_Players)
-  {
-    if (player->GetLagging())
-    {
-      player->SetDeleteMe(true);
-      player->SetLeftReason(reason);
-      player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
-    }
-  }
+	for (auto & player : m_Players)
+	{
+		if (player->GetLagging())
+		{
+			player->SetDeleteMe(true);
+			player->SetLeftReason(reason);
+			player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
+		}
+	}
 }
 
 void CGame::CreateVirtualHost()
 {
-  if (m_VirtualHostPID != 255)
-    return;
+	if (m_VirtualHostPID != 255)
+		return;
 
-  m_VirtualHostPID = GetNewPID();
+	m_VirtualHostPID = GetNewPID();
 
-  const BYTEARRAY IP = {0, 0, 0, 0};
+	const BYTEARRAY IP = { 0, 0, 0, 0 };
 
-  SendAll(m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, m_VirtualHostName, IP, IP));
+	SendAll(m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, m_VirtualHostName, IP, IP));
 }
 
 void CGame::DeleteVirtualHost()
 {
-  if (m_VirtualHostPID == 255)
-    return;
+	if (m_VirtualHostPID == 255)
+		return;
 
-  SendAll(m_Protocol->SEND_W3GS_PLAYERLEAVE_OTHERS(m_VirtualHostPID, PLAYERLEAVE_LOBBY));
-  m_VirtualHostPID = 255;
+	SendAll(m_Protocol->SEND_W3GS_PLAYERLEAVE_OTHERS(m_VirtualHostPID, PLAYERLEAVE_LOBBY));
+	m_VirtualHostPID = 255;
 }

@@ -1,22 +1,22 @@
 /*
 
-   Copyright [2010] [Josko Nikolic]
+Copyright [2010] [Josko Nikolic]
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
-   CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
+CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
- */
+*/
 
 #include "aura.h"
 #include "config.h"
@@ -50,74 +50,74 @@ static CAura *gAura = nullptr;
 uint32_t GetTime()
 {
 #ifdef WIN32
-  // don't use GetTickCount anymore because it's not accurate enough (~16ms resolution)
-  // don't use QueryPerformanceCounter anymore because it isn't guaranteed to be strictly increasing on some systems and thus requires "smoothing" code
-  // use timeGetTime instead, which typically has a high resolution (5ms or more) but we request a lower resolution on startup
+	// don't use GetTickCount anymore because it's not accurate enough (~16ms resolution)
+	// don't use QueryPerformanceCounter anymore because it isn't guaranteed to be strictly increasing on some systems and thus requires "smoothing" code
+	// use timeGetTime instead, which typically has a high resolution (5ms or more) but we request a lower resolution on startup
 
-  return timeGetTime() / 1000;
+	return timeGetTime() / 1000;
 #elif __APPLE__
-  const uint64_t current = mach_absolute_time();
-  static mach_timebase_info_data_t info = { 0, 0 };
+	const uint64_t current = mach_absolute_time();
+	static mach_timebase_info_data_t info = { 0, 0 };
 
-  // get timebase info
+	// get timebase info
 
-  if (info.denom == 0)
-    mach_timebase_info(&info);
+	if (info.denom == 0)
+		mach_timebase_info(&info);
 
-  const uint64_t elapsednano = current * (info.numer / info.denom);
+	const uint64_t elapsednano = current * (info.numer / info.denom);
 
-  // convert ns to s
+	// convert ns to s
 
-  return elapsednano / 1000000000;
+	return elapsednano / 1000000000;
 #else
-  static struct timespec t;
-  clock_gettime(CLOCK_MONOTONIC, &t);
-  return t.tv_sec;
+	static struct timespec t;
+	clock_gettime(CLOCK_MONOTONIC, &t);
+	return t.tv_sec;
 #endif
 }
 
 uint32_t GetTicks()
 {
 #ifdef WIN32
-  // don't use GetTickCount anymore because it's not accurate enough (~16ms resolution)
-  // don't use QueryPerformanceCounter anymore because it isn't guaranteed to be strictly increasing on some systems and thus requires "smoothing" code
-  // use timeGetTime instead, which typically has a high resolution (5ms or more) but we request a lower resolution on startup
+	// don't use GetTickCount anymore because it's not accurate enough (~16ms resolution)
+	// don't use QueryPerformanceCounter anymore because it isn't guaranteed to be strictly increasing on some systems and thus requires "smoothing" code
+	// use timeGetTime instead, which typically has a high resolution (5ms or more) but we request a lower resolution on startup
 
-  return timeGetTime();
+	return timeGetTime();
 #elif __APPLE__
-  const uint64_t current = mach_absolute_time();
-  static mach_timebase_info_data_t info = { 0, 0 };
+	const uint64_t current = mach_absolute_time();
+	static mach_timebase_info_data_t info = { 0, 0 };
 
-  // get timebase info
+	// get timebase info
 
-  if (info.denom == 0)
-    mach_timebase_info(&info);
+	if (info.denom == 0)
+		mach_timebase_info(&info);
 
-  const uint64_t elapsednano = current * (info.numer / info.denom);
+	const uint64_t elapsednano = current * (info.numer / info.denom);
 
-  // convert ns to ms
+	// convert ns to ms
 
-  return elapsednano / 1000000;
+	return elapsednano / 1000000;
 #else
-  static struct timespec t;
-  clock_gettime(CLOCK_MONOTONIC, &t);
-  return t.tv_sec * 1000 + t.tv_nsec / 1000000;
+	static struct timespec t;
+	clock_gettime(CLOCK_MONOTONIC, &t);
+	return t.tv_sec * 1000 + t.tv_nsec / 1000000;
 #endif
 }
 
 static void SignalCatcher(int32_t)
 {
-  Print("[!!!] caught signal SIGINT, exiting NOW");
+	Print("[!!!] caught signal SIGINT, exiting NOW");
 
-  if (gAura)
-  {
-    if (gAura->m_Exiting)
-      exit(1);
-    else
-      gAura->m_Exiting = true;
-  }
-  else
-    exit(1);
+	if (gAura)
+	{
+		if (gAura->m_Exiting)
+			exit(1);
+		else
+			gAura->m_Exiting = true;
+	}
+	else
+		exit(1);
 }
 
 #include "logging.h"
@@ -133,114 +133,114 @@ void Print(const string &message)
 
 int main(int, char *argv[])
 {
-  // seed the PRNG
+	// seed the PRNG
 
-  srand((uint32_t) time(nullptr));
+	srand((uint32_t)time(nullptr));
 
-  // disable sync since we don't use cstdio anyway
+	// disable sync since we don't use cstdio anyway
 
-  ios_base::sync_with_stdio(false);
+	ios_base::sync_with_stdio(false);
 
-  // read config file
+	// read config file
 
-  CConfig CFG;
-  CFG.Read("ydhost.cfg");
+	CConfig CFG;
+	CFG.Read("ydhost.cfg");
 
-  Print("[AURA] starting up");
+	Print("[AURA] starting up");
 
-  signal(SIGINT, SignalCatcher);
+	signal(SIGINT, SignalCatcher);
 
 #ifndef WIN32
-  // disable SIGPIPE since some systems like OS X don't define MSG_NOSIGNAL
+	// disable SIGPIPE since some systems like OS X don't define MSG_NOSIGNAL
 
-  signal(SIGPIPE, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
 #endif
 
 #ifdef WIN32
-  // initialize timer resolution
-  // attempt to set the resolution as low as possible from 1ms to 5ms
+	// initialize timer resolution
+	// attempt to set the resolution as low as possible from 1ms to 5ms
 
-  uint32_t TimerResolution = 0;
+	uint32_t TimerResolution = 0;
 
-  for (uint32_t i = 1; i <= 5; ++i)
-  {
-    if (timeBeginPeriod(i) == TIMERR_NOERROR)
-    {
-      TimerResolution = i;
-      break;
-    }
-    else if (i < 5)
-      Print("[AURA] error setting Windows timer resolution to " + to_string(i) + " milliseconds, trying a higher resolution");
-    else
-    {
-      Print("[AURA] error setting Windows timer resolution");
-      return 1;
-    }
-  }
+	for (uint32_t i = 1; i <= 5; ++i)
+	{
+		if (timeBeginPeriod(i) == TIMERR_NOERROR)
+		{
+			TimerResolution = i;
+			break;
+		}
+		else if (i < 5)
+			Print("[AURA] error setting Windows timer resolution to " + to_string(i) + " milliseconds, trying a higher resolution");
+		else
+		{
+			Print("[AURA] error setting Windows timer resolution");
+			return 1;
+		}
+	}
 
-  Print("[AURA] using Windows timer with resolution " + to_string(TimerResolution) + " milliseconds");
+	Print("[AURA] using Windows timer with resolution " + to_string(TimerResolution) + " milliseconds");
 #elif !defined(__APPLE__)
-  // print the timer resolution
+	// print the timer resolution
 
-  struct timespec Resolution;
+	struct timespec Resolution;
 
-  if (clock_getres(CLOCK_MONOTONIC, &Resolution) == -1)
-    Print("[AURA] error getting monotonic timer resolution");
-  else
-    Print("[AURA] using monotonic timer with resolution " + to_string((double)(Resolution.tv_nsec / 1000)) + " microseconds");
+	if (clock_getres(CLOCK_MONOTONIC, &Resolution) == -1)
+		Print("[AURA] error getting monotonic timer resolution");
+	else
+		Print("[AURA] using monotonic timer with resolution " + to_string((double)(Resolution.tv_nsec / 1000)) + " microseconds");
 
 #endif
 
 #ifdef WIN32
-  // initialize winsock
+	// initialize winsock
 
-  Print("[AURA] starting winsock");
-  WSADATA wsadata;
+	Print("[AURA] starting winsock");
+	WSADATA wsadata;
 
-  if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
-  {
-    Print("[AURA] error starting winsock");
-    return 1;
-  }
+	if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
+	{
+		Print("[AURA] error starting winsock");
+		return 1;
+	}
 
-  // increase process priority
+	// increase process priority
 
-  Print("[AURA] setting process priority to \"high\"");
-  SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	Print("[AURA] setting process priority to \"high\"");
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #endif
 
-  // initialize aura
+	// initialize aura
 
-  gAura = new CAura(&CFG);
+	gAura = new CAura(&CFG);
 
-  if (!gAura->m_Map)
-  {
-	  Print("[AURA] could not found the map");
-	  return 1;
-  }
+	if (!gAura->m_Map)
+	{
+		Print("[AURA] could not found the map");
+		return 1;
+	}
 
-  gAura->CreateGame(gAura->m_Map, CFG.GetString("bot_defaultgamename", ""));
+	gAura->CreateGame(gAura->m_Map, CFG.GetString("bot_defaultgamename", ""));
 
-  // loop
-  while (!gAura->Update());
+	// loop
+	while (!gAura->Update());
 
-  // shutdown aura
+	// shutdown aura
 
-  Print("[AURA] shutting down");
-  delete gAura;
+	Print("[AURA] shutting down");
+	delete gAura;
 
 #ifdef WIN32
-  // shutdown winsock
+	// shutdown winsock
 
-  Print("[AURA] shutting down winsock");
-  WSACleanup();
+	Print("[AURA] shutting down winsock");
+	WSACleanup();
 
-  // shutdown timer
+	// shutdown timer
 
-  timeEndPeriod(TimerResolution);
+	timeEndPeriod(TimerResolution);
 #endif
 
-  return 0;
+	return 0;
 }
 
 //
@@ -248,131 +248,131 @@ int main(int, char *argv[])
 //
 
 CAura::CAura(CConfig *CFG)
-  : m_UDPSocket(new CUDPSocket()),
-    m_Map(nullptr),
-    m_HostCounter(1),
-    m_Exiting(false)
+	: m_UDPSocket(new CUDPSocket()),
+	m_Map(nullptr),
+	m_HostCounter(1),
+	m_Exiting(false)
 {
-  Print("[AURA] Aura++ version 1.24");
+	Print("[AURA] Aura++ version 1.24");
 
-  m_UDPSocket->SetBroadcastTarget(string());
-  m_UDPSocket->SetDontRoute(false);
-  m_BindAddress = string();
-  m_LANWar3Version = CFG->GetInt("lan_war3version", 26);
-  m_VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
-  if (m_VirtualHostName.size() > 15)
-  {
-	  m_VirtualHostName = "|cFF4080C0YDWE";
-	  Print("[AURA] warning - bot_virtualhostname is longer than 15 characters, using default virtual host name");
-  }
+	m_UDPSocket->SetBroadcastTarget(string());
+	m_UDPSocket->SetDontRoute(false);
+	m_BindAddress = string();
+	m_LANWar3Version = CFG->GetInt("lan_war3version", 26);
+	m_VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
+	if (m_VirtualHostName.size() > 15)
+	{
+		m_VirtualHostName = "|cFF4080C0YDWE";
+		Print("[AURA] warning - bot_virtualhostname is longer than 15 characters, using default virtual host name");
+	}
 
-  m_Latency = CFG->GetInt("bot_latency", 100);
-  m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
-  m_AutoStart = CFG->GetInt("bot_autostart", 1);
+	m_Latency = CFG->GetInt("bot_latency", 100);
+	m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
+	m_AutoStart = CFG->GetInt("bot_autostart", 1);
 
-  m_MapPath = CFG->GetString("bot_mappath", string());
-  m_MapCFGPath = CFG->GetString("bot_mapcfgpath", string());
-  CConfig MAP;
-  MAP.Read(m_MapCFGPath);
-  m_Map = new CMap(this, m_MapPath, &MAP);
+	m_MapPath = CFG->GetString("bot_mappath", string());
+	m_MapCFGPath = CFG->GetString("bot_mapcfgpath", string());
+	CConfig MAP;
+	MAP.Read(m_MapCFGPath);
+	m_Map = new CMap(this, m_MapPath, &MAP);
 
 }
 
 CAura::~CAura()
 {
-  delete m_UDPSocket;
+	delete m_UDPSocket;
 
-  if (m_Map)
-    delete m_Map;
+	if (m_Map)
+		delete m_Map;
 
-  for (auto & game : m_Games)
-    delete game;
+	for (auto & game : m_Games)
+		delete game;
 }
 
 bool CAura::Update()
 {
-  uint32_t NumFDs = 0;
+	uint32_t NumFDs = 0;
 
-  // take every socket we own and throw it in one giant select statement so we can block on all sockets
+	// take every socket we own and throw it in one giant select statement so we can block on all sockets
 
-  int32_t nfds = 0;
-  fd_set fd, send_fd;
-  FD_ZERO(&fd);
-  FD_ZERO(&send_fd);
+	int32_t nfds = 0;
+	fd_set fd, send_fd;
+	FD_ZERO(&fd);
+	FD_ZERO(&send_fd);
 
-  // 2. all running games' player sockets
+	// 2. all running games' player sockets
 
-  for (auto & game : m_Games)
-    NumFDs += game->SetFD(&fd, &send_fd, &nfds);
+	for (auto & game : m_Games)
+		NumFDs += game->SetFD(&fd, &send_fd, &nfds);
 
-  // before we call select we need to determine how long to block for
-  // 50 ms is the hard maximum
+	// before we call select we need to determine how long to block for
+	// 50 ms is the hard maximum
 
-  unsigned long usecBlock = 50000;
+	unsigned long usecBlock = 50000;
 
-  for (auto & game : m_Games)
-  {
-    if (game->GetNextTimedActionTicks() * 1000 < usecBlock)
-      usecBlock = game->GetNextTimedActionTicks() * 1000;
-  }
+	for (auto & game : m_Games)
+	{
+		if (game->GetNextTimedActionTicks() * 1000 < usecBlock)
+			usecBlock = game->GetNextTimedActionTicks() * 1000;
+	}
 
-  static struct timeval tv;
-  tv.tv_sec = 0;
-  tv.tv_usec = usecBlock;
+	static struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = usecBlock;
 
-  static struct timeval send_tv;
-  send_tv.tv_sec = 0;
-  send_tv.tv_usec = 0;
+	static struct timeval send_tv;
+	send_tv.tv_sec = 0;
+	send_tv.tv_usec = 0;
 
 #ifdef WIN32
-  select(1, &fd, nullptr, nullptr, &tv);
-  select(1, nullptr, &send_fd, nullptr, &send_tv);
+	select(1, &fd, nullptr, nullptr, &tv);
+	select(1, nullptr, &send_fd, nullptr, &send_tv);
 #else
-  select(nfds + 1, &fd, nullptr, nullptr, &tv);
-  select(nfds + 1, nullptr, &send_fd, nullptr, &send_tv);
+	select(nfds + 1, &fd, nullptr, nullptr, &tv);
+	select(nfds + 1, nullptr, &send_fd, nullptr, &send_tv);
 #endif
 
-  if (NumFDs == 0)
-  {
-    // we don't have any sockets (i.e. we aren't connected to battle.net and irc maybe due to a lost connection and there aren't any games running)
-    // select will return immediately and we'll chew up the CPU if we let it loop so just sleep for 200ms to kill some time
+	if (NumFDs == 0)
+	{
+		// we don't have any sockets (i.e. we aren't connected to battle.net and irc maybe due to a lost connection and there aren't any games running)
+		// select will return immediately and we'll chew up the CPU if we let it loop so just sleep for 200ms to kill some time
 
-    MILLISLEEP(200);
-  }
+		MILLISLEEP(200);
+	}
 
-  // update running games
+	// update running games
 
-  for (auto i = begin(m_Games); i != end(m_Games);)
-  {
-    if ((*i)->Update(&fd, &send_fd))
-    {
-      Print("[AURA] deleting game [" + (*i)->GetGameName() + "]");
-      delete *i;
-      i = m_Games.erase(i);
-    }
-    else
-    {
-      (*i)->UpdatePost(&send_fd);
-      ++i;
-    }
-  }
+	for (auto i = begin(m_Games); i != end(m_Games);)
+	{
+		if ((*i)->Update(&fd, &send_fd))
+		{
+			Print("[AURA] deleting game [" + (*i)->GetGameName() + "]");
+			delete *i;
+			i = m_Games.erase(i);
+		}
+		else
+		{
+			(*i)->UpdatePost(&send_fd);
+			++i;
+		}
+	}
 
-  return m_Exiting || m_Games.size() == 0;
+	return m_Exiting || m_Games.size() == 0;
 }
 
 void CAura::CreateGame(CMap *map, string gameName)
 {
-  if (gameName.size() > 31)
-  {
-    return;
-  }
+	if (gameName.size() > 31)
+	{
+		return;
+	}
 
-  if (!map->GetValid())
-  {
-    return;
-  }
+	if (!map->GetValid())
+	{
+		return;
+	}
 
-  Print("[AURA] creating game [" + gameName + "]");
+	Print("[AURA] creating game [" + gameName + "]");
 
-  m_Games.push_back(new CGame(this, map, gameName));
+	m_Games.push_back(new CGame(this, map, gameName));
 }

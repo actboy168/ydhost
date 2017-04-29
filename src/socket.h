@@ -1,22 +1,22 @@
 /*
 
-   Copyright [2010] [Josko Nikolic]
+Copyright [2010] [Josko Nikolic]
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
-   CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
+CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
- */
+*/
 
 #ifndef AURA_SOCKET_H_
 #define AURA_SOCKET_H_
@@ -140,27 +140,27 @@ typedef int32_t SOCKET;
 class CSocket
 {
 protected:
-  SOCKET m_Socket;
-  struct sockaddr_in m_SIN;
-  bool m_HasError;
-  int m_Error;
-  
-  CSocket( );
-  CSocket( SOCKET nSocket, struct sockaddr_in nSIN );
+	SOCKET m_Socket;
+	struct sockaddr_in m_SIN;
+	bool m_HasError;
+	int m_Error;
+
+	CSocket();
+	CSocket(SOCKET nSocket, struct sockaddr_in nSIN);
 
 public:
-  ~CSocket( );
-  
-  std::string GetErrorString() const;
-  inline BYTEARRAY GetPort() const                        { return CreateByteArray(m_SIN.sin_port, false); }
-  inline BYTEARRAY GetIP() const                          { return CreateByteArray((uint32_t) m_SIN.sin_addr.s_addr, false); }
-  inline std::string GetIPString() const                       { return inet_ntoa(m_SIN.sin_addr); }
-  inline int32_t GetError() const                             { return m_Error; }
-  inline bool HasError() const                            { return m_HasError; }
-  
-  void SetFD(fd_set *fd, fd_set *send_fd, int32_t *nfds);
-  void Reset();
-  void Allocate(int type);
+	~CSocket();
+
+	std::string GetErrorString() const;
+	inline BYTEARRAY GetPort() const                        { return CreateByteArray(m_SIN.sin_port, false); }
+	inline BYTEARRAY GetIP() const                          { return CreateByteArray((uint32_t)m_SIN.sin_addr.s_addr, false); }
+	inline std::string GetIPString() const                       { return inet_ntoa(m_SIN.sin_addr); }
+	inline int32_t GetError() const                             { return m_Error; }
+	inline bool HasError() const                            { return m_HasError; }
+
+	void SetFD(fd_set *fd, fd_set *send_fd, int32_t *nfds);
+	void Reset();
+	void Allocate(int type);
 };
 
 //
@@ -170,100 +170,100 @@ public:
 class CTCPSocket : public CSocket
 {
 protected:
-  std::string m_RecvBuffer;
-  std::string m_SendBuffer;
-  uint32_t m_LastRecv;
-  bool m_Connected;
+	std::string m_RecvBuffer;
+	std::string m_SendBuffer;
+	uint32_t m_LastRecv;
+	bool m_Connected;
 
 public:
-  CTCPSocket();
-  CTCPSocket(SOCKET nSocket, struct sockaddr_in nSIN);
-  ~CTCPSocket();
+	CTCPSocket();
+	CTCPSocket(SOCKET nSocket, struct sockaddr_in nSIN);
+	~CTCPSocket();
 
 
-  inline std::string *GetBytes()                               { return &m_RecvBuffer; }
-  inline uint32_t GetLastRecv() const                     { return m_LastRecv; }
-  inline bool GetConnected() const                        { return m_Connected; }
-  
-  inline void PutBytes(const std::string &bytes)              { m_SendBuffer += bytes; }
-  inline void PutBytes(const BYTEARRAY &bytes)           { m_SendBuffer += std::string(begin(bytes), end(bytes)); }
+	inline std::string *GetBytes()                               { return &m_RecvBuffer; }
+	inline uint32_t GetLastRecv() const                     { return m_LastRecv; }
+	inline bool GetConnected() const                        { return m_Connected; }
 
-  inline void ClearRecvBuffer()                           { m_RecvBuffer.clear(); }
-  inline void SubstrRecvBuffer(uint32_t i)           { m_RecvBuffer = m_RecvBuffer.substr(i); }
-  inline void ClearSendBuffer()                           { m_SendBuffer.clear(); }
+	inline void PutBytes(const std::string &bytes)              { m_SendBuffer += bytes; }
+	inline void PutBytes(const BYTEARRAY &bytes)           { m_SendBuffer += std::string(begin(bytes), end(bytes)); }
 
-  void DoRecv(fd_set *fd);
-  void DoSend(fd_set *send_fd);
-  void Disconnect();
+	inline void ClearRecvBuffer()                           { m_RecvBuffer.clear(); }
+	inline void SubstrRecvBuffer(uint32_t i)           { m_RecvBuffer = m_RecvBuffer.substr(i); }
+	inline void ClearSendBuffer()                           { m_SendBuffer.clear(); }
 
-  void Reset();
+	void DoRecv(fd_set *fd);
+	void DoSend(fd_set *send_fd);
+	void Disconnect();
+
+	void Reset();
 };
 
 //
 // CTCPClient
 //
 
-class CTCPClient final  : public CTCPSocket
+class CTCPClient final : public CTCPSocket
 {
 protected:
-  bool m_Connecting;
+	bool m_Connecting;
 
 public:
-  CTCPClient();
-  ~CTCPClient();
+	CTCPClient();
+	~CTCPClient();
 
-  inline std::string *GetBytes()                               { return &m_RecvBuffer; }
-  inline bool GetConnected() const                        { return m_Connected; }
-  inline bool GetConnecting() const                       { return m_Connecting; }
+	inline std::string *GetBytes()                               { return &m_RecvBuffer; }
+	inline bool GetConnected() const                        { return m_Connected; }
+	inline bool GetConnecting() const                       { return m_Connecting; }
 
-  void Reset();
-  inline void PutBytes(const std::string &bytes)              { m_SendBuffer += bytes; }
-  inline void PutBytes(const BYTEARRAY &bytes)           { m_SendBuffer += std::string(begin(bytes), end(bytes)); }
+	void Reset();
+	inline void PutBytes(const std::string &bytes)              { m_SendBuffer += bytes; }
+	inline void PutBytes(const BYTEARRAY &bytes)           { m_SendBuffer += std::string(begin(bytes), end(bytes)); }
 
-  bool CheckConnect();
-  inline void ClearRecvBuffer()                           { m_RecvBuffer.clear(); }
-  inline void SubstrRecvBuffer(uint32_t i)           { m_RecvBuffer = m_RecvBuffer.substr(i); }
-  inline void ClearSendBuffer()                           { m_SendBuffer.clear(); }
-  void DoRecv(fd_set *fd);
-  void DoSend(fd_set *send_fd);
-  void Disconnect();
-  void Connect(const std::string &localaddress, const std::string &address, uint16_t port);
+	bool CheckConnect();
+	inline void ClearRecvBuffer()                           { m_RecvBuffer.clear(); }
+	inline void SubstrRecvBuffer(uint32_t i)           { m_RecvBuffer = m_RecvBuffer.substr(i); }
+	inline void ClearSendBuffer()                           { m_SendBuffer.clear(); }
+	void DoRecv(fd_set *fd);
+	void DoSend(fd_set *send_fd);
+	void Disconnect();
+	void Connect(const std::string &localaddress, const std::string &address, uint16_t port);
 };
 
 //
 // CTCPServer
 //
 
-class CTCPServer final  : public CTCPSocket
+class CTCPServer final : public CTCPSocket
 {
 public:
-  CTCPServer();
-  ~CTCPServer();
+	CTCPServer();
+	~CTCPServer();
 
-  bool Listen(const std::string &address, uint16_t& port);
-  CTCPSocket *Accept(fd_set *fd);
+	bool Listen(const std::string &address, uint16_t& port);
+	CTCPSocket *Accept(fd_set *fd);
 };
 
 //
 // CUDPSocket
 //
 
-class CUDPSocket final  : public CSocket
+class CUDPSocket final : public CSocket
 {
 protected:
-  struct in_addr m_BroadcastTarget;
+	struct in_addr m_BroadcastTarget;
 
 public:
-  CUDPSocket();
-  ~CUDPSocket();
+	CUDPSocket();
+	~CUDPSocket();
 
-  bool SendTo(struct sockaddr_in sin, const BYTEARRAY &message);
-  bool SendTo(const std::string &address, uint16_t port, const BYTEARRAY &message);
-  bool Broadcast(uint16_t port, const BYTEARRAY &message);
+	bool SendTo(struct sockaddr_in sin, const BYTEARRAY &message);
+	bool SendTo(const std::string &address, uint16_t port, const BYTEARRAY &message);
+	bool Broadcast(uint16_t port, const BYTEARRAY &message);
 
-  void Reset();
-  void SetBroadcastTarget(const std::string &subnet);
-  void SetDontRoute(bool dontRoute);
+	void Reset();
+	void SetBroadcastTarget(const std::string &subnet);
+	void SetDontRoute(bool dontRoute);
 };
 
 #endif  // AURA_SOCKET_H_
