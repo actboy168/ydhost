@@ -93,7 +93,7 @@ protected:
 
 	CTimer m_PingTimer;                           // GetTicks when the last ping was sent
 	CTimer m_DownloadTimer;                       // GetTicks when the last map download cycle was performed
-	CTimer m_DownloadCounterResetTimer;           // GetTicks when the download counter was last reset
+	CTimer m_SyncSlotInfoTimer;                   // GetTicks when the download counter was last reset
 	CTimer m_CountDownTimer;                      // GetTicks when the last countdown message was sent
 	CTimer m_LagScreenResetTimer;                 // GetTicks when the "lag" screen was last reset
 
