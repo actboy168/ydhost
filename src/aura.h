@@ -41,20 +41,13 @@ public:
 	CUDPSocket *m_UDPSocket;                      // a UDP socket for sending broadcasts and other junk (used with !sendlan)
 	std::vector<CGame *> m_Games;                 // these games are in progress
 	CMap *m_Map;                                  // the currently loaded map
-	std::string m_VirtualHostName;                // config value: virtual host name
 	uint32_t m_HostCounter;                       // the current host counter (a unique number to identify a game, incremented each time a game is created)
 	bool m_Exiting;                               // set to true to force aura to shutdown next update (used by SignalCatcher)
 
 	explicit CAura(CConfig *CFG);
 	~CAura();
 	CAura(CAura &) = delete;
-
-	// processing functions
-
 	bool Update();
-
-	// other functions
-	void CreateGame(CMap* Map, const std::string& GameName, uint8_t War3Version, uint32_t Latency, uint32_t AutoStart);
 };
 
 #endif  // AURA_AURA_H_

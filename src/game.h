@@ -27,7 +27,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 // CGame
 //
 
-class CAura;
 class CUDPSocket;
 class CTCPServer;
 class CGameProtocol;
@@ -65,6 +64,15 @@ private:
 	uint32_t m_Ticks;
 };
 
+struct CGameConfig
+{
+	std::string GameName;
+	std::string VirtualHostName;
+	uint8_t     War3Version;
+	uint32_t    Latency;
+	uint32_t    AutoStart;
+};
+
 class CGame
 {
 protected:
@@ -76,14 +84,10 @@ protected:
 	std::vector<CGamePlayer *> m_Players;         // std::vector of players
 	std::queue<CIncomingAction *> m_Actions;      // queue of actions to be sent
 	const CMap *m_Map;                            // map data
-	std::string m_GameName;                       // game name
-	std::string m_VirtualHostName;                // host's name
-	uint32_t m_AutoStart;
-	uint8_t  m_War3Version;                       // warcraft 3 version
+	const CGameConfig* m_Config;
 	uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
 	uint32_t m_HostCounter;                       // a unique game number
 	uint32_t m_EntryKey;                          // random entry key for LAN, used to prove that a player is actually joining from LAN
-	uint32_t m_Latency;                           // the number of ms to wait between sending action packets (we queue any received during this time)
 	uint32_t m_SyncLimit;                         // the maximum number of packets a player can fall out of sync before starting the lag screen
 	uint32_t m_SyncCounter;                       // the number of actions sent so far (for determining if anyone is lagging)
 	uint32_t m_CountDownCounter;                  // the countdown is finished when this reaches zero
@@ -117,17 +121,13 @@ protected:
 	State m_State;
 
 public:
-	CGame(CAura* Aura, const CMap* Map, const std::string& GameName, uint8_t War3Version, uint32_t Latency, uint32_t AutoStart);
+	CGame(const CMap* Map, const CGameConfig* Config, CUDPSocket* UDPSocket, uint32_t HostCounter);
 	~CGame();
 	CGame(CGame &) = delete;
 
-	inline const CMap *GetMap() const                 { return m_Map; }
-	inline CGameProtocol *GetProtocol() const         { return m_Protocol; }
-	inline uint32_t GetEntryKey() const               { return m_EntryKey; }
-	inline uint16_t GetHostPort() const               { return m_HostPort; }
-	inline std::string GetGameName() const            { return m_GameName; }
-	inline std::string GetVirtualHostName() const     { return m_VirtualHostName; }
-	inline uint32_t GetHostCounter() const            { return m_HostCounter; }
+	inline std::string GetGameName() const            { return m_Config->GameName; }
+	inline std::string GetVirtualHostName() const     { return m_Config->VirtualHostName; }
+	inline uint32_t GetLatency() const                { return m_Config->Latency; }
 
 	uint32_t GetNextTimedActionTicks() const;
 	uint32_t GetNumPlayers() const;

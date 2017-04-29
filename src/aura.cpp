@@ -221,12 +221,6 @@ CAura::CAura(CConfig *CFG)
 
 	m_UDPSocket->SetBroadcastTarget(string());
 	m_UDPSocket->SetDontRoute(false);
-	m_VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
-	if (m_VirtualHostName.size() > 15)
-	{
-		m_VirtualHostName = "|cFF4080C0YDWE";
-		Print("[AURA] warning - bot_virtualhostname is longer than 15 characters, using default virtual host name");
-	}
 
 	std::string MapPath = CFG->GetString("bot_mappath", string());
 	std::string MapCFGPath = CFG->GetString("bot_mapcfgpath", string());
@@ -235,9 +229,15 @@ CAura::CAura(CConfig *CFG)
 	m_Map = new CMap(MapPath, &MAP);
 
 	std::string GameName = CFG->GetString("bot_defaultgamename", "");
+	std::string VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
 	if (GameName.size() > 31)
 	{
-		return;
+		GameName = GameName.substr(0, 31);
+	}
+
+	if (VirtualHostName.size() > 15)
+	{
+		VirtualHostName = VirtualHostName.substr(0, 15);
 	}
 
 	if (!m_Map->GetValid())
@@ -247,11 +247,13 @@ CAura::CAura(CConfig *CFG)
 
 	Print("[AURA] creating game [" + GameName + "]");
 
-	m_Games.push_back(new CGame(this, m_Map, GameName
-		, CFG->GetInt("lan_war3version", 26)
-		, CFG->GetInt("bot_latency", 100)
-		, CFG->GetInt("bot_autostart", 1)
-	));
+	CGameConfig* config = new CGameConfig;
+	config->GameName = GameName;
+	config->VirtualHostName = VirtualHostName;
+	config->War3Version = CFG->GetInt("lan_war3version", 26);
+	config->Latency = CFG->GetInt("bot_latency", 100);
+	config->AutoStart = CFG->GetInt("bot_autostart", 1);
+	m_Games.push_back(new CGame(m_Map, config, m_UDPSocket, m_HostCounter++));
 }
 
 CAura::~CAura()
@@ -334,8 +336,4 @@ bool CAura::Update()
 	}
 
 	return m_Exiting || m_Games.size() == 0;
-}
-
-void CAura::CreateGame(CMap* Map, const string& GameName, uint8_t War3Version, uint32_t Latency, uint32_t AutoStart)
-{
 }

@@ -36,20 +36,16 @@ using namespace std;
 // CGame
 //
 
-CGame::CGame(CAura* Aura, const CMap* Map, const string& GameName, uint8_t War3Version, uint32_t Latency, uint32_t AutoStart)
-	: m_UDPSocket(Aura->m_UDPSocket),
+CGame::CGame(const CMap* Map, const CGameConfig* Config, CUDPSocket* UDPSocket, uint32_t HostCounter)
+	: m_UDPSocket(UDPSocket),
 	m_Socket(new CTCPServer()),
 	m_Protocol(new CGameProtocol()),
 	m_Slots(Map->GetSlots()),
 	m_Map(Map),
-	m_GameName(GameName),
-	m_VirtualHostName(Aura->m_VirtualHostName),
-	m_AutoStart(m_AutoStart),
-	m_War3Version(War3Version),
+	m_Config(Config),
 	m_RandomSeed(GetTicks()),
-	m_HostCounter(Aura->m_HostCounter++),
+	m_HostCounter(HostCounter),
 	m_EntryKey(rand()),
-	m_Latency(Latency),
 	m_SyncLimit(50),
 	m_SyncCounter(0),
 	m_PingTimer(),
@@ -71,10 +67,10 @@ CGame::CGame(CAura* Aura, const CMap* Map, const string& GameName, uint8_t War3V
 	m_State(State::Waiting)
 {
 	if (m_Socket->Listen(std::string(), m_HostPort))
-		Print("[GAME: " + m_GameName + "] listening on port " + to_string(m_HostPort));
+		Print("[GAME: " + GetGameName() + "] listening on port " + to_string(m_HostPort));
 	else
 	{
-		Print("[GAME: " + m_GameName + "] error listening on port " + to_string(m_HostPort));
+		Print("[GAME: " + GetGameName() + "] error listening on port " + to_string(m_HostPort));
 		m_Exiting = true;
 	}
 }
@@ -109,10 +105,10 @@ uint32_t CGame::GetNextTimedActionTicks() const
 
 	const uint32_t TicksSinceLastUpdate = GetTicks() - m_LastActionSentTicks;
 
-	if (TicksSinceLastUpdate > m_Latency - m_LastActionLateBy)
+	if (TicksSinceLastUpdate > GetLatency() - m_LastActionLateBy)
 		return 0;
 	else
-		return m_Latency - m_LastActionLateBy - TicksSinceLastUpdate;
+		return GetLatency() - m_LastActionLateBy - TicksSinceLastUpdate;
 }
 
 uint32_t CGame::GetNumPlayers() const
@@ -195,7 +191,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			// note: the PrivateGame flag is not set when broadcasting to LAN (as you might expect)
 			// note: we do not use m_Map->GetMapGameType because none of the filters are set when broadcasting to LAN (also as you might expect)
 
-			m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_War3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
+			m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Config->War3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), GetGameName(), "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
 		}
 	}
 
@@ -255,7 +251,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			if (m_Lagging)
 			{
 				// start the lag screen
-				Print("[GAME: " + m_GameName + "] started lagging on [" + LaggingString + "]");
+				Print("[GAME: " + GetGameName() + "] started lagging on [" + LaggingString + "]");
 				SendAll(m_Protocol->SEND_W3GS_START_LAG(m_Players));
 
 				// reset everyone's drop vote
@@ -302,7 +298,7 @@ bool CGame::Update(void *fd, void *send_fd)
 				{
 					// stop the lag screen for this player
 
-					Print("[GAME: " + m_GameName + "] stopped lagging on [" + player->GetName() + "]");
+					Print("[GAME: " + GetGameName() + "] stopped lagging on [" + player->GetName() + "]");
 					SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player));
 					player->SetLagging(false);
 					player->SetStartedLaggingTicks(0);
@@ -332,16 +328,16 @@ bool CGame::Update(void *fd, void *send_fd)
 		}
 	}
 
-	// send actions every m_Latency milliseconds
+	// send actions every GetLatency() milliseconds
 	// actions are at the heart of every Warcraft 3 game but luckily we don't need to know their contents to relay them
 	// we queue player actions in EventPlayerAction then just resend them in batches to all players here
-	if (m_State == State::Loaded && !m_Lagging && Ticks - m_LastActionSentTicks >= m_Latency - m_LastActionLateBy)
+	if (m_State == State::Loaded && !m_Lagging && Ticks - m_LastActionSentTicks >= GetLatency() - m_LastActionLateBy)
 		SendAllActions();
 
 	// end the game if there aren't any players left
 	if (m_Players.empty() && (m_State == State::Loading || m_State == State::Loaded))
 	{
-		Print("[GAME: " + m_GameName + "] is over (no players left)");
+		Print("[GAME: " + GetGameName() + "] is over (no players left)");
 		return true;
 	}
 
@@ -473,7 +469,7 @@ void CGame::SendAllChat(const string &message)
 
 	if (GetNumPlayers() > 0)
 	{
-		Print("[GAME: " + m_GameName + "] [Local] " + message);
+		Print("[GAME: " + GetGameName() + "] [Local] " + message);
 
 		if (m_State == State::Waiting || m_State == State::CountDown)
 		{
@@ -508,7 +504,7 @@ void CGame::SendVirtualHostPlayerInfo(CGamePlayer *player)
 
 	const BYTEARRAY IP = { 0, 0, 0, 0 };
 
-	Send(player, m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, m_VirtualHostName, IP, IP));
+	Send(player, m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, GetVirtualHostName(), IP, IP));
 }
 
 void CGame::SendAllActions()
@@ -556,7 +552,7 @@ void CGame::SendAllActions()
 			SubActionsLength += Action->GetLength();
 		}
 
-		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(SubActions, m_Latency));
+		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(SubActions, GetLatency()));
 
 		while (!SubActions.empty())
 		{
@@ -565,14 +561,14 @@ void CGame::SendAllActions()
 		}
 	}
 	else
-		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(m_Actions, m_Latency));
+		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(m_Actions, GetLatency()));
 
 	const uint32_t Ticks = GetTicks();
 	const uint32_t ActualSendInterval = Ticks - m_LastActionSentTicks;
-	const uint32_t ExpectedSendInterval = m_Latency - m_LastActionLateBy;
+	const uint32_t ExpectedSendInterval = GetLatency() - m_LastActionLateBy;
 	m_LastActionLateBy = ActualSendInterval - ExpectedSendInterval;
 
-	if (m_LastActionLateBy > m_Latency)
+	if (m_LastActionLateBy > GetLatency())
 	{
 		// something is going terribly wrong - Aura++ is probably starved of resources
 		// print a message because even though this will take more resources it should provide some information to the administrator for future reference
@@ -580,8 +576,8 @@ void CGame::SendAllActions()
 
 		// this program is SO FAST, I've yet to see this happen *coolface*
 
-		Print("[GAME: " + m_GameName + "] warning - the latency is " + to_string(m_Latency) + "ms but the last update was late by " + to_string(m_LastActionLateBy) + "ms");
-		m_LastActionLateBy = m_Latency;
+		Print("[GAME: " + GetGameName() + "] warning - the latency is " + to_string(GetLatency()) + "ms but the last update was late by " + to_string(m_LastActionLateBy) + "ms");
+		m_LastActionLateBy = GetLatency();
 	}
 
 	m_LastActionSentTicks = Ticks;
@@ -589,7 +585,7 @@ void CGame::SendAllActions()
 
 void CGame::EventPlayerDeleted(CGamePlayer *player)
 {
-	Print("[GAME: " + m_GameName + "] deleting player [" + player->GetName() + "]: " + player->GetLeftReason());
+	Print("[GAME: " + GetGameName() + "] deleting player [" + player->GetName() + "]: " + player->GetLeftReason());
 
 	// in some cases we're forced to send the left message early so don't send it again
 
@@ -641,9 +637,9 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 {
 	// check the new player's name
 
-	if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == m_VirtualHostName || joinPlayer->GetName().find(" ") != string::npos || joinPlayer->GetName().find("|") != string::npos)
+	if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == GetVirtualHostName() || joinPlayer->GetName().find(" ") != string::npos || joinPlayer->GetName().find("|") != string::npos)
 	{
-		Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] invalid name (taken, invalid char, spoofer, too long)");
+		Print("[GAME: " + GetGameName() + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] invalid name (taken, invalid char, spoofer, too long)");
 		potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
 		potential->SetDeleteMe(true);
 		return;
@@ -659,7 +655,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
 		if (joinPlayer->GetEntryKey() != m_EntryKey)
 		{
-			Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] is trying to join the game over LAN but used an incorrect entry key");
+			Print("[GAME: " + GetGameName() + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] is trying to join the game over LAN but used an incorrect entry key");
 			potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_WRONGPASSWORD));
 			potential->SetDeleteMe(true);
 			return;
@@ -685,7 +681,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 	// this problem is solved by setting the socket to nullptr before deletion and handling the nullptr case in the destructor
 	// we also have to be careful to not modify the m_Potentials vector since we're currently looping through it
 
-	Print("[GAME: " + m_GameName + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] joined the game");
+	Print("[GAME: " + GetGameName() + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] joined the game");
 	CGamePlayer *Player = new CGamePlayer(potential, GetNewPID(), joinPlayer->GetName(), joinPlayer->GetInternalIP());
 
 	m_Players.push_back(Player);
@@ -763,7 +759,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
 	if (m_State == State::Waiting)
 	{
-		switch (m_AutoStart)
+		switch (m_Config->AutoStart)
 		{
 		case 1:
 			StartCountDown();
@@ -797,7 +793,7 @@ void CGame::EventPlayerAction(CGamePlayer *player, CIncomingAction *action)
 
 	if (!action->GetAction()->empty() && (*action->GetAction())[0] == 6)
 	{
-		Print("[GAME: " + m_GameName + "] player [" + player->GetName() + "] is saving the game");
+		Print("[GAME: " + GetGameName() + "] player [" + player->GetName() + "] is saving the game");
 		SendAllChat("Player [" + player->GetName() + "] is saving the game");
 	}
 }
@@ -816,7 +812,7 @@ void CGame::EventPlayerKeepAlive(CGamePlayer *player)
 		if (!m_Desynced && player->GetCheckSums()->front() != FirstCheckSum)
 		{
 			m_Desynced = true;
-			Print("[GAME: " + m_GameName + "] desync detected");
+			Print("[GAME: " + GetGameName() + "] desync detected");
 			SendAllChat("Warning! Desync detected!");
 			SendAllChat("Warning! Desync detected!");
 			SendAllChat("Warning! Desync detected!");
@@ -978,7 +974,7 @@ void CGame::EventPlayerDropRequest(CGamePlayer *player)
 
 	if (m_Lagging)
 	{
-		Print("[GAME: " + m_GameName + "] player [" + player->GetName() + "] voted to drop laggers");
+		Print("[GAME: " + GetGameName() + "] player [" + player->GetName() + "] voted to drop laggers");
 		SendAllChat("Player [" + player->GetName() + "] voted to drop laggers");
 
 		// check if at least half the players voted to drop
@@ -1015,7 +1011,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 			{
 				// inform the client that we are willing to send the map
 
-				Print("[GAME: " + m_GameName + "] map download started for player [" + player->GetName() + "]");
+				Print("[GAME: " + GetGameName() + "] map download started for player [" + player->GetName() + "]");
 				Send(player, m_Protocol->SEND_W3GS_STARTDOWNLOAD(GetHostPID()));
 				player->SetDownloadStarted(true);
 			}
@@ -1058,7 +1054,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 
 void CGame::EventGameStarted(uint32_t Ticks)
 {
-	Print("[GAME: " + m_GameName + "] started loading with " + to_string(GetNumPlayers()) + " players");
+	Print("[GAME: " + GetGameName() + "] started loading with " + to_string(GetNumPlayers()) + " players");
 
 	// send a final slot info update if necessary
 	// this typically won't happen because we prevent the !start command from completing while someone is downloading the map
@@ -1390,7 +1386,7 @@ void CGame::CreateVirtualHost()
 
 	const BYTEARRAY IP = { 0, 0, 0, 0 };
 
-	SendAll(m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, m_VirtualHostName, IP, IP));
+	SendAll(m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, GetVirtualHostName(), IP, IP));
 }
 
 void CGame::DeleteVirtualHost()
