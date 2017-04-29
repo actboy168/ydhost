@@ -188,9 +188,7 @@ public:
 	uint8_t GetEmptySlot();
 	uint8_t GetEmptySlot(uint8_t team, uint8_t PID);
 	void SwapSlots(uint8_t SID1, uint8_t SID2);
-	void OpenSlot(uint8_t SID, bool kick);
-	void CloseSlot(uint8_t SID, bool kick);
-	void ComputerSlot(uint8_t SID, uint8_t skill, bool kick);
+	void OpenSlot(uint8_t SID);
 	void ColourSlot(uint8_t SID, uint8_t colour);
 	void StartCountDown();
 	void StopLaggers(const std::string &reason);

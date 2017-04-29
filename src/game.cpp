@@ -632,7 +632,7 @@ void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 		player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
 		if (m_State == State::Waiting || m_State == State::CountDown)
-			OpenSlot(GetSIDFromPID(player->GetPID()), false);
+			OpenSlot(GetSIDFromPID(player->GetPID()));
 	}
 }
 
@@ -643,7 +643,7 @@ void CGame::EventPlayerDisconnectSocketError(CGamePlayer *player)
 	player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
 	if (m_State == State::Waiting || m_State == State::CountDown)
-		OpenSlot(GetSIDFromPID(player->GetPID()), false);
+		OpenSlot(GetSIDFromPID(player->GetPID()));
 }
 
 void CGame::EventPlayerDisconnectConnectionClosed(CGamePlayer *player)
@@ -653,7 +653,7 @@ void CGame::EventPlayerDisconnectConnectionClosed(CGamePlayer *player)
 	player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
 	if (m_State == State::Waiting || m_State == State::CountDown)
-		OpenSlot(GetSIDFromPID(player->GetPID()), false);
+		OpenSlot(GetSIDFromPID(player->GetPID()));
 }
 
 void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *joinPlayer)
@@ -806,7 +806,7 @@ void CGame::EventPlayerLeft(CGamePlayer *player, uint32_t reason)
 	player->SetLeftCode(PLAYERLEAVE_LOST);
 
 	if (m_State == State::Waiting || m_State == State::CountDown)
-		OpenSlot(GetSIDFromPID(player->GetPID()), false);
+		OpenSlot(GetSIDFromPID(player->GetPID()));
 }
 
 void CGame::EventPlayerLoaded(CGamePlayer *player)
@@ -1052,7 +1052,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 			player->SetDeleteMe(true);
 			player->SetLeftReason("doesn't have the map and there is no local copy of the map to send");
 			player->SetLeftCode(PLAYERLEAVE_LOBBY);
-			OpenSlot(GetSIDFromPID(player->GetPID()), false);
+			OpenSlot(GetSIDFromPID(player->GetPID()));
 		}
 	}
 	else if (player->GetDownloadStarted())
@@ -1326,68 +1326,12 @@ void CGame::SwapSlots(uint8_t SID1, uint8_t SID2)
 	}
 }
 
-void CGame::OpenSlot(uint8_t SID, bool kick)
+void CGame::OpenSlot(uint8_t SID)
 {
 	if (SID < m_Slots.size())
 	{
-		if (kick)
-		{
-			CGamePlayer *Player = GetPlayerFromSID(SID);
-
-			if (Player)
-			{
-				Player->SetDeleteMe(true);
-				Player->SetLeftReason("was kicked when opening a slot");
-				Player->SetLeftCode(PLAYERLEAVE_LOBBY);
-			}
-		}
-
 		CGameSlot Slot = m_Slots[SID];
 		m_Slots[SID] = CGameSlot(0, 255, SLOTSTATUS_OPEN, 0, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace());
-		SendAllSlotInfo();
-	}
-}
-
-void CGame::CloseSlot(uint8_t SID, bool kick)
-{
-	if (SID < m_Slots.size())
-	{
-		if (kick)
-		{
-			CGamePlayer *Player = GetPlayerFromSID(SID);
-
-			if (Player)
-			{
-				Player->SetDeleteMe(true);
-				Player->SetLeftReason("was kicked when closing a slot");
-				Player->SetLeftCode(PLAYERLEAVE_LOBBY);
-			}
-		}
-
-		CGameSlot Slot = m_Slots[SID];
-		m_Slots[SID] = CGameSlot(0, 255, SLOTSTATUS_CLOSED, 0, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace());
-		SendAllSlotInfo();
-	}
-}
-
-void CGame::ComputerSlot(uint8_t SID, uint8_t skill, bool kick)
-{
-	if (SID < m_Slots.size() && skill < 3)
-	{
-		if (kick)
-		{
-			CGamePlayer *Player = GetPlayerFromSID(SID);
-
-			if (Player)
-			{
-				Player->SetDeleteMe(true);
-				Player->SetLeftReason("was kicked when creating a computer in a slot");
-				Player->SetLeftCode(PLAYERLEAVE_LOBBY);
-			}
-		}
-
-		CGameSlot Slot = m_Slots[SID];
-		m_Slots[SID] = CGameSlot(0, 100, SLOTSTATUS_OCCUPIED, 1, Slot.GetTeam(), Slot.GetColour(), Slot.GetRace(), skill);
 		SendAllSlotInfo();
 	}
 }
