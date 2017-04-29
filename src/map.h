@@ -84,9 +84,6 @@ class CConfig;
 
 class CMap
 {
-public:
-	CAura *m_Aura;
-
 private:
 	std::string m_MapData;              // the map data itself, for sending the map to players
 	BYTEARRAY m_MapSHA1;                // config value: map sha1 (20 bytes)
@@ -106,7 +103,7 @@ private:
 	bool m_Valid;
 
 public:
-	CMap(CAura *nAura, std::string const& MapPath, CConfig *MAP);
+	CMap(std::string const& MapPath, CConfig *MAP);
 	~CMap();
 
 	inline bool GetValid() const                               { return m_Valid; }

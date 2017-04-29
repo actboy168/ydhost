@@ -30,8 +30,7 @@ using namespace std;
 // CMap
 //
 
-CMap::CMap(CAura *nAura, std::string const& MapPath, CConfig *MAP)
-	: m_Aura(nAura)
+CMap::CMap(std::string const& MapPath, CConfig *MAP)
 {
 	Load(MapPath, MAP);
 }

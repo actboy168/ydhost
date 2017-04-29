@@ -42,12 +42,8 @@ public:
 	std::vector<CGame *> m_Games;                 // these games are in progress
 	CMap *m_Map;                                  // the currently loaded map
 	std::string m_VirtualHostName;                // config value: virtual host name
-	std::string m_BindAddress;                    // config value: the address to host games on
 	uint32_t m_HostCounter;                       // the current host counter (a unique number to identify a game, incremented each time a game is created)
-	uint32_t m_Latency;                           // config value: the latency (by default)
-	uint32_t m_SyncLimit;                         // config value: the maximum number of packets a player can fall out of sync before starting the lag screen (by default)
 	bool m_Exiting;                               // set to true to force aura to shutdown next update (used by SignalCatcher)
-	uint32_t m_AutoStart;
 
 	explicit CAura(CConfig *CFG);
 	~CAura();
@@ -58,7 +54,7 @@ public:
 	bool Update();
 
 	// other functions
-	void CreateGame(CMap* Map, const std::string& GameName, uint8_t War3Version);
+	void CreateGame(CMap* Map, const std::string& GameName, uint8_t War3Version, uint32_t Latency, uint32_t AutoStart);
 };
 
 #endif  // AURA_AURA_H_

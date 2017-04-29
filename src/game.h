@@ -28,6 +28,7 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 //
 
 class CAura;
+class CUDPSocket;
 class CTCPServer;
 class CGameProtocol;
 class CPotentialPlayer;
@@ -66,10 +67,8 @@ private:
 
 class CGame
 {
-public:
-	CAura *m_Aura;
-
 protected:
+	CUDPSocket *m_UDPSocket;
 	CTCPServer *m_Socket;                         // listening socket
 	CGameProtocol *m_Protocol;                    // game protocol
 	std::vector<CGameSlot> m_Slots;               // std::vector of slots
@@ -79,6 +78,7 @@ protected:
 	const CMap *m_Map;                            // map data
 	std::string m_GameName;                       // game name
 	std::string m_VirtualHostName;                // host's name
+	uint32_t m_AutoStart;
 	uint8_t  m_War3Version;                       // warcraft 3 version
 	uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
 	uint32_t m_HostCounter;                       // a unique game number
@@ -117,7 +117,7 @@ protected:
 	State m_State;
 
 public:
-	CGame(CAura* Aura, const CMap* Map, const std::string& GameName, uint8_t War3Version);
+	CGame(CAura* Aura, const CMap* Map, const std::string& GameName, uint8_t War3Version, uint32_t Latency, uint32_t AutoStart);
 	~CGame();
 	CGame(CGame &) = delete;
 

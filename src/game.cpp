@@ -36,20 +36,21 @@ using namespace std;
 // CGame
 //
 
-CGame::CGame(CAura* Aura, const CMap* Map, const string& GameName, uint8_t War3Version)
-	: m_Aura(Aura),
+CGame::CGame(CAura* Aura, const CMap* Map, const string& GameName, uint8_t War3Version, uint32_t Latency, uint32_t AutoStart)
+	: m_UDPSocket(Aura->m_UDPSocket),
 	m_Socket(new CTCPServer()),
-	m_Protocol(new CGameProtocol(Aura)),
+	m_Protocol(new CGameProtocol()),
 	m_Slots(Map->GetSlots()),
 	m_Map(Map),
 	m_GameName(GameName),
 	m_VirtualHostName(Aura->m_VirtualHostName),
+	m_AutoStart(m_AutoStart),
 	m_War3Version(War3Version),
 	m_RandomSeed(GetTicks()),
 	m_HostCounter(Aura->m_HostCounter++),
 	m_EntryKey(rand()),
-	m_Latency(Aura->m_Latency),
-	m_SyncLimit(Aura->m_SyncLimit),
+	m_Latency(Latency),
+	m_SyncLimit(50),
 	m_SyncCounter(0),
 	m_PingTimer(),
 	m_DownloadTimer(),
@@ -69,12 +70,7 @@ CGame::CGame(CAura* Aura, const CMap* Map, const string& GameName, uint8_t War3V
 	m_Desynced(false),
 	m_State(State::Waiting)
 {
-	// start listening for connections
-
-	if (!m_Aura->m_BindAddress.empty())
-		Print("[GAME: " + m_GameName + "] attempting to bind to address [" + m_Aura->m_BindAddress + "]");
-
-	if (m_Socket->Listen(m_Aura->m_BindAddress, m_HostPort))
+	if (m_Socket->Listen(std::string(), m_HostPort))
 		Print("[GAME: " + m_GameName + "] listening on port " + to_string(m_HostPort));
 	else
 	{
@@ -199,7 +195,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			// note: the PrivateGame flag is not set when broadcasting to LAN (as you might expect)
 			// note: we do not use m_Map->GetMapGameType because none of the filters are set when broadcasting to LAN (also as you might expect)
 
-			m_Aura->m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_War3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
+			m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_War3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
 		}
 	}
 
@@ -767,7 +763,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
 	if (m_State == State::Waiting)
 	{
-		switch (m_Aura->m_AutoStart)
+		switch (m_AutoStart)
 		{
 		case 1:
 			StartCountDown();

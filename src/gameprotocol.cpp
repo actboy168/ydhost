@@ -32,8 +32,7 @@ using namespace std;
 // CGameProtocol
 //
 
-CGameProtocol::CGameProtocol(CAura *nAura)
-	: m_Aura(nAura)
+CGameProtocol::CGameProtocol()
 {
 
 }
