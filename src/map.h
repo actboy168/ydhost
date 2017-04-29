@@ -110,22 +110,22 @@ public:
   ~CMap();
 
   inline bool GetValid() const                               { return m_Valid; }
-  inline std::string GetMapPath() const                           { return m_MapPath; }
+  inline std::string GetMapPath() const                      { return m_MapPath; }
   inline BYTEARRAY GetMapSize() const                        { return m_MapSize; }
   inline BYTEARRAY GetMapInfo() const                        { return m_MapInfo; }
   inline BYTEARRAY GetMapCRC() const                         { return m_MapCRC; }
   inline BYTEARRAY GetMapSHA1() const                        { return m_MapSHA1; }
-  inline uint8_t GetMapObservers() const               { return m_MapObservers; }
-  inline uint8_t GetMapFlags() const                   { return m_MapFlags; }
+  inline uint8_t GetMapObservers() const                     { return m_MapObservers; }
+  inline uint8_t GetMapFlags() const                         { return m_MapFlags; }
   inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
   inline BYTEARRAY GetMapWidth() const                       { return m_MapWidth; }
   inline BYTEARRAY GetMapHeight() const                      { return m_MapHeight; }
   inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
-  inline std::vector<CGameSlot> GetSlots() const                  { return m_Slots; }
+  inline std::vector<CGameSlot> GetSlots() const             { return m_Slots; }
 
   BYTEARRAY GetMapGameFlags() const;
   uint8_t GetMapLayoutStyle() const;
-  std::string *GetMapData();
+  const std::string *GetMapData() const;
   void Load(std::string const& MapPath, CConfig *MAP);
   void CheckValid();
 };

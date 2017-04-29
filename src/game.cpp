@@ -36,12 +36,12 @@ using namespace std;
 // CGame
 //
 
-CGame::CGame(CAura *nAura, CMap *nMap, string &nGameName)
+CGame::CGame(CAura *nAura, const CMap *nMap, string &nGameName)
   : m_Aura(nAura),
     m_Socket(new CTCPServer()),
     m_Protocol(new CGameProtocol(nAura)),
     m_Slots(nMap->GetSlots()),
-    m_Map(new CMap(*nMap)),
+    m_Map(nMap),
     m_GameName(nGameName),
     m_VirtualHostName(nAura->m_VirtualHostName),
     m_RandomSeed(GetTicks()),
@@ -89,7 +89,6 @@ CGame::~CGame()
 {
   delete m_Socket;
   delete m_Protocol;
-  delete m_Map;
 
   for (auto & potential : m_Potentials)
     delete potential;
@@ -1092,7 +1091,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 
     if (m_Aura->m_AllowDownloads)
     {
-      string *MapData = m_Map->GetMapData();
+	  const string *MapData = m_Map->GetMapData();
 
       if (!MapData->empty())
       {
@@ -1192,11 +1191,6 @@ void CGame::EventGameStarted()
     delete potential;
 
   m_Potentials.clear();
-
-  // delete the map data
-
-  delete m_Map;
-  m_Map = nullptr;
 }
 
 uint8_t CGame::GetSIDFromPID(uint8_t PID) const

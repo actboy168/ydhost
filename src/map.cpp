@@ -279,7 +279,7 @@ void CMap::CheckValid()
   }
 }
 
-std::string* CMap::GetMapData()
+const std::string* CMap::GetMapData() const
 {
 	// todo; 下载地图支持
 	return &m_MapData;

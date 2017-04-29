@@ -50,7 +50,7 @@ protected:
   std::vector<CPotentialPlayer *> m_Potentials; // std::vector of potential players (connections that haven't sent a W3GS_REQJOIN packet yet)
   std::vector<CGamePlayer *> m_Players;         // std::vector of players
   std::queue<CIncomingAction *> m_Actions;      // queue of actions to be sent
-  CMap *m_Map;                                  // map data
+  const CMap *m_Map;                            // map data
   std::string m_GameName;                       // game name
   std::string m_VirtualHostName;                // host's name
   uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
@@ -81,11 +81,11 @@ protected:
   bool m_Desynced;                              // if the game has desynced or not
 
 public:
-  CGame(CAura *nAura, CMap *nMap, std::string &nGameName);
+  CGame(CAura *nAura, const CMap *nMap, std::string &nGameName);
   ~CGame();
   CGame(CGame &) = delete;
 
-  inline CMap *GetMap() const                       { return m_Map; }
+  inline const CMap *GetMap() const                 { return m_Map; }
   inline CGameProtocol *GetProtocol() const         { return m_Protocol; }
   inline uint32_t GetEntryKey() const               { return m_EntryKey; }
   inline uint16_t GetHostPort() const               { return m_HostPort; }
