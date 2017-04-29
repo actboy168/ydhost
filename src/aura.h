@@ -31,7 +31,6 @@ class CUDPSocket;
 class CTCPSocket;
 class CTCPServer;
 class CGPSProtocol;
-class CCRC32;
 class CGame;
 class CMap;
 class CConfig;
@@ -40,7 +39,6 @@ class CAura
 {
 public:
   CUDPSocket *m_UDPSocket;                      // a UDP socket for sending broadcasts and other junk (used with !sendlan)
-  CCRC32 *m_CRC;                                // for calculating CRC's
   std::vector<CGame *> m_Games;                 // these games are in progress
   CMap *m_Map;                                  // the currently loaded map
   std::string m_MapCFGPath;                     // config value: map cfg path

@@ -19,7 +19,6 @@
  */
 
 #include "aura.h"
-#include "crc32.h"
 #include "config.h"
 #include "socket.h"
 #include "map.h"
@@ -250,13 +249,11 @@ int main(int, char *argv[])
 
 CAura::CAura(CConfig *CFG)
   : m_UDPSocket(new CUDPSocket()),
-    m_CRC(new CCRC32()),
     m_Map(nullptr),
     m_HostCounter(1),
     m_Exiting(false)
 {
   Print("[AURA] Aura++ version 1.24");
-  m_CRC->Initialize();
 
   m_UDPSocket->SetBroadcastTarget(string());
   m_UDPSocket->SetDontRoute(false);
@@ -287,7 +284,6 @@ CAura::CAura(CConfig *CFG)
 CAura::~CAura()
 {
   delete m_UDPSocket;
-  delete m_CRC;
 
   if (m_Map)
     delete m_Map;
