@@ -117,8 +117,7 @@ int main(int, char *argv[])
 
 	// read config file
 
-	CConfig CFG;
-	CFG.Read("ydhost.cfg");
+	CConfig CFG("ydhost.cfg");
 
 	Print("[AURA] starting up");
 
@@ -227,8 +226,7 @@ CAura::CAura(CConfig *CFG)
 
 	std::string MapPath = CFG->GetString("bot_mappath", std::string());
 	std::string MapCFGPath = CFG->GetString("bot_mapcfgpath", std::string());
-	CConfig MAP;
-	MAP.Read(MapCFGPath);
+	CConfig MAP(MapCFGPath);
 	m_Map = new CMap(MapPath, &MAP);
 
 	std::string GameName = CFG->GetString("bot_defaultgamename", "");

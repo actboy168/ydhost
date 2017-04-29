@@ -34,14 +34,11 @@ private:
 	std::map<std::string, std::string> m_CFG;
 
 public:
-	CConfig();
+	CConfig(const std::string& filename);
 	~CConfig();
 
-	void Read(const std::string &file);
-	bool Exists(const std::string &key);
-	int32_t GetInt(const std::string &key, int32_t x);
-	std::string GetString(const std::string &key, const std::string &x);
-	void Set(const std::string &key, const std::string &x);
+	int32_t GetInt(const std::string &key, int32_t def);
+	std::string GetString(const std::string &key, const std::string& def);
 };
 
 #endif  // AURA_CONFIG_H_
