@@ -64,11 +64,9 @@ CGame::CGame(CAura *nAura, const CMap *nMap, string &nGameName)
 	m_VirtualHostPID(255),
 	m_Exiting(false),
 	m_SlotInfoChanged(false),
-	m_CountDownStarted(false),
-	m_GameLoading(false),
-	m_GameLoaded(false),
 	m_Lagging(false),
-	m_Desynced(false)
+	m_Desynced(false),
+	m_State(State::Waiting)
 {
 	// start listening for connections
 
@@ -109,7 +107,7 @@ uint32_t CGame::GetNextTimedActionTicks() const
 	// note: there's no reason this function couldn't take into account the game's other timers too but they're far less critical
 	// warning: this function must take into account when actions are not being sent (e.g. during loading or lagging)
 
-	if (!m_GameLoaded || m_Lagging)
+	if (m_State != State::Loaded || m_Lagging)
 		return 50;
 
 	const uint32_t TicksSinceLastUpdate = GetTicks() - m_LastActionSentTicks;
@@ -180,7 +178,7 @@ bool CGame::Update(void *fd, void *send_fd)
 		// however we only want to broadcast if the countdown hasn't started
 		// see the !sendlan code later in this file for some more information about how this works
 
-		if (!m_CountDownStarted)
+		if (m_State == State::Waiting)
 		{
 			// construct a fixed host counter which will be used to identify players from this "realm" (i.e. LAN)
 			// the fixed host counter's 4 most significant bits will contain a 4 bit ID (0-15)
@@ -238,7 +236,7 @@ bool CGame::Update(void *fd, void *send_fd)
 	// keep track of the largest sync counter (the number of keepalive packets received by each player)
 	// if anyone falls behind by more than m_SyncLimit keepalives we start the lag screen
 
-	if (m_GameLoaded)
+	if (m_State == State::Loaded)
 	{
 		// check if anyone has started lagging
 		// we consider a player to have started lagging if they're more than m_SyncLimit keepalives behind
@@ -355,12 +353,12 @@ bool CGame::Update(void *fd, void *send_fd)
 	// actions are at the heart of every Warcraft 3 game but luckily we don't need to know their contents to relay them
 	// we queue player actions in EventPlayerAction then just resend them in batches to all players here
 
-	if (m_GameLoaded && !m_Lagging && Ticks - m_LastActionSentTicks >= m_Latency - m_LastActionLateBy)
+	if (m_State == State::Loaded && !m_Lagging && Ticks - m_LastActionSentTicks >= m_Latency - m_LastActionLateBy)
 		SendAllActions();
 
 	// end the game if there aren't any players left
 
-	if (m_Players.empty() && (m_GameLoading || m_GameLoaded))
+	if (m_Players.empty() && (m_State == State::Loading || m_State == State::Loaded))
 	{
 		Print("[GAME: " + m_GameName + "] is over (no players left)");
 
@@ -369,7 +367,7 @@ bool CGame::Update(void *fd, void *send_fd)
 
 	// check if the game is loaded
 
-	if (m_GameLoading)
+	if (m_State == State::Loading)
 	{
 		bool FinishedLoading = true;
 
@@ -384,17 +382,16 @@ bool CGame::Update(void *fd, void *send_fd)
 		if (FinishedLoading)
 		{
 			m_LastActionSentTicks = Ticks;
-			m_GameLoading = false;
-			m_GameLoaded = true;
+			m_State = State::Loaded;
 		}
 	}
 
-	if (m_GameLoaded)
+	if (m_State == State::Loaded)
 		return m_Exiting;
 
 	// send more map data
 
-	if (!m_GameLoading && !m_GameLoaded && m_DownloadCounterResetTimer.update(Ticks, 1000))
+	if ((m_State == State::Waiting || m_State == State::CountDown) && m_DownloadCounterResetTimer.update(Ticks, 1000))
 	{
 		// hackhack: another timer hijack is in progress here
 		// since the download counter is reset once per second it's a great place to update the slot info if necessary
@@ -403,7 +400,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			SendAllSlotInfo();
 	}
 
-	if (!m_GameLoading && m_DownloadTimer.update(Ticks, 100))
+	if ((m_State == State::Waiting || m_State == State::CountDown) && m_DownloadTimer.update(Ticks, 100))
 	{
 		for (auto & player : m_Players)
 		{
@@ -436,7 +433,7 @@ bool CGame::Update(void *fd, void *send_fd)
 
 	// countdown every 500 ms
 
-	if (m_CountDownStarted && m_CountDownTimer.update(Ticks, 500))
+	if (m_State == State::CountDown && m_CountDownTimer.update(Ticks, 500))
 	{
 		if (m_CountDownCounter > 0)
 		{
@@ -446,13 +443,13 @@ bool CGame::Update(void *fd, void *send_fd)
 
 			SendAllChat(to_string(m_CountDownCounter--) + ". . .");
 		}
-		else if (!m_GameLoading && !m_GameLoaded)
+		else if (m_State == State::Waiting || m_State == State::CountDown)
 			EventGameStarted(Ticks);
 	}
 
 	// create the virtual host player
 
-	if (!m_GameLoading && !m_GameLoaded && GetNumPlayers() < 12)
+	if ((m_State == State::Waiting || m_State == State::CountDown) && GetNumPlayers() < 12)
 		CreateVirtualHost();
 
 	// accept new connections
@@ -508,7 +505,7 @@ void CGame::SendAllChat(const string &message)
 	{
 		Print("[GAME: " + m_GameName + "] [Local] " + message);
 
-		if (!m_GameLoading && !m_GameLoaded)
+		if (m_State == State::Waiting || m_State == State::CountDown)
 		{
 			if (message.size() > 254)
 				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, BYTEARRAY(), message.substr(0, 254)));
@@ -527,7 +524,7 @@ void CGame::SendAllChat(const string &message)
 
 void CGame::SendAllSlotInfo()
 {
-	if (!m_GameLoading && !m_GameLoaded)
+	if (m_State == State::Waiting || m_State == State::CountDown)
 	{
 		SendAll(m_Protocol->SEND_W3GS_SLOTINFO(m_Slots, m_RandomSeed, m_Map->GetMapLayoutStyle(), m_Map->GetMapNumPlayers()));
 		m_SlotInfoChanged = false;
@@ -629,7 +626,7 @@ void CGame::EventPlayerDeleted(CGamePlayer *player)
 	if (player->GetLeftMessageSent())
 		return;
 
-	if (m_GameLoaded)
+	if (m_State == State::Loaded)
 		SendAllChat(player->GetName() + " " + player->GetLeftReason() + ".");
 
 	if (player->GetLagging())
@@ -641,10 +638,10 @@ void CGame::EventPlayerDeleted(CGamePlayer *player)
 
 	// abort the countdown if there was one in progress
 
-	if (m_CountDownStarted && !m_GameLoading && !m_GameLoaded)
+	if (m_State == State::CountDown)
 	{
 		SendAllChat("Countdown aborted!");
-		m_CountDownStarted = false;
+		m_State = State::Waiting;
 	}
 }
 
@@ -660,7 +657,7 @@ void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 		player->SetLeftReason("has lost the connection (timed out)");
 		player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
-		if (!m_GameLoading && !m_GameLoaded)
+		if (m_State == State::Waiting || m_State == State::CountDown)
 			OpenSlot(GetSIDFromPID(player->GetPID()), false);
 	}
 }
@@ -671,7 +668,7 @@ void CGame::EventPlayerDisconnectSocketError(CGamePlayer *player)
 	player->SetLeftReason("has lost the connection (connection error - " + player->GetSocket()->GetErrorString() + ")");
 	player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
-	if (!m_GameLoading && !m_GameLoaded)
+	if (m_State == State::Waiting || m_State == State::CountDown)
 		OpenSlot(GetSIDFromPID(player->GetPID()), false);
 }
 
@@ -681,7 +678,7 @@ void CGame::EventPlayerDisconnectConnectionClosed(CGamePlayer *player)
 	player->SetLeftReason("has lost the connection (connection closed by remote host)");
 	player->SetLeftCode(PLAYERLEAVE_DISCONNECT);
 
-	if (!m_GameLoading && !m_GameLoaded)
+	if (m_State == State::Waiting || m_State == State::CountDown)
 		OpenSlot(GetSIDFromPID(player->GetPID()), false);
 }
 
@@ -803,13 +800,13 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
 	// abort the countdown if there was one in progress
 
-	if (m_CountDownStarted && !m_GameLoading && !m_GameLoaded)
+	if (m_State == State::CountDown)
 	{
 		SendAllChat("Countdown aborted!");
-		m_CountDownStarted = false;
+		m_State = State::Waiting;
 	}
 
-	if (!m_CountDownStarted)
+	if (m_State == State::Waiting)
 	{
 		switch (m_Aura->m_AutoStart)
 		{
@@ -834,7 +831,7 @@ void CGame::EventPlayerLeft(CGamePlayer *player, uint32_t reason)
 	player->SetLeftReason("has left the game voluntarily");
 	player->SetLeftCode(PLAYERLEAVE_LOST);
 
-	if (!m_GameLoading && !m_GameLoaded)
+	if (m_State == State::Waiting || m_State == State::CountDown)
 		OpenSlot(GetSIDFromPID(player->GetPID()), false);
 }
 
@@ -885,7 +882,7 @@ void CGame::EventPlayerChatToHost(CGamePlayer *player, CIncomingChatPlayer *chat
 {
 	if (chatPlayer->GetFromPID() == player->GetPID())
 	{
-		if (!m_CountDownStarted)
+		if (m_State == State::Waiting)
 		{
 			if (chatPlayer->GetType() == CIncomingChatPlayer::CTH_TEAMCHANGE)
 				EventPlayerChangeTeam(player, chatPlayer->GetByte());
@@ -1052,7 +1049,7 @@ void CGame::EventPlayerDropRequest(CGamePlayer *player)
 
 void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 {
-	if (m_GameLoading || m_GameLoaded)
+	if (m_State != State::Waiting &&  m_State != State::CountDown)
 		return;
 
 	uint32_t MapSize = ByteArrayToUInt32(m_Map->GetMapSize(), false);
@@ -1127,7 +1124,7 @@ void CGame::EventGameStarted(uint32_t Ticks)
 		SendAllSlotInfo();
 
 	m_LagScreenResetTimer.reset(Ticks);
-	m_GameLoading = true;
+	m_State = State::Loading;
 
 	// since we use a fake countdown to deal with leavers during countdown the COUNTDOWN_START and COUNTDOWN_END packets are sent in quick succession
 	// send a start countdown packet
@@ -1462,9 +1459,9 @@ void CGame::ColourSlot(uint8_t SID, uint8_t colour)
 
 void CGame::StartCountDown()
 {
-	if (!m_CountDownStarted)
+	if (m_State == State::Waiting)
 	{
-		m_CountDownStarted = true;
+		m_State = State::CountDown;
 		m_CountDownCounter = 5;
 	}
 }

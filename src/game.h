@@ -101,11 +101,19 @@ protected:
 	uint8_t m_VirtualHostPID;                     // host's PID
 	bool m_Exiting;                               // set to true and this class will be deleted next update
 	bool m_SlotInfoChanged;                       // if the slot info has changed and hasn't been sent to the players yet (optimization)
-	bool m_CountDownStarted;                      // if the game start countdown has started or not
-	bool m_GameLoading;                           // if the game is currently loading or not
-	bool m_GameLoaded;                            // if the game has loaded or not
+
 	bool m_Lagging;                               // if the lag screen is active or not
 	bool m_Desynced;                              // if the game has desynced or not
+
+	enum class State
+	{
+		Waiting,
+		CountDown,
+		Loading,
+		Loaded,
+	};
+
+	State m_State;
 
 public:
 	CGame(CAura *nAura, const CMap *nMap, std::string &nGameName);
