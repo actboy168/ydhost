@@ -52,7 +52,6 @@ CGame::CGame(CAura *nAura, const CMap *nMap, string &nGameName)
     m_SyncCounter(0),
     m_LastPingTime(0),
     m_LastDownloadTicks(GetTime()),
-    m_DownloadCounter(0),
     m_LastDownloadCounterResetTicks(GetTicks()),
     m_LastCountDownTicks(0),
     m_CountDownCounter(0),
@@ -409,23 +408,15 @@ bool CGame::Update(void *fd, void *send_fd)
     if (m_SlotInfoChanged)
       SendAllSlotInfo();
 
-    m_DownloadCounter = 0;
     m_LastDownloadCounterResetTicks = Ticks;
   }
 
   if (!m_GameLoading && Ticks - m_LastDownloadTicks >= 100)
   {
-    uint32_t Downloaders = 0;
-
     for (auto & player : m_Players)
     {
       if (player->GetDownloadStarted() && !player->GetDownloadFinished())
       {
-        ++Downloaders;
-
-        if (m_Aura->m_MaxDownloaders > 0 && Downloaders > m_Aura->m_MaxDownloaders)
-          break;
-
         // send up to 100 pieces of the map at once so that the download goes faster
         // if we wait for each MAPPART packet to be acknowledged by the client it'll take a long time to download
         // this is because we would have to wait the round trip time (the ping time) between sending every 1442 bytes of map data
@@ -444,15 +435,8 @@ bool CGame::Update(void *fd, void *send_fd)
 
         while (player->GetLastMapPartSent() < player->GetLastMapPartAcked() + 1442 * 100 && player->GetLastMapPartSent() < MapSize)
         {
-          // limit the download speed if we're sending too much data
-          // the download counter is the # of map bytes downloaded in the last second (it's reset once per second)
-
-          if (m_Aura->m_MaxDownloadSpeed > 0 && m_DownloadCounter > m_Aura->m_MaxDownloadSpeed * 1024)
-            break;
-
           Send(player, m_Protocol->SEND_W3GS_MAPPART(GetHostPID(), player->GetPID(), player->GetLastMapPartSent(), m_Map->GetMapData()));
           player->SetLastMapPartSent(player->GetLastMapPartSent() + 1442);
-          m_DownloadCounter += 1442;
         }
       }
     }
@@ -1089,8 +1073,6 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
   {
     // the player doesn't have the map
 
-    if (m_Aura->m_AllowDownloads)
-    {
 	  const string *MapData = m_Map->GetMapData();
 
       if (!MapData->empty())
@@ -1113,14 +1095,6 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
         player->SetLeftCode(PLAYERLEAVE_LOBBY);
         OpenSlot(GetSIDFromPID(player->GetPID()), false);
       }
-    }
-    else
-    {
-      player->SetDeleteMe(true);
-      player->SetLeftReason("doesn't have the map and map downloads are disabled");
-      player->SetLeftCode(PLAYERLEAVE_LOBBY);
-      OpenSlot(GetSIDFromPID(player->GetPID()), false);
-    }
   }
   else if (player->GetDownloadStarted())
   {

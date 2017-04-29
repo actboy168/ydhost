@@ -61,7 +61,6 @@ protected:
   uint32_t m_SyncCounter;                       // the number of actions sent so far (for determining if anyone is lagging)
   uint32_t m_LastPingTime;                      // GetTime when the last ping was sent
   uint32_t m_LastDownloadTicks;                 // GetTicks when the last map download cycle was performed
-  uint32_t m_DownloadCounter;                   // # of map bytes downloaded in the last second
   uint32_t m_LastDownloadCounterResetTicks;     // GetTicks when the download counter was last reset
   uint32_t m_LastCountDownTicks;                // GetTicks when the last countdown message was sent
   uint32_t m_CountDownCounter;                  // the countdown is finished when this reaches zero
