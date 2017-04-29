@@ -18,10 +18,11 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
 */
 
-#include "aura.h"
 #include "config.h"
+#include "includes.h"
 
 #include <cstdlib>
+#include <fstream>
 
 using namespace std;
 

@@ -19,7 +19,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 */
 
 #include "map.h"
-#include "aura.h"
 #include "util.h"
 #include "config.h"
 #include "gameslot.h"

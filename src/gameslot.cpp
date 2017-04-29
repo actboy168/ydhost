@@ -18,7 +18,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
 */
 
-#include "aura.h"
 #include "gameslot.h"
 
 using namespace std;

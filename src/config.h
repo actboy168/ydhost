@@ -21,6 +21,9 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_CONFIG_H_
 #define AURA_CONFIG_H_
 
+#include <map>
+#include <stdint.h>
+
 //
 // CConfig
 //

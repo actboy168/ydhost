@@ -19,7 +19,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 */
 
 #include "game.h"
-#include "aura.h"
 #include "util.h"
 #include "config.h"
 #include "socket.h"

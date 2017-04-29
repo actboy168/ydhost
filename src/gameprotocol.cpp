@@ -19,12 +19,10 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 */
 
 #include "gameprotocol.h"
-#include "aura.h"
 #include "util.h"
 #include "crc32.h"
 #include "gameplayer.h"
 #include "gameslot.h"
-#include "game.h"
 
 using namespace std;
 

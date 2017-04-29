@@ -22,8 +22,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "config.h"
 #include "socket.h"
 #include "map.h"
-#include "gameplayer.h"
-#include "gameprotocol.h"
 #include "game.h"
 #include "util.h"
 
