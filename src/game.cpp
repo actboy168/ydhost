@@ -29,6 +29,9 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include <ctime>
 #include <cmath>
 
+uint32_t GetTicks();
+void Print(const std::string &message);
+
 //
 // CGame
 //

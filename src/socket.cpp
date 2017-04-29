@@ -29,6 +29,9 @@ int32_t GetLastError()
 }
 #endif
 
+uint32_t GetTicks();
+void Print(const std::string &message);
+
 //
 // CSocket
 //

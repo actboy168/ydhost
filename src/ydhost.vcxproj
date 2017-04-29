@@ -239,7 +239,6 @@
     <ClInclude Include="gameprotocol.h" />
     <ClInclude Include="gameslot.h" />
     <ClInclude Include="aura.h" />
-    <ClInclude Include="includes.h" />
     <ClInclude Include="map.h" />
     <ClInclude Include="socket.h" />
     <ClInclude Include="util.h" />

@@ -24,6 +24,9 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "gameplayer.h"
 #include "gameslot.h"
 
+uint32_t GetTicks();
+void Print(const std::string &message);
+
 //
 // CGameProtocol
 //

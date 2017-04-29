@@ -21,7 +21,9 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_GAMEPROTOCOL_H_
 #define AURA_GAMEPROTOCOL_H_
 
-#include "includes.h"
+#include <queue>
+#include <stdint.h>
+typedef std::vector<uint8_t> BYTEARRAY;
 
 //
 // CGameProtocol

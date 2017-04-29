@@ -22,6 +22,8 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "gameprotocol.h"
 #include "game.h"
 
+uint32_t GetTicks();
+
 //
 // CPotentialPlayer
 //

@@ -28,6 +28,7 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include <csignal>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 
 #ifdef WIN32
 #include <ws2tcpip.h>
@@ -39,6 +40,12 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
 #ifdef __APPLE__
 #include <mach/mach_time.h>
+#endif
+
+#ifdef WIN32
+#define MILLISLEEP( x ) Sleep( x )
+#else
+#define MILLISLEEP( x ) usleep( ( x ) * 1000 )
 #endif
 
 static CAura *gAura = nullptr;
@@ -72,6 +79,13 @@ uint32_t GetTicks()
 #endif
 }
 
+#include "logging.h"
+void Print(const std::string &message)
+{
+	std::cout << message << std::endl;
+	logging::logger() << message;
+}
+
 static void SignalCatcher(int32_t)
 {
 	Print("[!!!] caught signal SIGINT, exiting NOW");
@@ -85,13 +99,6 @@ static void SignalCatcher(int32_t)
 	}
 	else
 		exit(1);
-}
-
-#include "logging.h"
-void Print(const std::string &message)
-{
-	std::cout << message << std::endl;
-	logging::logger() << message;
 }
 
 //

@@ -21,7 +21,10 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_UTIL_H_
 #define AURA_UTIL_H_
 
-#include "includes.h"
+#include <sstream>
+#include <vector>
+#include <stdint.h>
+typedef std::vector<uint8_t> BYTEARRAY;
 
 inline BYTEARRAY CreateByteArray(const uint8_t *a, int32_t size)
 {

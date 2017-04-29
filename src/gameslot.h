@@ -21,7 +21,9 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_GAMESLOT_H_
 #define AURA_GAMESLOT_H_
 
-#include "includes.h"
+#include <vector>
+#include <stdint.h>
+typedef std::vector<uint8_t> BYTEARRAY;
 
 #define SLOTSTATUS_OPEN     0
 #define SLOTSTATUS_CLOSED   1

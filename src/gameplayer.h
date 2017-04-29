@@ -22,6 +22,7 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #define AURA_GAMEPLAYER_H_
 
 #include "socket.h"
+#include <queue>
 
 class CTCPSocket;
 class CGameProtocol;

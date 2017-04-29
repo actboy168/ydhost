@@ -21,7 +21,8 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_AURA_H_
 #define AURA_AURA_H_
 
-#include "includes.h"
+#include <vector>
+#include <stdint.h>
 
 //
 // CAura

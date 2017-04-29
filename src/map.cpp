@@ -23,6 +23,8 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "config.h"
 #include "gameslot.h"
 
+void Print(const std::string &message);
+
 //
 // CMap
 //

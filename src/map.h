@@ -76,7 +76,9 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 // CMap
 //
 
-#include "includes.h"
+#include <vector>
+#include <stdint.h>
+typedef std::vector<uint8_t> BYTEARRAY;
 
 class CAura;
 class CGameSlot;

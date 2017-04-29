@@ -19,10 +19,12 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 */
 
 #include "config.h"
-#include "includes.h"
 
-#include <cstdlib>
 #include <fstream>
+#include <algorithm>
+#include <string>
+
+void Print(const std::string &message);
 
 //
 // CConfig
@@ -61,8 +63,8 @@ void CConfig::Read(const std::string &file)
 
 			// remove newlines and partial newlines to help fix issues with Windows formatted config files on Linux systems
 
-			Line.erase(remove(std::begin(Line), std::end(Line), '\r'), std::end(Line));
-			Line.erase(remove(std::begin(Line), std::end(Line), '\n'), std::end(Line));
+			Line.erase(std::remove(std::begin(Line), std::end(Line), '\r'), std::end(Line));
+			Line.erase(std::remove(std::begin(Line), std::end(Line), '\n'), std::end(Line));
 
 			std::string::size_type Split = Line.find("=");
 

@@ -22,6 +22,7 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #define AURA_GAME_H_
 
 #include "gameslot.h"
+#include <queue>
 
 //
 // CGame
