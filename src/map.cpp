@@ -23,8 +23,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "config.h"
 #include "gameslot.h"
 
-using namespace std;
-
 //
 // CMap
 //
@@ -114,10 +112,10 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 
 	m_MapPath = MapPath;
 
-	m_MapSize = ExtractNumbers(MAP->GetString("map_size", string()), 4);
-	m_MapInfo = ExtractNumbers(MAP->GetString("map_info", string()), 4);
-	m_MapCRC = ExtractNumbers(MAP->GetString("map_crc", string()), 4);
-	m_MapSHA1 = ExtractNumbers(MAP->GetString("map_sha1", string()), 20);
+	m_MapSize = ExtractNumbers(MAP->GetString("map_size", std::string()), 4);
+	m_MapInfo = ExtractNumbers(MAP->GetString("map_info", std::string()), 4);
+	m_MapCRC = ExtractNumbers(MAP->GetString("map_crc", std::string()), 4);
+	m_MapSHA1 = ExtractNumbers(MAP->GetString("map_sha1", std::string()), 20);
 
 	Print("[MAP] map_size = " + ByteArrayToDecString(m_MapSize));
 	Print("[MAP] map_info = " + ByteArrayToDecString(m_MapInfo));
@@ -125,10 +123,10 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 	Print("[MAP] map_sha1 = " + ByteArrayToDecString(m_MapSHA1));
 
 	m_MapOptions = MAP->GetInt("map_options", 0);
-	m_MapWidth = ExtractNumbers(MAP->GetString("map_width", string()), 2);
-	m_MapHeight = ExtractNumbers(MAP->GetString("map_height", string()), 2);
+	m_MapWidth = ExtractNumbers(MAP->GetString("map_width", std::string()), 2);
+	m_MapHeight = ExtractNumbers(MAP->GetString("map_height", std::string()), 2);
 
-	Print("[MAP] map_options = " + to_string(m_MapOptions));
+	Print("[MAP] map_options = " + std::to_string(m_MapOptions));
 	Print("[MAP] map_width = " + ByteArrayToDecString(m_MapWidth));
 	Print("[MAP] map_height = " + ByteArrayToDecString(m_MapHeight));
 
@@ -136,8 +134,8 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 	m_Slots.clear();
 	for (uint32_t Slot = 1; Slot <= 12; ++Slot)
 	{
-		string SlotString = MAP->GetString("map_slot" + to_string(Slot), string());
-		Print("[MAP] map_slot" + to_string(Slot) + " = " + SlotString);
+		std::string SlotString = MAP->GetString("map_slot" + std::to_string(Slot), std::string());
+		Print("[MAP] map_slot" + std::to_string(Slot) + " = " + SlotString);
 		if (SlotString.empty())
 			break;
 		BYTEARRAY SlotData = ExtractNumbers(SlotString, 9);
@@ -183,7 +181,7 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 
 	if (m_MapObservers == MAPOBS_ALLOWED || m_MapObservers == MAPOBS_REFEREES)
 	{
-		Print("[MAP] adding " + to_string(12 - m_Slots.size()) + " observer slots");
+		Print("[MAP] adding " + std::to_string(12 - m_Slots.size()) + " observer slots");
 
 		while (m_Slots.size() < 12)
 			m_Slots.push_back(CGameSlot(0, 255, SLOTSTATUS_OPEN, 0, 12, 12, SLOTRACE_RANDOM));
@@ -202,7 +200,7 @@ void CMap::CheckValid()
 		Print("[MAP] invalid map_path detected");
 	}
 
-	if (m_MapPath.find('/') != string::npos)
+	if (m_MapPath.find('/') != std::string::npos)
 		Print("[MAP] warning - map_path contains forward slashes '/' but it must use Windows style back slashes '\\'");
 
 	if (m_MapSize.size() != 4)

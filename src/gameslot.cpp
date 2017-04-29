@@ -20,8 +20,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
 #include "gameslot.h"
 
-using namespace std;
-
 //
 // CGameSlot
 //

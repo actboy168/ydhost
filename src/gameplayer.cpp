@@ -22,8 +22,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "gameprotocol.h"
 #include "game.h"
 
-using namespace std;
-
 //
 // CPotentialPlayer
 //
@@ -58,7 +56,7 @@ bool CPotentialPlayer::Update(void *fd)
 
 	// extract as many packets as possible from the socket's receive buffer and process them
 
-	string *RecvBuffer = m_Socket->GetBytes();
+	std::string *RecvBuffer = m_Socket->GetBytes();
 	BYTEARRAY Bytes = CreateByteArray((uint8_t *)RecvBuffer->c_str(), RecvBuffer->size());
 	uint32_t LengthProcessed = 0;
 
@@ -116,7 +114,7 @@ void CPotentialPlayer::Send(const BYTEARRAY &data) const
 // CGamePlayer
 //
 
-CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const string &nName, const BYTEARRAY &nInternalIP)
+CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nName, const BYTEARRAY &nInternalIP)
 	: m_Protocol(potential->m_Protocol),
 	m_Game(potential->m_Game),
 	m_Socket(potential->GetSocket()),
@@ -160,7 +158,7 @@ bool CGamePlayer::Update(void *fd)
 
 	// extract as many packets as possible from the socket's receive buffer and process them
 
-	string *RecvBuffer = m_Socket->GetBytes();
+	std::string *RecvBuffer = m_Socket->GetBytes();
 	BYTEARRAY Bytes = CreateByteArray((uint8_t *)RecvBuffer->c_str(), RecvBuffer->size());
 	uint32_t LengthProcessed = 0;
 

@@ -41,8 +41,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include <mach/mach_time.h>
 #endif
 
-using namespace std;
-
 static CAura *gAura = nullptr;
 
 uint32_t GetTicks()
@@ -90,9 +88,9 @@ static void SignalCatcher(int32_t)
 }
 
 #include "logging.h"
-void Print(const string &message)
+void Print(const std::string &message)
 {
-	cout << message << endl;
+	std::cout << message << std::endl;
 	logging::logger() << message;
 }
 
@@ -108,7 +106,7 @@ int main(int, char *argv[])
 
 	// disable sync since we don't use cstdio anyway
 
-	ios_base::sync_with_stdio(false);
+	std::ios_base::sync_with_stdio(false);
 
 	// read config file
 
@@ -139,7 +137,7 @@ int main(int, char *argv[])
 			break;
 		}
 		else if (i < 5)
-			Print("[AURA] error setting Windows timer resolution to " + to_string(i) + " milliseconds, trying a higher resolution");
+			Print("[AURA] error setting Windows timer resolution to " + std::to_string(i) + " milliseconds, trying a higher resolution");
 		else
 		{
 			Print("[AURA] error setting Windows timer resolution");
@@ -147,7 +145,7 @@ int main(int, char *argv[])
 		}
 	}
 
-	Print("[AURA] using Windows timer with resolution " + to_string(TimerResolution) + " milliseconds");
+	Print("[AURA] using Windows timer with resolution " + std::to_string(TimerResolution) + " milliseconds");
 #elif !defined(__APPLE__)
 	// print the timer resolution
 
@@ -217,11 +215,11 @@ CAura::CAura(CConfig *CFG)
 {
 	Print("[AURA] Aura++ version 1.24");
 
-	m_UDPSocket->SetBroadcastTarget(string());
+	m_UDPSocket->SetBroadcastTarget(std::string());
 	m_UDPSocket->SetDontRoute(false);
 
-	std::string MapPath = CFG->GetString("bot_mappath", string());
-	std::string MapCFGPath = CFG->GetString("bot_mapcfgpath", string());
+	std::string MapPath = CFG->GetString("bot_mappath", std::string());
+	std::string MapCFGPath = CFG->GetString("bot_mapcfgpath", std::string());
 	CConfig MAP;
 	MAP.Read(MapCFGPath);
 	m_Map = new CMap(MapPath, &MAP);

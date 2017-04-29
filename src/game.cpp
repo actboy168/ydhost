@@ -29,8 +29,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include <ctime>
 #include <cmath>
 
-using namespace std;
-
 //
 // CGame
 //
@@ -66,10 +64,10 @@ CGame::CGame(const CMap* Map, const CGameConfig* Config, CUDPSocket* UDPSocket, 
 	m_State(State::Waiting)
 {
 	if (m_Socket->Listen(std::string(), m_HostPort))
-		Print("[GAME: " + GetGameName() + "] listening on port " + to_string(m_HostPort));
+		Print("[GAME: " + GetGameName() + "] listening on port " + std::to_string(m_HostPort));
 	else
 	{
-		Print("[GAME: " + GetGameName() + "] error listening on port " + to_string(m_HostPort));
+		Print("[GAME: " + GetGameName() + "] error listening on port " + std::to_string(m_HostPort));
 		m_Exiting = true;
 	}
 }
@@ -229,7 +227,7 @@ bool CGame::Update(void *fd, void *send_fd)
 		// we consider a player to have started lagging if they're more than m_SyncLimit keepalives behind
 		if (!m_Lagging)
 		{
-			string LaggingString;
+			std::string LaggingString;
 
 			for (auto & player : m_Players)
 			{
@@ -279,7 +277,7 @@ bool CGame::Update(void *fd, void *send_fd)
 							Send(_i, m_Protocol->SEND_W3GS_STOP_LAG(player));
 					}
 
-					Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(queue<CIncomingAction *>(), 0));
+					Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(std::queue<CIncomingAction *>(), 0));
 
 					// start the lag screen
 					Send(_i, m_Protocol->SEND_W3GS_START_LAG(m_Players));
@@ -406,7 +404,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			// we use a countdown counter rather than a "finish countdown time" here because it might alternately round up or down the count
 			// this sometimes resulted in a countdown of e.g. "6 5 3 2 1" during my testing which looks pretty dumb
 			// doing it this way ensures it's always "5 4 3 2 1" but each int32_terval might not be *exactly* the same length
-			SendAllChat(to_string(m_CountDownCounter--) + ". . .");
+			SendAllChat(std::to_string(m_CountDownCounter--) + ". . .");
 		}
 		else
 		{
@@ -461,7 +459,7 @@ void CGame::SendAll(const BYTEARRAY &data)
 		player->Send(data);
 }
 
-void CGame::SendAllChat(const string &message)
+void CGame::SendAllChat(const std::string &message)
 {
 	uint8_t fromPID = GetHostPID();
 	// send a public message to all players - it'll be marked [All] in Warcraft 3
@@ -517,7 +515,7 @@ void CGame::SendAllActions()
 		// we use a "sub actions queue" which we keep adding actions to until we reach the size limit
 		// start by adding one action to the sub actions queue
 
-		queue<CIncomingAction *> SubActions;
+		std::queue<CIncomingAction *> SubActions;
 		CIncomingAction *Action = m_Actions.front();
 		m_Actions.pop();
 		SubActions.push(Action);
@@ -575,7 +573,7 @@ void CGame::SendAllActions()
 
 		// this program is SO FAST, I've yet to see this happen *coolface*
 
-		Print("[GAME: " + GetGameName() + "] warning - the latency is " + to_string(GetLatency()) + "ms but the last update was late by " + to_string(m_LastActionLateBy) + "ms");
+		Print("[GAME: " + GetGameName() + "] warning - the latency is " + std::to_string(GetLatency()) + "ms but the last update was late by " + std::to_string(m_LastActionLateBy) + "ms");
 		m_LastActionLateBy = GetLatency();
 	}
 
@@ -636,7 +634,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 {
 	// check the new player's name
 
-	if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == GetVirtualHostName() || joinPlayer->GetName().find(" ") != string::npos || joinPlayer->GetName().find("|") != string::npos)
+	if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == GetVirtualHostName() || joinPlayer->GetName().find(" ") != std::string::npos || joinPlayer->GetName().find("|") != std::string::npos)
 	{
 		Print("[GAME: " + GetGameName() + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] invalid name (taken, invalid char, spoofer, too long)");
 		potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
@@ -1002,7 +1000,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 	{
 		// the player doesn't have the map
 
-		const string *MapData = m_Map->GetMapData();
+		const std::string *MapData = m_Map->GetMapData();
 
 		if (!MapData->empty())
 		{
@@ -1053,7 +1051,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 
 void CGame::EventGameStarted(uint32_t Ticks)
 {
-	Print("[GAME: " + GetGameName() + "] started loading with " + to_string(GetNumPlayers()) + " players");
+	Print("[GAME: " + GetGameName() + "] started loading with " + std::to_string(GetNumPlayers()) + " players");
 
 	// send a final slot info update if necessary
 	// this typically won't happen because we prevent the !start command from completing while someone is downloading the map
@@ -1365,7 +1363,7 @@ void CGame::StartCountDown()
 	}
 }
 
-void CGame::StopLaggers(const string &reason)
+void CGame::StopLaggers(const std::string &reason)
 {
 	for (auto & player : m_Players)
 	{

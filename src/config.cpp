@@ -24,8 +24,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include <cstdlib>
 #include <fstream>
 
-using namespace std;
-
 //
 // CConfig
 //
@@ -40,9 +38,9 @@ CConfig::~CConfig()
 
 }
 
-void CConfig::Read(const string &file)
+void CConfig::Read(const std::string &file)
 {
-	ifstream in;
+	std::ifstream in;
 	in.open(file.c_str());
 
 	if (in.fail())
@@ -50,11 +48,11 @@ void CConfig::Read(const string &file)
 	else
 	{
 		Print("[CONFIG] loading file [" + file + "]");
-		string Line;
+		std::string Line;
 
 		while (!in.eof())
 		{
-			getline(in, Line);
+			std::getline(in, Line);
 
 			// ignore blank lines and comments
 
@@ -63,20 +61,20 @@ void CConfig::Read(const string &file)
 
 			// remove newlines and partial newlines to help fix issues with Windows formatted config files on Linux systems
 
-			Line.erase(remove(begin(Line), end(Line), '\r'), end(Line));
-			Line.erase(remove(begin(Line), end(Line), '\n'), end(Line));
+			Line.erase(remove(std::begin(Line), std::end(Line), '\r'), std::end(Line));
+			Line.erase(remove(std::begin(Line), std::end(Line), '\n'), std::end(Line));
 
-			string::size_type Split = Line.find("=");
+			std::string::size_type Split = Line.find("=");
 
-			if (Split == string::npos)
+			if (Split == std::string::npos)
 				continue;
 
-			string::size_type KeyStart = Line.find_first_not_of(" ");
-			string::size_type KeyEnd = Line.find(" ", KeyStart);
-			string::size_type ValueStart = Line.find_first_not_of(" ", Split + 1);
-			string::size_type ValueEnd = Line.size();
+			std::string::size_type KeyStart = Line.find_first_not_of(" ");
+			std::string::size_type KeyEnd = Line.find(" ", KeyStart);
+			std::string::size_type ValueStart = Line.find_first_not_of(" ", Split + 1);
+			std::string::size_type ValueEnd = Line.size();
 
-			if (ValueStart != string::npos)
+			if (ValueStart != std::string::npos)
 				m_CFG[Line.substr(KeyStart, KeyEnd - KeyStart)] = Line.substr(ValueStart, ValueEnd - ValueStart);
 		}
 
@@ -84,28 +82,28 @@ void CConfig::Read(const string &file)
 	}
 }
 
-bool CConfig::Exists(const string &key)
+bool CConfig::Exists(const std::string &key)
 {
-	return m_CFG.find(key) != end(m_CFG);
+	return m_CFG.find(key) != std::end(m_CFG);
 }
 
-int32_t CConfig::GetInt(const string &key, int32_t x)
+int32_t CConfig::GetInt(const std::string &key, int32_t x)
 {
-	if (m_CFG.find(key) == end(m_CFG))
+	if (m_CFG.find(key) == std::end(m_CFG))
 		return x;
 	else
 		return atoi(m_CFG[key].c_str());
 }
 
-string CConfig::GetString(const string &key, const string &x)
+std::string CConfig::GetString(const std::string &key, const std::string &x)
 {
-	if (m_CFG.find(key) == end(m_CFG))
+	if (m_CFG.find(key) == std::end(m_CFG))
 		return x;
 	else
 		return m_CFG[key];
 }
 
-void CConfig::Set(const string &key, const string &x)
+void CConfig::Set(const std::string &key, const std::string &x)
 {
 	m_CFG[key] = x;
 }

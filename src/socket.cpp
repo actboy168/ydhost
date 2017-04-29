@@ -22,8 +22,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
 #include <string.h>
 
-using namespace std;
-
 #ifndef WIN32
 int32_t GetLastError()
 {
@@ -58,7 +56,7 @@ CSocket::~CSocket()
 		closesocket(m_Socket);
 }
 
-string CSocket::GetErrorString() const
+std::string CSocket::GetErrorString() const
 {
 	if (!m_HasError)
 		return "NO ERROR";
@@ -103,7 +101,7 @@ string CSocket::GetErrorString() const
 	case ECONNRESET: return "Connection reset by peer";
 	}
 
-	return "UNKNOWN ERROR (" + to_string(m_Error) + ")";
+	return "UNKNOWN ERROR (" + std::to_string(m_Error) + ")";
 }
 
 void CSocket::SetFD(fd_set *fd, fd_set *send_fd, int *nfds)
@@ -227,7 +225,7 @@ void CTCPSocket::DoRecv(fd_set *fd)
 		{
 			// success! add the received data to the buffer
 
-			m_RecvBuffer += string(buffer, c);
+			m_RecvBuffer += std::string(buffer, c);
 			m_LastRecv = GetTicks();
 		}
 		else if (c == SOCKET_ERROR && GetLastError() != EWOULDBLOCK)
@@ -318,7 +316,7 @@ void CTCPClient::Disconnect()
 	m_Connecting = false;
 }
 
-void CTCPClient::Connect(const string &localaddress, const string &address, uint16_t port)
+void CTCPClient::Connect(const std::string &localaddress, const std::string &address, uint16_t port)
 {
 	if (m_Socket == INVALID_SOCKET || m_HasError || m_Connecting || m_Connected)
 		return;
@@ -460,7 +458,7 @@ CTCPServer::~CTCPServer()
 		closesocket(m_Socket);
 }
 
-bool CTCPServer::Listen(const string &address, uint16_t& port)
+bool CTCPServer::Listen(const std::string &address, uint16_t& port)
 {
 	if (m_Socket == INVALID_SOCKET || m_HasError)
 		return false;
@@ -561,7 +559,7 @@ bool CUDPSocket::SendTo(struct sockaddr_in sin, const BYTEARRAY &message)
 	if (m_Socket == INVALID_SOCKET || m_HasError)
 		return false;
 
-	const string MessageString = string(begin(message), end(message));
+	const std::string MessageString = std::string(std::begin(message), std::end(message));
 
 	if (sendto(m_Socket, MessageString.c_str(), MessageString.size(), 0, (struct sockaddr *) &sin, sizeof(sin)) == -1)
 		return false;
@@ -569,7 +567,7 @@ bool CUDPSocket::SendTo(struct sockaddr_in sin, const BYTEARRAY &message)
 	return true;
 }
 
-bool CUDPSocket::SendTo(const string &address, uint16_t port, const BYTEARRAY &message)
+bool CUDPSocket::SendTo(const std::string &address, uint16_t port, const BYTEARRAY &message)
 {
 	if (m_Socket == INVALID_SOCKET || m_HasError)
 		return false;
@@ -607,18 +605,18 @@ bool CUDPSocket::Broadcast(uint16_t port, const BYTEARRAY &message)
 	sin.sin_addr.s_addr = m_BroadcastTarget.s_addr;
 	sin.sin_port = htons(port);
 
-	const string MessageString = string(begin(message), end(message));
+	const std::string MessageString = std::string(std::begin(message), std::end(message));
 
 	if (sendto(m_Socket, MessageString.c_str(), MessageString.size(), 0, (struct sockaddr *) &sin, sizeof(sin)) == -1)
 	{
-		Print("[UDPSOCKET] failed to broadcast packet (port " + to_string(port) + ", size " + to_string(MessageString.size()) + " bytes)");
+		Print("[UDPSOCKET] failed to broadcast packet (port " + std::to_string(port) + ", size " + std::to_string(MessageString.size()) + " bytes)");
 		return false;
 	}
 
 	return true;
 }
 
-void CUDPSocket::SetBroadcastTarget(const string &subnet)
+void CUDPSocket::SetBroadcastTarget(const std::string &subnet)
 {
 	if (subnet.empty())
 	{

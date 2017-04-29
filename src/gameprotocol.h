@@ -117,13 +117,13 @@ public:
 	BYTEARRAY SEND_W3GS_PLAYERINFO(uint8_t PID, const std::string &name, BYTEARRAY externalIP, BYTEARRAY internalIP);
 	BYTEARRAY SEND_W3GS_PLAYERLEAVE_OTHERS(uint8_t PID, uint32_t leftCode);
 	BYTEARRAY SEND_W3GS_GAMELOADED_OTHERS(uint8_t PID);
-	BYTEARRAY SEND_W3GS_SLOTINFO(std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots);
+	BYTEARRAY SEND_W3GS_SLOTINFO(const std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots);
 	BYTEARRAY SEND_W3GS_COUNTDOWN_START();
 	BYTEARRAY SEND_W3GS_COUNTDOWN_END();
 	BYTEARRAY SEND_W3GS_INCOMING_ACTION(std::queue<CIncomingAction *> actions, uint16_t sendInterval);
 	BYTEARRAY SEND_W3GS_INCOMING_ACTION2(std::queue<CIncomingAction *> actions);
 	BYTEARRAY SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARRAY &toPIDs, uint8_t flag, const BYTEARRAY &flagExtra, const std::string &message);
-	BYTEARRAY SEND_W3GS_START_LAG(std::vector<CGamePlayer *> players);
+	BYTEARRAY SEND_W3GS_START_LAG(const std::vector<CGamePlayer *>& players);
 	BYTEARRAY SEND_W3GS_STOP_LAG(CGamePlayer *player);
 	BYTEARRAY SEND_W3GS_GAMEINFO(uint8_t war3Version, const BYTEARRAY &mapGameType, const BYTEARRAY &mapFlags, const BYTEARRAY &mapWidth, const BYTEARRAY &mapHeight, const std::string &gameName, const std::string &hostName, uint32_t upTime, const std::string &mapPath, const BYTEARRAY &mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey);
 	BYTEARRAY SEND_W3GS_CREATEGAME(uint8_t war3Version);
