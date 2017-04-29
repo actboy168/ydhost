@@ -79,6 +79,7 @@ protected:
 	const CMap *m_Map;                            // map data
 	std::string m_GameName;                       // game name
 	std::string m_VirtualHostName;                // host's name
+	uint8_t  m_War3Version;                       // warcraft 3 version
 	uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
 	uint32_t m_HostCounter;                       // a unique game number
 	uint32_t m_EntryKey;                          // random entry key for LAN, used to prove that a player is actually joining from LAN
@@ -116,7 +117,7 @@ protected:
 	State m_State;
 
 public:
-	CGame(CAura *nAura, const CMap *nMap, std::string &nGameName);
+	CGame(CAura* Aura, const CMap* Map, const std::string& GameName, uint8_t War3Version);
 	~CGame();
 	CGame(CGame &) = delete;
 

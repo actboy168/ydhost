@@ -184,13 +184,6 @@ int main(int, char *argv[])
 
 	gAura = new CAura(&CFG);
 
-	if (!gAura->m_Map)
-	{
-		Print("[AURA] could not found the map");
-		return 1;
-	}
-
-	gAura->CreateGame(gAura->m_Map, CFG.GetString("bot_defaultgamename", ""));
 
 	// loop
 	while (!gAura->Update());
@@ -229,7 +222,6 @@ CAura::CAura(CConfig *CFG)
 	m_UDPSocket->SetBroadcastTarget(string());
 	m_UDPSocket->SetDontRoute(false);
 	m_BindAddress = string();
-	m_LANWar3Version = CFG->GetInt("lan_war3version", 26);
 	m_VirtualHostName = CFG->GetString("bot_virtualhostname", "|cFF4080C0YDWE");
 	if (m_VirtualHostName.size() > 15)
 	{
@@ -241,11 +233,13 @@ CAura::CAura(CConfig *CFG)
 	m_SyncLimit = CFG->GetInt("bot_synclimit", 50);
 	m_AutoStart = CFG->GetInt("bot_autostart", 1);
 
-	m_MapPath = CFG->GetString("bot_mappath", string());
-	m_MapCFGPath = CFG->GetString("bot_mapcfgpath", string());
+	std::string MapPath = CFG->GetString("bot_mappath", string());
+	std::string MapCFGPath = CFG->GetString("bot_mapcfgpath", string());
 	CConfig MAP;
-	MAP.Read(m_MapCFGPath);
-	m_Map = new CMap(this, m_MapPath, &MAP);
+	MAP.Read(MapCFGPath);
+	m_Map = new CMap(this, MapPath, &MAP);
+
+	CreateGame(m_Map, CFG->GetString("bot_defaultgamename", ""), CFG->GetInt("lan_war3version", 26));
 
 }
 
@@ -331,19 +325,19 @@ bool CAura::Update()
 	return m_Exiting || m_Games.size() == 0;
 }
 
-void CAura::CreateGame(CMap *map, string gameName)
+void CAura::CreateGame(CMap* Map, const string& GameName, uint8_t War3Version)
 {
-	if (gameName.size() > 31)
+	if (GameName.size() > 31)
 	{
 		return;
 	}
 
-	if (!map->GetValid())
+	if (!Map->GetValid())
 	{
 		return;
 	}
 
-	Print("[AURA] creating game [" + gameName + "]");
+	Print("[AURA] creating game [" + GameName + "]");
 
-	m_Games.push_back(new CGame(this, map, gameName));
+	m_Games.push_back(new CGame(this, Map, GameName, War3Version));
 }

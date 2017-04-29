@@ -41,14 +41,11 @@ public:
 	CUDPSocket *m_UDPSocket;                      // a UDP socket for sending broadcasts and other junk (used with !sendlan)
 	std::vector<CGame *> m_Games;                 // these games are in progress
 	CMap *m_Map;                                  // the currently loaded map
-	std::string m_MapCFGPath;                     // config value: map cfg path
-	std::string m_MapPath;                        // config value: map path
 	std::string m_VirtualHostName;                // config value: virtual host name
 	std::string m_BindAddress;                    // config value: the address to host games on
 	uint32_t m_HostCounter;                       // the current host counter (a unique number to identify a game, incremented each time a game is created)
 	uint32_t m_Latency;                           // config value: the latency (by default)
 	uint32_t m_SyncLimit;                         // config value: the maximum number of packets a player can fall out of sync before starting the lag screen (by default)
-	uint8_t m_LANWar3Version;                     // config value: LAN warcraft 3 version
 	bool m_Exiting;                               // set to true to force aura to shutdown next update (used by SignalCatcher)
 	uint32_t m_AutoStart;
 
@@ -61,7 +58,7 @@ public:
 	bool Update();
 
 	// other functions
-	void CreateGame(CMap *map, std::string gameName);
+	void CreateGame(CMap* Map, const std::string& GameName, uint8_t War3Version);
 };
 
 #endif  // AURA_AURA_H_

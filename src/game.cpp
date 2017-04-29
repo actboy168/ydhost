@@ -36,19 +36,20 @@ using namespace std;
 // CGame
 //
 
-CGame::CGame(CAura *nAura, const CMap *nMap, string &nGameName)
-	: m_Aura(nAura),
+CGame::CGame(CAura* Aura, const CMap* Map, const string& GameName, uint8_t War3Version)
+	: m_Aura(Aura),
 	m_Socket(new CTCPServer()),
-	m_Protocol(new CGameProtocol(nAura)),
-	m_Slots(nMap->GetSlots()),
-	m_Map(nMap),
-	m_GameName(nGameName),
-	m_VirtualHostName(nAura->m_VirtualHostName),
+	m_Protocol(new CGameProtocol(Aura)),
+	m_Slots(Map->GetSlots()),
+	m_Map(Map),
+	m_GameName(GameName),
+	m_VirtualHostName(Aura->m_VirtualHostName),
+	m_War3Version(War3Version),
 	m_RandomSeed(GetTicks()),
-	m_HostCounter(nAura->m_HostCounter++),
+	m_HostCounter(Aura->m_HostCounter++),
 	m_EntryKey(rand()),
-	m_Latency(nAura->m_Latency),
-	m_SyncLimit(nAura->m_SyncLimit),
+	m_Latency(Aura->m_Latency),
+	m_SyncLimit(Aura->m_SyncLimit),
 	m_SyncCounter(0),
 	m_PingTimer(),
 	m_DownloadTimer(),
@@ -198,7 +199,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			// note: the PrivateGame flag is not set when broadcasting to LAN (as you might expect)
 			// note: we do not use m_Map->GetMapGameType because none of the filters are set when broadcasting to LAN (also as you might expect)
 
-			m_Aura->m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Aura->m_LANWar3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
+			m_Aura->m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_War3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName, "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
 		}
 	}
 
