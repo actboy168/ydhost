@@ -52,7 +52,7 @@ CGame::CGame(CAura *nAura, const CMap *nMap, string &nGameName)
 	m_SyncCounter(0),
 	m_PingTimer(),
 	m_DownloadTimer(),
-	m_DownloadCounterResetTimer(),
+	m_SyncSlotInfoTimer(),
 	m_CountDownTimer(),
 	m_CountDownCounter(0),
 	m_LagScreenResetTimer(),
@@ -166,7 +166,6 @@ bool CGame::Update(void *fd, void *send_fd)
 	// ping every 5 seconds
 	// changed this to ping during game loading as well to hopefully fix some problems with people disconnecting during loading
 	// changed this to ping during the game as well
-
 	if (m_PingTimer.update(Ticks, 5000))
 	{
 		// note: we must send pings to players who are downloading the map because Warcraft III disconnects from the lobby if it doesn't receive a ping every ~90 seconds
@@ -204,7 +203,6 @@ bool CGame::Update(void *fd, void *send_fd)
 	}
 
 	// update players
-
 	for (auto i = begin(m_Players); i != end(m_Players);)
 	{
 		if ((*i)->Update(fd))
@@ -222,10 +220,8 @@ bool CGame::Update(void *fd, void *send_fd)
 		if ((*i)->Update(fd))
 		{
 			// flush the socket (e.g. in case a rejection message is queued)
-
 			if ((*i)->GetSocket())
 				(*i)->GetSocket()->DoSend((fd_set *)send_fd);
-
 			delete *i;
 			i = m_Potentials.erase(i);
 		}
@@ -235,12 +231,10 @@ bool CGame::Update(void *fd, void *send_fd)
 
 	// keep track of the largest sync counter (the number of keepalive packets received by each player)
 	// if anyone falls behind by more than m_SyncLimit keepalives we start the lag screen
-
 	if (m_State == State::Loaded)
 	{
 		// check if anyone has started lagging
 		// we consider a player to have started lagging if they're more than m_SyncLimit keepalives behind
-
 		if (!m_Lagging)
 		{
 			string LaggingString;
@@ -264,15 +258,12 @@ bool CGame::Update(void *fd, void *send_fd)
 			if (m_Lagging)
 			{
 				// start the lag screen
-
 				Print("[GAME: " + m_GameName + "] started lagging on [" + LaggingString + "]");
 				SendAll(m_Protocol->SEND_W3GS_START_LAG(m_Players));
 
 				// reset everyone's drop vote
-
 				for (auto & player : m_Players)
 					player->SetDropVote(false);
-
 				m_LagScreenResetTimer.reset(Ticks);
 			}
 		}
@@ -285,13 +276,11 @@ bool CGame::Update(void *fd, void *send_fd)
 			// we cannot allow the lag screen to stay up for more than ~65 seconds because Warcraft III disconnects if it doesn't receive an action packet at least this often
 			// one (easy) solution is to simply drop all the laggers if they lag for more than 60 seconds
 			// another solution is to reset the lag screen the same way we reset it when using load-in-game
-
 			if (m_LagScreenResetTimer.update(Ticks, 60000))
 			{
 				for (auto & _i : m_Players)
 				{
 					// stop the lag screen
-
 					for (auto & player : m_Players)
 					{
 						if (player->GetLagging())
@@ -301,7 +290,6 @@ bool CGame::Update(void *fd, void *send_fd)
 					Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(queue<CIncomingAction *>(), 0));
 
 					// start the lag screen
-
 					Send(_i, m_Protocol->SEND_W3GS_START_LAG(m_Players));
 				}
 
@@ -340,11 +328,9 @@ bool CGame::Update(void *fd, void *send_fd)
 			m_Lagging = Lagging;
 
 			// reset m_LastActionSentTicks because we want the game to stop running while the lag screen is up
-
 			m_LastActionSentTicks = Ticks;
 
 			// keep track of the last lag screen time so we can avoid timing out players
-
 			m_LastLagScreenTicks = Ticks;
 		}
 	}
@@ -352,21 +338,17 @@ bool CGame::Update(void *fd, void *send_fd)
 	// send actions every m_Latency milliseconds
 	// actions are at the heart of every Warcraft 3 game but luckily we don't need to know their contents to relay them
 	// we queue player actions in EventPlayerAction then just resend them in batches to all players here
-
 	if (m_State == State::Loaded && !m_Lagging && Ticks - m_LastActionSentTicks >= m_Latency - m_LastActionLateBy)
 		SendAllActions();
 
 	// end the game if there aren't any players left
-
 	if (m_Players.empty() && (m_State == State::Loading || m_State == State::Loaded))
 	{
 		Print("[GAME: " + m_GameName + "] is over (no players left)");
-
 		return true;
 	}
 
 	// check if the game is loaded
-
 	if (m_State == State::Loading)
 	{
 		bool FinishedLoading = true;
@@ -374,7 +356,6 @@ bool CGame::Update(void *fd, void *send_fd)
 		for (auto & player : m_Players)
 		{
 			FinishedLoading = player->GetFinishedLoading();
-
 			if (!FinishedLoading)
 				break;
 		}
@@ -386,21 +367,16 @@ bool CGame::Update(void *fd, void *send_fd)
 		}
 	}
 
-	if (m_State == State::Loaded)
+	if (m_State == State::Loaded || m_State == State::Loading)
 		return m_Exiting;
 
-	// send more map data
-
-	if ((m_State == State::Waiting || m_State == State::CountDown) && m_DownloadCounterResetTimer.update(Ticks, 1000))
+	if (m_SyncSlotInfoTimer.update(Ticks, 1000))
 	{
-		// hackhack: another timer hijack is in progress here
-		// since the download counter is reset once per second it's a great place to update the slot info if necessary
-
 		if (m_SlotInfoChanged)
 			SendAllSlotInfo();
 	}
 
-	if ((m_State == State::Waiting || m_State == State::CountDown) && m_DownloadTimer.update(Ticks, 100))
+	if (m_DownloadTimer.update(Ticks, 100))
 	{
 		for (auto & player : m_Players)
 		{
@@ -431,8 +407,6 @@ bool CGame::Update(void *fd, void *send_fd)
 		}
 	}
 
-	// countdown every 500 ms
-
 	if (m_State == State::CountDown && m_CountDownTimer.update(Ticks, 500))
 	{
 		if (m_CountDownCounter > 0)
@@ -440,20 +414,19 @@ bool CGame::Update(void *fd, void *send_fd)
 			// we use a countdown counter rather than a "finish countdown time" here because it might alternately round up or down the count
 			// this sometimes resulted in a countdown of e.g. "6 5 3 2 1" during my testing which looks pretty dumb
 			// doing it this way ensures it's always "5 4 3 2 1" but each int32_terval might not be *exactly* the same length
-
 			SendAllChat(to_string(m_CountDownCounter--) + ". . .");
 		}
-		else if (m_State == State::Waiting || m_State == State::CountDown)
+		else
+		{
 			EventGameStarted(Ticks);
+		}
 	}
 
 	// create the virtual host player
-
-	if ((m_State == State::Waiting || m_State == State::CountDown) && GetNumPlayers() < 12)
+	if (GetNumPlayers() < 12)
 		CreateVirtualHost();
 
 	// accept new connections
-
 	if (m_Socket)
 	{
 		CTCPSocket *NewSocket = m_Socket->Accept((fd_set *)fd);
