@@ -54,7 +54,7 @@ CGame::CGame(const CMap* Map, const CGameConfig* Config, CUDPSocket* UDPSocket, 
 	m_CountDownTimer(),
 	m_CountDownCounter(0),
 	m_LagScreenResetTimer(),
-	m_LastActionSentTicks(0),
+	m_ActionSentTimer(),
 	m_LastActionLateBy(0),
 	m_StartedLaggingTicks(0),
 	m_LastLagScreenTicks(0),
@@ -103,7 +103,7 @@ uint32_t CGame::GetNextTimedActionTicks() const
 	if (m_State != State::Loaded || m_Lagging)
 		return 50;
 
-	const uint32_t TicksSinceLastUpdate = GetTicks() - m_LastActionSentTicks;
+	const uint32_t TicksSinceLastUpdate = GetTicks() - m_ActionSentTimer;
 
 	if (TicksSinceLastUpdate > GetLatency() - m_LastActionLateBy)
 		return 0;
@@ -320,8 +320,8 @@ bool CGame::Update(void *fd, void *send_fd)
 
 			m_Lagging = Lagging;
 
-			// reset m_LastActionSentTicks because we want the game to stop running while the lag screen is up
-			m_LastActionSentTicks = Ticks;
+			// reset m_ActionSentTimer because we want the game to stop running while the lag screen is up
+			m_ActionSentTimer.reset(Ticks);
 
 			// keep track of the last lag screen time so we can avoid timing out players
 			m_LastLagScreenTicks = Ticks;
@@ -331,8 +331,9 @@ bool CGame::Update(void *fd, void *send_fd)
 	// send actions every GetLatency() milliseconds
 	// actions are at the heart of every Warcraft 3 game but luckily we don't need to know their contents to relay them
 	// we queue player actions in EventPlayerAction then just resend them in batches to all players here
-	if (m_State == State::Loaded && !m_Lagging && Ticks - m_LastActionSentTicks >= GetLatency() - m_LastActionLateBy)
+	if (m_State == State::Loaded && !m_Lagging && m_ActionSentTimer.update(Ticks, GetLatency() - m_LastActionLateBy)) {
 		SendAllActions();
+	}
 
 	// end the game if there aren't any players left
 	if (m_Players.empty() && (m_State == State::Loading || m_State == State::Loaded))
@@ -355,7 +356,7 @@ bool CGame::Update(void *fd, void *send_fd)
 
 		if (FinishedLoading)
 		{
-			m_LastActionSentTicks = Ticks;
+			m_ActionSentTimer.reset(Ticks);
 			m_State = State::Loaded;
 		}
 	}
@@ -564,7 +565,7 @@ void CGame::SendAllActions()
 		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(m_Actions, GetLatency()));
 
 	const uint32_t Ticks = GetTicks();
-	const uint32_t ActualSendInterval = Ticks - m_LastActionSentTicks;
+	const uint32_t ActualSendInterval = Ticks - m_ActionSentTimer;
 	const uint32_t ExpectedSendInterval = GetLatency() - m_LastActionLateBy;
 	m_LastActionLateBy = ActualSendInterval - ExpectedSendInterval;
 
@@ -579,8 +580,6 @@ void CGame::SendAllActions()
 		Print("[GAME: " + GetGameName() + "] warning - the latency is " + std::to_string(GetLatency()) + "ms but the last update was late by " + std::to_string(m_LastActionLateBy) + "ms");
 		m_LastActionLateBy = GetLatency();
 	}
-
-	m_LastActionSentTicks = Ticks;
 }
 
 void CGame::EventPlayerDeleted(CGamePlayer *player)
@@ -788,14 +787,6 @@ void CGame::EventPlayerLoaded(CGamePlayer *player)
 void CGame::EventPlayerAction(CGamePlayer *player, CIncomingAction *action)
 {
 	m_Actions.push(action);
-
-	// check for players saving the game and notify everyone
-
-	if (!action->GetAction()->empty() && (*action->GetAction())[0] == 6)
-	{
-		Print("[GAME: " + GetGameName() + "] player [" + player->GetName() + "] is saving the game");
-		SendAllChat("Player [" + player->GetName() + "] is saving the game");
-	}
 }
 
 void CGame::EventPlayerKeepAlive(CGamePlayer *player)

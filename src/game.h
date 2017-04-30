@@ -46,9 +46,9 @@ public:
 		: m_Ticks(0)
 	{ }
 
-	bool update(uint32_t CurTicks, uint32_t Timeout)
+	bool update(uint32_t CurTicks, int32_t Timeout)
 	{
-		if (CurTicks - m_Ticks < Timeout)
+		if (CurTicks < m_Ticks + Timeout)
 		{
 			return false;
 		}
@@ -59,6 +59,11 @@ public:
 	void reset(uint32_t CurTicks)
 	{
 		m_Ticks = CurTicks;
+	}
+
+	operator uint32_t() const
+	{
+		return m_Ticks;
 	}
 
 private:
@@ -95,14 +100,12 @@ protected:
 	uint32_t m_LastActionLateBy;                  // the number of ticks we were late sending the last action packet by
 	uint32_t m_StartedLaggingTicks;               // GetTicks when the last lag screen started
 	uint32_t m_LastLagScreenTicks;                // GetTicks when the last lag screen was active (continuously updated)
-	uint32_t m_LastActionSentTicks;               // GetTicks when the last action packet was sent
-
+	CTimer m_ActionSentTimer;                     // GetTicks when the last action packet was sent
 	CTimer m_PingTimer;                           // GetTicks when the last ping was sent
 	CTimer m_DownloadTimer;                       // GetTicks when the last map download cycle was performed
 	CTimer m_SyncSlotInfoTimer;                   // GetTicks when the download counter was last reset
 	CTimer m_CountDownTimer;                      // GetTicks when the last countdown message was sent
 	CTimer m_LagScreenResetTimer;                 // GetTicks when the "lag" screen was last reset
-
 	uint16_t m_HostPort;                          // the port to host games on
 	uint8_t m_VirtualHostPID;                     // host's PID
 	bool m_Exiting;                               // set to true and this class will be deleted next update
