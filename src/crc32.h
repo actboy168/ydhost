@@ -58,10 +58,10 @@ static const uint32_t crc32tab[] = {
 	0x2d02ef8dL
 };
 
-inline uint32_t CRC32(const char* buf, size_t len) {
+inline uint32_t CRC32(const unsigned char* buf, size_t len) {
 	uint32_t h = 0xFFFFFFFF;
 	while (len--) {
-		h = crc32tab[(h ^ (unsigned char)*buf++) & 0xFF] ^ (h >> 8);
+		h = crc32tab[(h ^ *buf++) & 0xFF] ^ (h >> 8);
 	}
 	return(h ^ (~0L));
 }

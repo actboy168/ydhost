@@ -122,8 +122,8 @@ public:
 	BYTEARRAY SEND_W3GS_SLOTINFO(const std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots);
 	BYTEARRAY SEND_W3GS_COUNTDOWN_START();
 	BYTEARRAY SEND_W3GS_COUNTDOWN_END();
-	BYTEARRAY SEND_W3GS_INCOMING_ACTION(std::queue<CIncomingAction *> actions, uint16_t sendInterval);
-	BYTEARRAY SEND_W3GS_INCOMING_ACTION2(std::queue<CIncomingAction *> actions);
+	BYTEARRAY SEND_W3GS_INCOMING_ACTION(const std::vector<CIncomingAction *>& actions, uint16_t sendInterval);
+	BYTEARRAY SEND_W3GS_INCOMING_ACTION2(const std::vector<CIncomingAction *>& actions);
 	BYTEARRAY SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARRAY &toPIDs, uint8_t flag, const BYTEARRAY &flagExtra, const std::string &message);
 	BYTEARRAY SEND_W3GS_START_LAG(const std::vector<CGamePlayer *>& players);
 	BYTEARRAY SEND_W3GS_STOP_LAG(CGamePlayer *player);

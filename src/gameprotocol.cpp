@@ -378,7 +378,7 @@ BYTEARRAY CGameProtocol::SEND_W3GS_COUNTDOWN_END()
 	return BYTEARRAY{ W3GS_HEADER_CONSTANT, W3GS_COUNTDOWN_END, 4, 0 };
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_INCOMING_ACTION(std::queue<CIncomingAction *> actions, uint16_t sendInterval)
+BYTEARRAY CGameProtocol::SEND_W3GS_INCOMING_ACTION(const std::vector<CIncomingAction *>& actions, uint16_t sendInterval)
 {
 	BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_INCOMING_ACTION, 0, 0 };
 	AppendByteArray(packet, sendInterval, false);   // send int32_terval
@@ -389,18 +389,16 @@ BYTEARRAY CGameProtocol::SEND_W3GS_INCOMING_ACTION(std::queue<CIncomingAction *>
 	{
 		BYTEARRAY subpacket;
 
-		do
+		for (auto& act : actions)
 		{
-			CIncomingAction *Action = actions.front();
-			actions.pop();
-			subpacket.push_back(Action->GetPID());
-			AppendByteArray(subpacket, (uint16_t)Action->GetAction()->size(), false);
-			AppendByteArrayFast(subpacket, *Action->GetAction());
-		} while (!actions.empty());
+			subpacket.push_back(act->GetPID());
+			AppendByteArray(subpacket, (uint16_t)act->GetAction()->size(), false);
+			AppendByteArrayFast(subpacket, *act->GetAction());
+		}
 
 		// calculate crc (we only care about the first 2 bytes though)
 
-		BYTEARRAY crc32 = CreateByteArray(CRC32(std::string(begin(subpacket), end(subpacket)).c_str(), subpacket.size()), false);
+		BYTEARRAY crc32 = CreateByteArray(CRC32(subpacket.data(), subpacket.size()), false);
 		crc32.resize(2);
 
 		// finish subpacket
@@ -568,12 +566,12 @@ BYTEARRAY CGameProtocol::SEND_W3GS_MAPPART(uint8_t fromPID, uint8_t toPID, uint3
 
 		// calculate crc
 
-		const BYTEARRAY crc32 = CreateByteArray(CRC32(mapData->c_str() + start, End - start), false);
+		const BYTEARRAY crc32 = CreateByteArray(CRC32((const uint8_t*)mapData->c_str() + start, End - start), false);
 		AppendByteArrayFast(packet, crc32);
 
 		// map data
 
-		const BYTEARRAY data = CreateByteArray((uint8_t *)mapData->c_str() + start, End - start);
+		const BYTEARRAY data = CreateByteArray((const uint8_t *)mapData->c_str() + start, End - start);
 		AppendByteArrayFast(packet, data);
 		AssignLength(packet);
 		return packet;
@@ -583,7 +581,7 @@ BYTEARRAY CGameProtocol::SEND_W3GS_MAPPART(uint8_t fromPID, uint8_t toPID, uint3
 	return BYTEARRAY();
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_INCOMING_ACTION2(std::queue<CIncomingAction *> actions)
+BYTEARRAY CGameProtocol::SEND_W3GS_INCOMING_ACTION2(const std::vector<CIncomingAction *>& actions)
 {
 	BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_INCOMING_ACTION2, 0, 0, 0, 0 };
 
@@ -593,18 +591,16 @@ BYTEARRAY CGameProtocol::SEND_W3GS_INCOMING_ACTION2(std::queue<CIncomingAction *
 	{
 		BYTEARRAY subpacket;
 
-		while (!actions.empty())
+		for (auto& act : actions)
 		{
-			CIncomingAction *Action = actions.front();
-			actions.pop();
-			subpacket.push_back(Action->GetPID());
-			AppendByteArray(subpacket, (uint16_t)Action->GetAction()->size(), false);
-			AppendByteArrayFast(subpacket, *Action->GetAction());
+			subpacket.push_back(act->GetPID());
+			AppendByteArray(subpacket, (uint16_t)act->GetAction()->size(), false);
+			AppendByteArrayFast(subpacket, *act->GetAction());
 		}
 
 		// calculate crc (we only care about the first 2 bytes though)
 
-		BYTEARRAY crc32 = CreateByteArray(CRC32(std::string(begin(subpacket), end(subpacket)).c_str(), subpacket.size()), false);
+		BYTEARRAY crc32 = CreateByteArray(CRC32(subpacket.data(), subpacket.size()), false);
 		crc32.resize(2);
 
 		// finish subpacket

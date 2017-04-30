@@ -86,11 +86,8 @@ CGame::~CGame()
 	for (auto & player : m_Players)
 		delete player;
 
-	while (!m_Actions.empty())
-	{
-		delete m_Actions.front();
-		m_Actions.pop();
-	}
+	for (auto& act : m_Actions)
+		delete act;
 }
 
 uint32_t CGame::GetNextTimedActionTicks() const
@@ -280,7 +277,7 @@ bool CGame::Update(void *fd, void *send_fd)
 							Send(_i, m_Protocol->SEND_W3GS_STOP_LAG(player));
 					}
 
-					Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(std::queue<CIncomingAction *>(), 0));
+					Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(std::vector<CIncomingAction *>(), 0));
 
 					// start the lag screen
 					Send(_i, m_Protocol->SEND_W3GS_START_LAG(m_Players));
@@ -515,55 +512,27 @@ void CGame::SendAllActions()
 
 	// we aren't allowed to send more than 1460 bytes in a single packet but it's possible we might have more than that many bytes waiting in the queue
 
-	if (!m_Actions.empty())
+	uint32_t SubActionsLength = 0;
+	std::vector<CIncomingAction *> SubActions;
+	for (auto& act : m_Actions)
 	{
-		// we use a "sub actions queue" which we keep adding actions to until we reach the size limit
-		// start by adding one action to the sub actions queue
-
-		std::queue<CIncomingAction *> SubActions;
-		CIncomingAction *Action = m_Actions.front();
-		m_Actions.pop();
-		SubActions.push(Action);
-		uint32_t SubActionsLength = Action->GetLength();
-
-		while (!m_Actions.empty())
+		if (SubActionsLength + act->GetLength() > 1452)
 		{
-			Action = m_Actions.front();
-			m_Actions.pop();
-
-			// check if adding the next action to the sub actions queue would put us over the limit (1452 because the INCOMING_ACTION and INCOMING_ACTION2 packets use an extra 8 bytes)
-
-			if (SubActionsLength + Action->GetLength() > 1452)
-			{
-				// we'd be over the limit if we added the next action to the sub actions queue
-				// so send everything already in the queue and then clear it out
-				// the W3GS_INCOMING_ACTION2 packet handles the overflow but it must be sent *before* the corresponding W3GS_INCOMING_ACTION packet
-
-				SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION2(SubActions));
-
-				while (!SubActions.empty())
-				{
-					delete SubActions.front();
-					SubActions.pop();
-				}
-
-				SubActionsLength = 0;
-			}
-
-			SubActions.push(Action);
-			SubActionsLength += Action->GetLength();
+			SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION2(SubActions));
+			SubActions.clear();
+			SubActionsLength = 0;
 		}
-
-		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(SubActions, GetLatency()));
-
-		while (!SubActions.empty())
-		{
-			delete SubActions.front();
-			SubActions.pop();
-		}
+		SubActions.push_back(act);
+		SubActionsLength += act->GetLength();
 	}
-	else
-		SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(m_Actions, GetLatency()));
+
+	SendAll(m_Protocol->SEND_W3GS_INCOMING_ACTION(SubActions, GetLatency()));
+
+	for (auto& act : m_Actions)
+	{
+		delete act;
+	}
+	m_Actions.clear();
 
 	const uint32_t Ticks = GetTicks();
 	const uint32_t ActualSendInterval = Ticks - m_ActionSentTimer;
@@ -787,7 +756,7 @@ void CGame::EventPlayerLoaded(CGamePlayer *player)
 
 void CGame::EventPlayerAction(CGamePlayer *player, CIncomingAction *action)
 {
-	m_Actions.push(action);
+	m_Actions.push_back(action);
 }
 
 void CGame::EventPlayerKeepAlive(CGamePlayer *player)

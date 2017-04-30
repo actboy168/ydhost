@@ -88,7 +88,7 @@ protected:
 	std::vector<CGameSlot> m_Slots;               // std::vector of slots
 	std::vector<CPotentialPlayer *> m_Potentials; // std::vector of potential players (connections that haven't sent a W3GS_REQJOIN packet yet)
 	std::vector<CGamePlayer *> m_Players;         // std::vector of players
-	std::queue<CIncomingAction *> m_Actions;      // queue of actions to be sent
+	std::vector<CIncomingAction *> m_Actions;     // queue of actions to be sent
 	const CMap *m_Map;                            // map data
 	const CGameConfig* m_Config;
 	uint32_t m_RandomSeed;                        // the random seed sent to the Warcraft III clients
