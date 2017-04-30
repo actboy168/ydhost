@@ -61,11 +61,6 @@ public:
 		m_Ticks = CurTicks;
 	}
 
-	operator uint32_t() const
-	{
-		return m_Ticks;
-	}
-
 private:
 	uint32_t m_Ticks;
 };
@@ -97,7 +92,6 @@ protected:
 	uint32_t m_SyncLimit;                         // the maximum number of packets a player can fall out of sync before starting the lag screen
 	uint32_t m_SyncCounter;                       // the number of actions sent so far (for determining if anyone is lagging)
 	uint32_t m_CountDownCounter;                  // the countdown is finished when this reaches zero
-	uint32_t m_LastActionLateBy;                  // the number of ticks we were late sending the last action packet by
 	uint32_t m_StartedLaggingTicks;               // GetTicks when the last lag screen started
 	uint32_t m_LastLagScreenTicks;                // GetTicks when the last lag screen was active (continuously updated)
 	CTimer m_ActionSentTimer;                     // GetTicks when the last action packet was sent
@@ -133,7 +127,6 @@ public:
 	inline std::string GetVirtualHostName() const     { return m_Config->VirtualHostName; }
 	inline uint32_t GetLatency() const                { return m_Config->Latency; }
 
-	uint32_t GetNextTimedActionTicks() const;
 	uint32_t GetNumPlayers() const;
 
 	inline void SetExiting(bool nExiting)                      { m_Exiting = nExiting; }

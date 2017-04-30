@@ -55,7 +55,6 @@ CGame::CGame(const CMap* Map, const CGameConfig* Config, CUDPSocket* UDPSocket, 
 	m_CountDownCounter(0),
 	m_LagScreenResetTimer(),
 	m_ActionSentTimer(),
-	m_LastActionLateBy(0),
 	m_StartedLaggingTicks(0),
 	m_LastLagScreenTicks(0),
 	m_HostPort(0),
@@ -88,24 +87,6 @@ CGame::~CGame()
 
 	for (auto& act : m_Actions)
 		delete act;
-}
-
-uint32_t CGame::GetNextTimedActionTicks() const
-{
-	// return the number of ticks (ms) until the next "timed action", which for our purposes is the next game update
-	// the main Aura++ loop will make sure the next loop update happens at or before this value
-	// note: there's no reason this function couldn't take into account the game's other timers too but they're far less critical
-	// warning: this function must take into account when actions are not being sent (e.g. during loading or lagging)
-
-	if (m_State != State::Loaded || m_Lagging)
-		return 50;
-
-	const uint32_t TicksSinceLastUpdate = GetTicks() - m_ActionSentTimer;
-
-	if (TicksSinceLastUpdate > GetLatency() - m_LastActionLateBy)
-		return 0;
-	else
-		return GetLatency() - m_LastActionLateBy - TicksSinceLastUpdate;
 }
 
 uint32_t CGame::GetNumPlayers() const
@@ -328,7 +309,7 @@ bool CGame::Update(void *fd, void *send_fd)
 	// send actions every GetLatency() milliseconds
 	// actions are at the heart of every Warcraft 3 game but luckily we don't need to know their contents to relay them
 	// we queue player actions in EventPlayerAction then just resend them in batches to all players here
-	if (m_State == State::Loaded && !m_Lagging && m_ActionSentTimer.update(Ticks, GetLatency() - m_LastActionLateBy)) {
+	if (m_State == State::Loaded && !m_Lagging && m_ActionSentTimer.update(Ticks, GetLatency())) {
 		SendAllActions();
 	}
 
@@ -533,23 +514,6 @@ void CGame::SendAllActions()
 		delete act;
 	}
 	m_Actions.clear();
-
-	const uint32_t Ticks = GetTicks();
-	const uint32_t ActualSendInterval = Ticks - m_ActionSentTimer;
-	const uint32_t ExpectedSendInterval = GetLatency() - m_LastActionLateBy;
-	m_LastActionLateBy = ActualSendInterval - ExpectedSendInterval;
-
-	if (m_LastActionLateBy > GetLatency())
-	{
-		// something is going terribly wrong - Aura++ is probably starved of resources
-		// print a message because even though this will take more resources it should provide some information to the administrator for future reference
-		// other solutions - dynamically modify the latency, request higher priority, terminate other games, ???
-
-		// this program is SO FAST, I've yet to see this happen *coolface*
-
-		Print("[GAME: " + GetGameName() + "] warning - the latency is " + std::to_string(GetLatency()) + "ms but the last update was late by " + std::to_string(m_LastActionLateBy) + "ms");
-		m_LastActionLateBy = GetLatency();
-	}
 }
 
 void CGame::EventPlayerDeleted(CGamePlayer *player)

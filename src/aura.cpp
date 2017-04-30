@@ -286,18 +286,9 @@ bool CAura::Update()
 
 	// before we call select we need to determine how long to block for
 	// 50 ms is the hard maximum
-
-	unsigned long usecBlock = 50000;
-
-	for (auto & game : m_Games)
-	{
-		if (game->GetNextTimedActionTicks() * 1000 < usecBlock)
-			usecBlock = game->GetNextTimedActionTicks() * 1000;
-	}
-
 	static struct timeval tv;
 	tv.tv_sec = 0;
-	tv.tv_usec = usecBlock;
+	tv.tv_usec = 50000;
 
 	static struct timeval send_tv;
 	send_tv.tv_sec = 0;
