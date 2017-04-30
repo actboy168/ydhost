@@ -142,7 +142,7 @@ bool CGame::Update(void *fd, void *send_fd)
 		// note: we must send pings to players who are downloading the map because Warcraft III disconnects from the lobby if it doesn't receive a ping every ~90 seconds
 		// so if the player takes longer than 90 seconds to download the map they would be disconnected unless we keep sending pings
 
-		SendAll(m_Protocol->SEND_W3GS_PING_FROM_HOST());
+		SendAll(m_Protocol->SEND_W3GS_PING_FROM_HOST(Ticks));
 
 		// we also broadcast the game to the local network every 5 seconds so we hijack this timer for our nefarious purposes
 		// however we only want to broadcast if the countdown hasn't started
@@ -176,9 +176,9 @@ bool CGame::Update(void *fd, void *send_fd)
 	// update players
 	for (auto i = begin(m_Players); i != end(m_Players);)
 	{
-		if ((*i)->Update(fd))
+		if ((*i)->Update(Ticks, fd))
 		{
-			EventPlayerDeleted(*i);
+			EventPlayerDeleted(Ticks, *i);
 			delete *i;
 			i = m_Players.erase(i);
 		}
@@ -230,7 +230,16 @@ bool CGame::Update(void *fd, void *send_fd)
 			{
 				// start the lag screen
 				Print("[GAME: " + GetGameName() + "] started lagging on [" + LaggingString + "]");
-				SendAll(m_Protocol->SEND_W3GS_START_LAG(m_Players));
+
+				std::vector<std::pair<uint8_t, uint32_t>> lags;
+				for (auto& ply : m_Players)
+				{
+					if (ply->GetLagging())
+					{
+						lags.push_back(std::make_pair(ply->GetPID(), Ticks - ply->GetStartedLaggingTicks()));
+					}
+				}
+				SendAll(m_Protocol->SEND_W3GS_START_LAG(lags));
 
 				// reset everyone's drop vote
 				for (auto & player : m_Players)
@@ -252,16 +261,24 @@ bool CGame::Update(void *fd, void *send_fd)
 				for (auto & _i : m_Players)
 				{
 					// stop the lag screen
-					for (auto & player : m_Players)
+					for (auto& ply : m_Players)
 					{
-						if (player->GetLagging())
-							Send(_i, m_Protocol->SEND_W3GS_STOP_LAG(player));
+						if (ply->GetLagging())
+							Send(_i, m_Protocol->SEND_W3GS_STOP_LAG(ply->GetPID(), Ticks - ply->GetStartedLaggingTicks()));
 					}
 
 					Send(_i, m_Protocol->SEND_W3GS_INCOMING_ACTION(std::vector<CIncomingAction *>(), 0));
 
 					// start the lag screen
-					Send(_i, m_Protocol->SEND_W3GS_START_LAG(m_Players));
+					std::vector<std::pair<uint8_t, uint32_t>> lags;
+					for (auto& ply : m_Players)
+					{
+						if (ply->GetLagging())
+						{
+							lags.push_back(std::make_pair(ply->GetPID(), Ticks - ply->GetStartedLaggingTicks()));
+						}
+					}
+					Send(_i, m_Protocol->SEND_W3GS_START_LAG(lags));
 				}
 
 				// Warcraft III doesn't seem to respond to empty actions
@@ -270,16 +287,16 @@ bool CGame::Update(void *fd, void *send_fd)
 			// check if anyone has stopped lagging normally
 			// we consider a player to have stopped lagging if they're less than half m_SyncLimit keepalives behind
 
-			for (auto & player : m_Players)
+			for (auto & ply : m_Players)
 			{
-				if (player->GetLagging() && m_SyncCounter - player->GetSyncCounter() < m_SyncLimit / 2)
+				if (ply->GetLagging() && m_SyncCounter - ply->GetSyncCounter() < m_SyncLimit / 2)
 				{
 					// stop the lag screen for this player
 
-					Print("[GAME: " + GetGameName() + "] stopped lagging on [" + player->GetName() + "]");
-					SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player));
-					player->SetLagging(false);
-					player->SetStartedLaggingTicks(0);
+					Print("[GAME: " + GetGameName() + "] stopped lagging on [" + ply->GetName() + "]");
+					SendAll(m_Protocol->SEND_W3GS_STOP_LAG(ply->GetPID(), Ticks - ply->GetStartedLaggingTicks()));
+					ply->SetLagging(false);
+					ply->SetStartedLaggingTicks(0);
 				}
 			}
 
@@ -516,7 +533,7 @@ void CGame::SendAllActions()
 	m_Actions.clear();
 }
 
-void CGame::EventPlayerDeleted(CGamePlayer *player)
+void CGame::EventPlayerDeleted(uint32_t Ticks, CGamePlayer *player)
 {
 	Print("[GAME: " + GetGameName() + "] deleting player [" + player->GetName() + "]: " + player->GetLeftReason());
 
@@ -529,7 +546,7 @@ void CGame::EventPlayerDeleted(CGamePlayer *player)
 		SendAllChat(player->GetName() + " " + player->GetLeftReason() + ".");
 
 	if (player->GetLagging())
-		SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player));
+		SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player->GetPID(), Ticks - player->GetStartedLaggingTicks()));
 
 	// tell everyone about the player leaving
 
@@ -546,14 +563,7 @@ void CGame::EventPlayerDeleted(CGamePlayer *player)
 
 void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 {
-	// not only do we not do any timeouts if the game is lagging, we allow for an additional grace period of 10 seconds
-	// this is because Warcraft 3 stops sending packets during the lag screen
-	// so when the lag screen finishes we would immediately disconnect everyone if we didn't give them some extra time
-
-	if (GetTicks() - m_LastLagScreenTicks >= 10000)
-	{
-		DeletePlayer(player, PLAYERLEAVE_DISCONNECT, "has lost the connection (timed out)");
-	}
+	DeletePlayer(player, PLAYERLEAVE_DISCONNECT, "has lost the connection (timed out)");
 }
 
 void CGame::EventPlayerDisconnectSocketError(CGamePlayer *player)

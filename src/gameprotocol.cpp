@@ -24,7 +24,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "gameplayer.h"
 #include "gameslot.h"
 
-uint32_t GetTicks();
 void Print(const std::string &message);
 
 //
@@ -250,10 +249,10 @@ uint32_t CGameProtocol::RECEIVE_W3GS_PONG_TO_HOST(const BYTEARRAY &data)
 // SEND FUNCTIONS //
 ////////////////////
 
-BYTEARRAY CGameProtocol::SEND_W3GS_PING_FROM_HOST()
+BYTEARRAY CGameProtocol::SEND_W3GS_PING_FROM_HOST(uint32_t ticks)
 {
 	BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_PING_FROM_HOST, 8, 0 };
-	AppendByteArray(packet, GetTicks(), false);    // ping value
+	AppendByteArray(packet, ticks, false);    // ping value
 	return packet;
 }
 
@@ -429,27 +428,16 @@ BYTEARRAY CGameProtocol::SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARR
 	return BYTEARRAY();
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_START_LAG(const std::vector<CGamePlayer *>& players)
+BYTEARRAY CGameProtocol::SEND_W3GS_START_LAG(const std::vector<std::pair<uint8_t, uint32_t>>& lags)
 {
-	uint8_t NumLaggers = 0;
-
-	for (auto & player : players)
+	if (!lags.empty())
 	{
-		if ((player)->GetLagging())
-			++NumLaggers;
-	}
+		BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_START_LAG, 0, 0, (uint8_t)lags.size() };
 
-	if (NumLaggers > 0)
-	{
-		BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_START_LAG, 0, 0, NumLaggers };
-
-		for (auto & player : players)
+		for (auto& lag : lags)
 		{
-			if ((player)->GetLagging())
-			{
-				packet.push_back((player)->GetPID());
-				AppendByteArray(packet, GetTicks() - (player)->GetStartedLaggingTicks(), false);
-			}
+			packet.push_back(lag.first);
+			AppendByteArray(packet, lag.second, false);
 		}
 
 		AssignLength(packet);
@@ -460,10 +448,10 @@ BYTEARRAY CGameProtocol::SEND_W3GS_START_LAG(const std::vector<CGamePlayer *>& p
 	return BYTEARRAY();
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_STOP_LAG(CGamePlayer *player)
+BYTEARRAY CGameProtocol::SEND_W3GS_STOP_LAG(uint8_t pid, uint32_t time)
 {
-	BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_STOP_LAG, 9, 0, player->GetPID() };
-	AppendByteArray(packet, GetTicks() - player->GetStartedLaggingTicks(), false);
+	BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_STOP_LAG, 9, 0, pid };
+	AppendByteArray(packet, time, false);
 	return packet;
 }
 

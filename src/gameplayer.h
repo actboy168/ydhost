@@ -144,7 +144,7 @@ public:
 
 	// processing functions
 
-	bool Update(void *fd);
+	bool Update(uint32_t Ticks, void *fd);
 
 	// other functions
 

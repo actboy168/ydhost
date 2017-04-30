@@ -113,7 +113,7 @@ public:
 
 	// send functions
 
-	BYTEARRAY SEND_W3GS_PING_FROM_HOST();
+	BYTEARRAY SEND_W3GS_PING_FROM_HOST(uint32_t ticks);
 	BYTEARRAY SEND_W3GS_SLOTINFOJOIN(uint8_t PID, const BYTEARRAY &port, const BYTEARRAY &externalIP, const std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots);
 	BYTEARRAY SEND_W3GS_REJECTJOIN(uint32_t reason);
 	BYTEARRAY SEND_W3GS_PLAYERINFO(uint8_t PID, const std::string &name, BYTEARRAY externalIP, BYTEARRAY internalIP);
@@ -125,8 +125,8 @@ public:
 	BYTEARRAY SEND_W3GS_INCOMING_ACTION(const std::vector<CIncomingAction *>& actions, uint16_t sendInterval);
 	BYTEARRAY SEND_W3GS_INCOMING_ACTION2(const std::vector<CIncomingAction *>& actions);
 	BYTEARRAY SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARRAY &toPIDs, uint8_t flag, const BYTEARRAY &flagExtra, const std::string &message);
-	BYTEARRAY SEND_W3GS_START_LAG(const std::vector<CGamePlayer *>& players);
-	BYTEARRAY SEND_W3GS_STOP_LAG(CGamePlayer *player);
+	BYTEARRAY SEND_W3GS_START_LAG(const std::vector<std::pair<uint8_t, uint32_t>>& lags);
+	BYTEARRAY SEND_W3GS_STOP_LAG(uint8_t pid, uint32_t time);
 	BYTEARRAY SEND_W3GS_GAMEINFO(uint8_t war3Version, const BYTEARRAY &mapGameType, const BYTEARRAY &mapFlags, const BYTEARRAY &mapWidth, const BYTEARRAY &mapHeight, const std::string &gameName, const std::string &hostName, uint32_t upTime, const std::string &mapPath, const BYTEARRAY &mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey);
 	BYTEARRAY SEND_W3GS_CREATEGAME(uint8_t war3Version);
 	BYTEARRAY SEND_W3GS_REFRESHGAME(uint32_t players, uint32_t playerSlots);

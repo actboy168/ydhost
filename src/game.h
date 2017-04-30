@@ -126,7 +126,8 @@ public:
 	inline std::string GetGameName() const            { return m_Config->GameName; }
 	inline std::string GetVirtualHostName() const     { return m_Config->VirtualHostName; }
 	inline uint32_t GetLatency() const                { return m_Config->Latency; }
-
+	inline uint32_t GetLastLagScreenTicks() const     { return m_LastLagScreenTicks; }
+	
 	uint32_t GetNumPlayers() const;
 
 	inline void SetExiting(bool nExiting)                      { m_Exiting = nExiting; }
@@ -153,7 +154,7 @@ public:
 	// note: these are only called while iterating through the m_Potentials or m_Players std::vectors
 	// therefore you can't modify those std::vectors and must use the player's m_DeleteMe member to flag for deletion
 
-	void EventPlayerDeleted(CGamePlayer *player);
+	void EventPlayerDeleted(uint32_t Ticks, CGamePlayer *player);
 	void EventPlayerDisconnectTimedOut(CGamePlayer *player);
 	void EventPlayerDisconnectSocketError(CGamePlayer *player);
 	void EventPlayerDisconnectConnectionClosed(CGamePlayer *player);

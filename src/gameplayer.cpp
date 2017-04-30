@@ -22,8 +22,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "gameprotocol.h"
 #include "game.h"
 
-uint32_t GetTicks();
-
 //
 // CPotentialPlayer
 //
@@ -144,17 +142,24 @@ CGamePlayer::~CGamePlayer()
 	delete m_Socket;
 }
 
-bool CGamePlayer::Update(void *fd)
+bool CGamePlayer::Update(uint32_t Ticks, void *fd)
 {
-	const uint32_t Ticks = GetTicks();
-
 	// check for socket timeouts
 	// if we don't receive anything from a player for 30 seconds we can assume they've dropped
 	// this works because in the lobby we send pings every 5 seconds and expect a response to each one
 	// and in the game the Warcraft 3 client sends keepalives frequently (at least once per second it looks like)
 
 	if (Ticks - m_Socket->GetLastRecv() >= 30000)
-		m_Game->EventPlayerDisconnectTimedOut(this);
+	{
+		// not only do we not do any timeouts if the game is lagging, we allow for an additional grace period of 10 seconds
+		// this is because Warcraft 3 stops sending packets during the lag screen
+		// so when the lag screen finishes we would immediately disconnect everyone if we didn't give them some extra time
+
+		if (Ticks - m_Game->GetLastLagScreenTicks() >= 10000)
+		{
+			m_Game->EventPlayerDisconnectTimedOut(this);
+		}
+	}
 
 	m_Socket->DoRecv((fd_set *)fd);
 
