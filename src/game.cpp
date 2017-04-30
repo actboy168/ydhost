@@ -661,16 +661,16 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
 	SendVirtualHostPlayerInfo(Player);
 
-	for (auto & player : m_Players)
+	for (auto & ply : m_Players)
 	{
-		if (!player->GetLeftMessageSent() && player != Player)
+		if (!ply->GetLeftMessageSent() && ply != Player)
 		{
 			// send info about the new player to every other player
 
-			player->Send(m_Protocol->SEND_W3GS_PLAYERINFO(Player->GetPID(), Player->GetName(), Player->GetExternalIP(), Player->GetInternalIP()));
+			ply->Send(m_Protocol->SEND_W3GS_PLAYERINFO(Player->GetPID(), Player->GetName(), Player->GetExternalIP(), Player->GetInternalIP()));
 
 			// send info about every other player to the new player
-			Player->Send(m_Protocol->SEND_W3GS_PLAYERINFO(player->GetPID(), player->GetName(), player->GetExternalIP(), player->GetInternalIP()));
+			Player->Send(m_Protocol->SEND_W3GS_PLAYERINFO(ply->GetPID(), ply->GetName(), ply->GetExternalIP(), ply->GetInternalIP()));
 		}
 	}
 
