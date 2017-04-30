@@ -94,6 +94,7 @@ protected:
 	uint32_t m_CountDownCounter;                  // the countdown is finished when this reaches zero
 	uint32_t m_StartedLaggingTicks;               // GetTicks when the last lag screen started
 	uint32_t m_LastLagScreenTicks;                // GetTicks when the last lag screen was active (continuously updated)
+	uint32_t m_EmptyWaitingTicks;
 	CTimer m_ActionSentTimer;                     // GetTicks when the last action packet was sent
 	CTimer m_PingTimer;                           // GetTicks when the last ping was sent
 	CTimer m_DownloadTimer;                       // GetTicks when the last map download cycle was performed

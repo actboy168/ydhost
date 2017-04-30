@@ -57,6 +57,7 @@ CGame::CGame(const CMap* Map, const CGameConfig* Config, CUDPSocket* UDPSocket, 
 	m_ActionSentTimer(),
 	m_StartedLaggingTicks(0),
 	m_LastLagScreenTicks(0),
+	m_EmptyWaitingTicks(0),
 	m_HostPort(0),
 	m_VirtualHostPID(255),
 	m_Exiting(false),
@@ -331,10 +332,23 @@ bool CGame::Update(void *fd, void *send_fd)
 	}
 
 	// end the game if there aren't any players left
-	if (m_Players.empty() && (m_State == State::Loading || m_State == State::Loaded))
+	if (m_Players.empty())
 	{
-		Print("[GAME: " + GetGameName() + "] is over (no players left)");
-		return true;
+		if (m_State != State::Waiting) {
+			Print("[GAME: " + GetGameName() + "] is over (no players left)");
+			return true;
+		}
+		if (m_EmptyWaitingTicks == 0) {
+			m_EmptyWaitingTicks = GetTicks();
+		}
+		else if (Ticks - m_EmptyWaitingTicks >= 60000) {
+			Print("[GAME: " + GetGameName() + "] is over (waiting too long)");
+			return true;
+		}
+	}
+	else
+	{
+		m_EmptyWaitingTicks = 0;
 	}
 
 	// check if the game is loaded
