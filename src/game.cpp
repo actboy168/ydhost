@@ -413,6 +413,7 @@ bool CGame::Update(void *fd, void *send_fd)
 		else
 		{
 			EventGameStarted(Ticks);
+			return m_Exiting;
 		}
 	}
 
