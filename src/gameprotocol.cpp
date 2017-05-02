@@ -21,7 +21,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "gameprotocol.h"
 #include "util.h"
 #include "crc32.h"
-#include "gameplayer.h"
 #include "gameslot.h"
 
 void Print(const std::string &message);
@@ -256,32 +255,25 @@ BYTEARRAY CGameProtocol::SEND_W3GS_PING_FROM_HOST(uint32_t ticks)
 	return packet;
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_SLOTINFOJOIN(uint8_t PID, const BYTEARRAY &port, const BYTEARRAY &externalIP, const std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots)
+BYTEARRAY CGameProtocol::SEND_W3GS_SLOTINFOJOIN(uint8_t PID, uint16_t port, uint32_t externalIP, const std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots)
 {
 	BYTEARRAY packet;
-
-	if (port.size() == 2 && externalIP.size() == 4)
-	{
-		const uint8_t Zeros[] = { 0, 0, 0, 0 };
-		const BYTEARRAY SlotInfo = EncodeSlotInfo(slots, randomSeed, layoutStyle, playerSlots);
-		packet.push_back(W3GS_HEADER_CONSTANT);   // W3GS header constant
-		packet.push_back(W3GS_SLOTINFOJOIN);   // W3GS_SLOTINFOJOIN
-		packet.push_back(0);   // packet length will be assigned later
-		packet.push_back(0);   // packet length will be assigned later
-		AppendByteArray(packet, (uint16_t)SlotInfo.size(), false);    // SlotInfo length
-		AppendByteArrayFast(packet, SlotInfo);   // SlotInfo
-		packet.push_back(PID);   // PID
-		packet.push_back(2);   // AF_INET
-		packet.push_back(0);   // AF_INET continued...
-		AppendByteArray(packet, port);   // port
-		AppendByteArrayFast(packet, externalIP);   // external IP
-		AppendByteArray(packet, Zeros, 4);   // ???
-		AppendByteArray(packet, Zeros, 4);   // ???
-		AssignLength(packet);
-	}
-	else
-		Print("[GAMEPROTO] invalid parameters passed to SEND_W3GS_SLOTINFOJOIN");
-
+	const uint8_t Zeros[] = { 0, 0, 0, 0 };
+	const BYTEARRAY SlotInfo = EncodeSlotInfo(slots, randomSeed, layoutStyle, playerSlots);
+	packet.push_back(W3GS_HEADER_CONSTANT);   // W3GS header constant
+	packet.push_back(W3GS_SLOTINFOJOIN);   // W3GS_SLOTINFOJOIN
+	packet.push_back(0);   // packet length will be assigned later
+	packet.push_back(0);   // packet length will be assigned later
+	AppendByteArray(packet, (uint16_t)SlotInfo.size(), false);    // SlotInfo length
+	AppendByteArrayFast(packet, SlotInfo);   // SlotInfo
+	packet.push_back(PID);   // PID
+	packet.push_back(2);   // AF_INET
+	packet.push_back(0);   // AF_INET continued...
+	AppendByteArray(packet, port, false);   // port
+	AppendByteArray(packet, externalIP, false);   // external IP
+	AppendByteArray(packet, Zeros, 4);   // ???
+	AppendByteArray(packet, Zeros, 4);   // ???
+	AssignLength(packet);
 	return packet;
 }
 
@@ -292,11 +284,11 @@ BYTEARRAY CGameProtocol::SEND_W3GS_REJECTJOIN(uint32_t reason)
 	return packet;
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_PLAYERINFO(uint8_t PID, const std::string &name, BYTEARRAY externalIP, BYTEARRAY internalIP)
+BYTEARRAY CGameProtocol::SEND_W3GS_PLAYERINFO(uint8_t PID, const std::string &name, uint32_t externalIP, uint32_t internalIP)
 {
 	BYTEARRAY packet;
 
-	if (!name.empty() && name.size() <= 15 && externalIP.size() == 4 && internalIP.size() == 4)
+	if (!name.empty() && name.size() <= 15)
 	{
 		const uint8_t PlayerJoinCounter[] = { 2, 0, 0, 0 };
 		const uint8_t Zeros[] = { 0, 0, 0, 0 };
@@ -314,14 +306,14 @@ BYTEARRAY CGameProtocol::SEND_W3GS_PLAYERINFO(uint8_t PID, const std::string &na
 		packet.push_back(0);   // AF_INET continued...
 		packet.push_back(0);   // port
 		packet.push_back(0);   // port continued...
-		AppendByteArrayFast(packet, externalIP);   // external IP
+		AppendByteArray(packet, externalIP, false);   // external IP
 		AppendByteArray(packet, Zeros, 4);   // ???
 		AppendByteArray(packet, Zeros, 4);   // ???
 		packet.push_back(2);   // AF_INET
 		packet.push_back(0);   // AF_INET continued...
 		packet.push_back(0);   // port
 		packet.push_back(0);   // port continued...
-		AppendByteArrayFast(packet, internalIP);   // internal IP
+		AppendByteArray(packet, internalIP, false);   // internal IP
 		AppendByteArray(packet, Zeros, 4);   // ???
 		AppendByteArray(packet, Zeros, 4);   // ???
 		AssignLength(packet);

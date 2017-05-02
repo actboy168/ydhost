@@ -46,8 +46,6 @@ typedef std::vector<uint8_t> BYTEARRAY;
 #define REJECTJOIN_STARTED         10
 #define REJECTJOIN_WRONGPASSWORD   27
 
-class CAura;
-class CGamePlayer;
 class CIncomingJoinPlayer;
 class CIncomingAction;
 class CIncomingChatPlayer;
@@ -114,9 +112,9 @@ public:
 	// send functions
 
 	BYTEARRAY SEND_W3GS_PING_FROM_HOST(uint32_t ticks);
-	BYTEARRAY SEND_W3GS_SLOTINFOJOIN(uint8_t PID, const BYTEARRAY &port, const BYTEARRAY &externalIP, const std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots);
+	BYTEARRAY SEND_W3GS_SLOTINFOJOIN(uint8_t PID, uint16_t port, uint32_t externalIP, const std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots);
 	BYTEARRAY SEND_W3GS_REJECTJOIN(uint32_t reason);
-	BYTEARRAY SEND_W3GS_PLAYERINFO(uint8_t PID, const std::string &name, BYTEARRAY externalIP, BYTEARRAY internalIP);
+	BYTEARRAY SEND_W3GS_PLAYERINFO(uint8_t PID, const std::string &name, uint32_t externalIP, uint32_t internalIP);
 	BYTEARRAY SEND_W3GS_PLAYERLEAVE_OTHERS(uint8_t PID, uint32_t leftCode);
 	BYTEARRAY SEND_W3GS_GAMELOADED_OTHERS(uint8_t PID);
 	BYTEARRAY SEND_W3GS_SLOTINFO(const std::vector<CGameSlot> &slots, uint32_t randomSeed, uint8_t layoutStyle, uint8_t playerSlots);

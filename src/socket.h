@@ -21,7 +21,10 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_SOCKET_H_
 #define AURA_SOCKET_H_
 
-#include "util.h"
+#include <string>
+#include <vector>
+#include <stdint.h>
+typedef std::vector<uint8_t> BYTEARRAY;
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -152,8 +155,8 @@ public:
 	~CSocket();
 
 	std::string GetErrorString() const;
-	inline BYTEARRAY GetPort() const                        { return CreateByteArray(m_SIN.sin_port, false); }
-	inline BYTEARRAY GetIP() const                          { return CreateByteArray((uint32_t)m_SIN.sin_addr.s_addr, false); }
+	inline uint16_t GetPort() const                        { return m_SIN.sin_port; }
+	inline uint32_t GetIP() const                          { return (uint32_t)m_SIN.sin_addr.s_addr; }
 	inline std::string GetIPString() const                       { return inet_ntoa(m_SIN.sin_addr); }
 	inline int32_t GetError() const                             { return m_Error; }
 	inline bool HasError() const                            { return m_HasError; }

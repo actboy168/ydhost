@@ -21,6 +21,7 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "gameplayer.h"
 #include "gameprotocol.h"
 #include "game.h"
+#include "util.h"
 
 //
 // CPotentialPlayer
@@ -118,7 +119,7 @@ CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::s
 	: m_Protocol(potential->m_Protocol),
 	m_Game(potential->m_Game),
 	m_Socket(potential->GetSocket()),
-	m_InternalIP(nInternalIP),
+	m_InternalIP(ByteArrayToUInt32(nInternalIP, false)),
 	m_Name(nName),
 	m_LeftCode(PLAYERLEAVE_LOBBY),
 	m_SyncCounter(0),

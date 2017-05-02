@@ -512,10 +512,7 @@ void CGame::SendVirtualHostPlayerInfo(CGamePlayer *player)
 {
 	if (m_VirtualHostPID == 255)
 		return;
-
-	const BYTEARRAY IP = { 0, 0, 0, 0 };
-
-	Send(player, m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, GetVirtualHostName(), IP, IP));
+	Send(player, m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, GetVirtualHostName(), 0, 0));
 }
 
 void CGame::SendAllActions()
@@ -1332,10 +1329,7 @@ void CGame::CreateVirtualHost()
 		return;
 
 	m_VirtualHostPID = GetNewPID();
-
-	const BYTEARRAY IP = { 0, 0, 0, 0 };
-
-	SendAll(m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, GetVirtualHostName(), IP, IP));
+	SendAll(m_Protocol->SEND_W3GS_PLAYERINFO(m_VirtualHostPID, GetVirtualHostName(), 0, 0));
 }
 
 void CGame::DeleteVirtualHost()

@@ -17,7 +17,6 @@ limitations under the License.
 CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 */
 
-#include "util.h"
 #include "socket.h"
 
 #include <string.h>

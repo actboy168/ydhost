@@ -52,7 +52,7 @@ public:
 	~CPotentialPlayer();
 
 	inline CTCPSocket *GetSocket() const                         { return m_Socket; }
-	inline BYTEARRAY GetExternalIP() const                       { return m_Socket->GetIP(); }
+	inline uint32_t GetExternalIP() const                        { return m_Socket->GetIP(); }
 	inline std::string GetExternalIPString() const               { return m_Socket->GetIPString(); }
 	inline bool GetDeleteMe() const                              { return m_DeleteMe; }
 	inline CIncomingJoinPlayer *GetJoinPlayer() const            { return m_IncomingJoinPlayer; }
@@ -83,7 +83,7 @@ protected:
 	CTCPSocket *m_Socket;                     // note: we permit m_Socket to be NULL in this class to allow for the virtual host player which doesn't really exist
 
 private:
-	BYTEARRAY m_InternalIP;                   // the player's internal IP address as reported by the player when connecting
+	uint32_t m_InternalIP;                    // the player's internal IP address as reported by the player when connecting
 	std::queue<uint32_t> m_CheckSums;         // the last few checksums the player has sent (for detecting desyncs)
 	std::string m_LeftReason;                 // the reason the player left the game
 	std::string m_Name;                       // the player's name
@@ -108,12 +108,12 @@ public:
 	~CGamePlayer();
 
 	inline CTCPSocket *GetSocket() const                                { return m_Socket; }
-	inline BYTEARRAY GetExternalIP() const                              { return m_Socket->GetIP(); }
+	inline uint32_t GetExternalIP() const                               { return m_Socket->GetIP(); }
 	inline std::string GetExternalIPString() const                      { return m_Socket->GetIPString(); }
 	inline bool GetDeleteMe() const                                     { return m_DeleteMe; }
 	inline uint8_t GetPID() const                                       { return m_PID; }
 	inline std::string GetName() const                                  { return m_Name; }
-	inline BYTEARRAY GetInternalIP() const                              { return m_InternalIP; }
+	inline uint32_t GetInternalIP() const                               { return m_InternalIP; }
 	inline std::queue<uint32_t> *GetCheckSums()                         { return &m_CheckSums; }
 	inline std::string GetLeftReason() const                            { return m_LeftReason; }
 	inline uint32_t GetLeftCode() const                                 { return m_LeftCode; }
