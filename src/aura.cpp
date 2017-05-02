@@ -23,7 +23,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "socket.h"
 #include "map.h"
 #include "game.h"
-#include "util.h"
 
 #include <csignal>
 #include <cstdlib>

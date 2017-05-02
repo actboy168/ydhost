@@ -89,7 +89,7 @@ class CMap
 private:
 	std::string m_MapData;              // the map data itself, for sending the map to players
 	BYTEARRAY m_MapSHA1;                // config value: map sha1 (20 bytes)
-	BYTEARRAY m_MapSize;                // config value: map size (4 bytes)
+	uint32_t m_MapSize;                // config value: map size (4 bytes)
 	BYTEARRAY m_MapInfo;                // config value: map info (4 bytes) -> this is the real CRC
 	BYTEARRAY m_MapCRC;                 // config value: map crc (4 bytes) -> this is not the real CRC, it's the "xoro" value
 	BYTEARRAY m_MapWidth;               // config value: map width (2 bytes)
@@ -110,7 +110,7 @@ public:
 
 	inline bool GetValid() const                               { return m_Valid; }
 	inline std::string GetMapPath() const                      { return m_MapPath; }
-	inline BYTEARRAY GetMapSize() const                        { return m_MapSize; }
+	inline uint32_t GetMapSize() const                         { return m_MapSize; }
 	inline BYTEARRAY GetMapInfo() const                        { return m_MapInfo; }
 	inline BYTEARRAY GetMapCRC() const                         { return m_MapCRC; }
 	inline BYTEARRAY GetMapSHA1() const                        { return m_MapSHA1; }

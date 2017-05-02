@@ -114,12 +114,12 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 
 	m_MapPath = MapPath;
 
-	m_MapSize = ExtractNumbers(MAP->GetString("map_size", std::string()), 4);
+	m_MapSize = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_size", std::string()), 4), false);
 	m_MapInfo = ExtractNumbers(MAP->GetString("map_info", std::string()), 4);
 	m_MapCRC = ExtractNumbers(MAP->GetString("map_crc", std::string()), 4);
 	m_MapSHA1 = ExtractNumbers(MAP->GetString("map_sha1", std::string()), 20);
 
-	Print("[MAP] map_size = " + ByteArrayToDecString(m_MapSize));
+	Print("[MAP] map_size = " + ByteArrayToDecString(CreateByteArray(m_MapSize)));
 	Print("[MAP] map_info = " + ByteArrayToDecString(m_MapInfo));
 	Print("[MAP] map_crc = " + ByteArrayToDecString(m_MapCRC));
 	Print("[MAP] map_sha1 = " + ByteArrayToDecString(m_MapSHA1));
@@ -205,12 +205,8 @@ void CMap::CheckValid()
 	if (m_MapPath.find('/') != std::string::npos)
 		Print("[MAP] warning - map_path contains forward slashes '/' but it must use Windows style back slashes '\\'");
 
-	if (m_MapSize.size() != 4)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_size detected");
-	}
-	else if (!m_MapData.empty() && m_MapData.size() != ByteArrayToUInt32(m_MapSize, false))
+
+	if (!m_MapData.empty() && m_MapData.size() != m_MapSize)
 	{
 		m_Valid = false;
 		Print("[MAP] invalid map_size detected - size mismatch with actual map data");

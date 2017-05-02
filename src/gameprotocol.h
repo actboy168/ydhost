@@ -122,14 +122,14 @@ public:
 	BYTEARRAY SEND_W3GS_COUNTDOWN_END();
 	BYTEARRAY SEND_W3GS_INCOMING_ACTION(const std::vector<CIncomingAction *>& actions, uint16_t sendInterval);
 	BYTEARRAY SEND_W3GS_INCOMING_ACTION2(const std::vector<CIncomingAction *>& actions);
-	BYTEARRAY SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARRAY &toPIDs, uint8_t flag, const BYTEARRAY &flagExtra, const std::string &message);
+	BYTEARRAY SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARRAY &toPIDs, uint8_t flag, uint32_t flagExtra, const std::string &message);
 	BYTEARRAY SEND_W3GS_START_LAG(const std::vector<std::pair<uint8_t, uint32_t>>& lags);
 	BYTEARRAY SEND_W3GS_STOP_LAG(uint8_t pid, uint32_t time);
-	BYTEARRAY SEND_W3GS_GAMEINFO(uint8_t war3Version, const BYTEARRAY &mapGameType, const BYTEARRAY &mapFlags, const BYTEARRAY &mapWidth, const BYTEARRAY &mapHeight, const std::string &gameName, const std::string &hostName, uint32_t upTime, const std::string &mapPath, const BYTEARRAY &mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey);
+	BYTEARRAY SEND_W3GS_GAMEINFO(uint8_t war3Version, uint32_t mapGameType, const BYTEARRAY &mapFlags, const BYTEARRAY &mapWidth, const BYTEARRAY &mapHeight, const std::string &gameName, const std::string &hostName, uint32_t upTime, const std::string &mapPath, const BYTEARRAY &mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey);
 	BYTEARRAY SEND_W3GS_CREATEGAME(uint8_t war3Version);
 	BYTEARRAY SEND_W3GS_REFRESHGAME(uint32_t players, uint32_t playerSlots);
 	BYTEARRAY SEND_W3GS_DECREATEGAME();
-	BYTEARRAY SEND_W3GS_MAPCHECK(const std::string &mapPath, const BYTEARRAY &mapSize, const BYTEARRAY &mapInfo, const BYTEARRAY &mapCRC, const BYTEARRAY &mapSHA1);
+	BYTEARRAY SEND_W3GS_MAPCHECK(const std::string &mapPath, uint32_t mapSize, const BYTEARRAY &mapInfo, const BYTEARRAY &mapCRC, const BYTEARRAY &mapSHA1);
 	BYTEARRAY SEND_W3GS_STARTDOWNLOAD(uint8_t fromPID);
 	BYTEARRAY SEND_W3GS_MAPPART(uint8_t fromPID, uint8_t toPID, uint32_t start, const std::string *mapData);
 

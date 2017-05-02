@@ -19,7 +19,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 */
 
 #include "game.h"
-#include "util.h"
 #include "config.h"
 #include "socket.h"
 #include "map.h"
@@ -170,7 +169,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			// note: the PrivateGame flag is not set when broadcasting to LAN (as you might expect)
 			// note: we do not use m_Map->GetMapGameType because none of the filters are set when broadcasting to LAN (also as you might expect)
 
-			m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Config->War3Version, CreateByteArray((uint32_t)MAPGAMETYPE_UNKNOWN0, false), m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), GetGameName(), "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
+			m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Config->War3Version, MAPGAMETYPE_UNKNOWN0, m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), GetGameName(), "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
 		}
 	}
 
@@ -399,9 +398,7 @@ bool CGame::Update(void *fd, void *send_fd)
 				// in addition to this, the throughput is limited by the configuration value bot_maxdownloadspeed
 				// in summary: the actual throughput is MIN( 140 * 1000 / ping, 1400, bot_maxdownloadspeed ) in KB/sec assuming only one player is downloading the map
 
-				const uint32_t MapSize = ByteArrayToUInt32(m_Map->GetMapSize(), false);
-
-				while (player->GetLastMapPartSent() < player->GetLastMapPartAcked() + 1442 * 100 && player->GetLastMapPartSent() < MapSize)
+				while (player->GetLastMapPartSent() < player->GetLastMapPartAcked() + 1442 * 100 && player->GetLastMapPartSent() < m_Map->GetMapSize())
 				{
 					Send(player, m_Protocol->SEND_W3GS_MAPPART(GetHostPID(), player->GetPID(), player->GetLastMapPartSent(), m_Map->GetMapData()));
 					player->SetLastMapPartSent(player->GetLastMapPartSent() + 1442);
@@ -485,16 +482,16 @@ void CGame::SendAllChat(const std::string &message)
 		if (m_State == State::Waiting || m_State == State::CountDown)
 		{
 			if (message.size() > 254)
-				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, BYTEARRAY(), message.substr(0, 254)));
+				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, 0, message.substr(0, 254)));
 			else
-				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, BYTEARRAY(), message));
+				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 16, 0, message));
 		}
 		else
 		{
 			if (message.size() > 127)
-				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, CreateByteArray((uint32_t)0, false), message.substr(0, 127)));
+				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, 0, message.substr(0, 127)));
 			else
-				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, CreateByteArray((uint32_t)0, false), message));
+				SendAll(m_Protocol->SEND_W3GS_CHAT_FROM_HOST(fromPID, GetPIDs(), 32, 0, message));
 		}
 	}
 }
@@ -943,9 +940,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 	if (m_State != State::Waiting &&  m_State != State::CountDown)
 		return;
 
-	uint32_t MapSize = ByteArrayToUInt32(m_Map->GetMapSize(), false);
-
-	if (mapSize->GetSizeFlag() != 1 || mapSize->GetMapSize() != MapSize)
+	if (mapSize->GetSizeFlag() != 1 || mapSize->GetMapSize() != m_Map->GetMapSize())
 	{
 		// the player doesn't have the map
 
@@ -974,7 +969,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 		player->SetDownloadFinished(true);
 	}
 
-	uint8_t NewDownloadStatus = (uint8_t)((float)mapSize->GetMapSize() / MapSize * 100.f);
+	uint8_t NewDownloadStatus = (uint8_t)((float)mapSize->GetMapSize() / m_Map->GetMapSize() * 100.f);
 	const uint8_t SID = GetSIDFromPID(player->GetPID());
 
 	if (NewDownloadStatus > 100)

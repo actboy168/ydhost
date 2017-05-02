@@ -402,7 +402,7 @@ BYTEARRAY CGameProtocol::SEND_W3GS_INCOMING_ACTION(const std::vector<CIncomingAc
 	return packet;
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARRAY &toPIDs, uint8_t flag, const BYTEARRAY &flagExtra, const std::string &message)
+BYTEARRAY CGameProtocol::SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARRAY &toPIDs, uint8_t flag, uint32_t flagExtra, const std::string &message)
 {
 	if (!toPIDs.empty() && !message.empty() && message.size() < 255)
 	{
@@ -410,7 +410,7 @@ BYTEARRAY CGameProtocol::SEND_W3GS_CHAT_FROM_HOST(uint8_t fromPID, const BYTEARR
 		AppendByteArrayFast(packet, toPIDs);      // receivers
 		packet.push_back(fromPID);                // sender
 		packet.push_back(flag);                   // flag
-		AppendByteArrayFast(packet, flagExtra);   // extra flag
+		AppendByteArray(packet, flagExtra, false);   // extra flag
 		AppendByteArrayFast(packet, message);     // message
 		AssignLength(packet);
 		return packet;
@@ -447,9 +447,9 @@ BYTEARRAY CGameProtocol::SEND_W3GS_STOP_LAG(uint8_t pid, uint32_t time)
 	return packet;
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_GAMEINFO(uint8_t war3Version, const BYTEARRAY &mapGameType, const BYTEARRAY &mapFlags, const BYTEARRAY &mapWidth, const BYTEARRAY &mapHeight, const std::string &gameName, const std::string &hostName, uint32_t upTime, const std::string &mapPath, const BYTEARRAY &mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey)
+BYTEARRAY CGameProtocol::SEND_W3GS_GAMEINFO(uint8_t war3Version, uint32_t mapGameType, const BYTEARRAY &mapFlags, const BYTEARRAY &mapWidth, const BYTEARRAY &mapHeight, const std::string &gameName, const std::string &hostName, uint32_t upTime, const std::string &mapPath, const BYTEARRAY &mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey)
 {
-	if (mapGameType.size() == 4 && mapFlags.size() == 4 && mapWidth.size() == 2 && mapHeight.size() == 2 && !gameName.empty() && !hostName.empty() && !mapPath.empty() && mapCRC.size() == 4)
+	if (mapFlags.size() == 4 && mapWidth.size() == 2 && mapHeight.size() == 2 && !gameName.empty() && !hostName.empty() && !mapPath.empty() && mapCRC.size() == 4)
 	{
 		const uint8_t Unknown2[] = { 1, 0, 0, 0 };
 
@@ -476,7 +476,7 @@ BYTEARRAY CGameProtocol::SEND_W3GS_GAMEINFO(uint8_t war3Version, const BYTEARRAY
 		AppendByteArrayFast(packet, StatString);      // Stat String
 		packet.push_back(0);                            // Stat String null terminator (the stat string is encoded to remove all even numbers i.e. zeros)
 		AppendByteArray(packet, slotsTotal, false);   // Slots Total
-		AppendByteArrayFast(packet, mapGameType);     // Game Type
+		AppendByteArray(packet, mapGameType, false);     // Game Type
 		AppendByteArray(packet, Unknown2, 4);         // ???
 		AppendByteArray(packet, slotsOpen, false);    // Slots Open
 		AppendByteArray(packet, upTime, false);       // time since creation
@@ -507,13 +507,13 @@ BYTEARRAY CGameProtocol::SEND_W3GS_DECREATEGAME()
 	return BYTEARRAY{ W3GS_HEADER_CONSTANT, W3GS_DECREATEGAME, 8, 0, 1, 0, 0, 0 };
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_MAPCHECK(const std::string &mapPath, const BYTEARRAY &mapSize, const BYTEARRAY &mapInfo, const BYTEARRAY &mapCRC, const BYTEARRAY &mapSHA1)
+BYTEARRAY CGameProtocol::SEND_W3GS_MAPCHECK(const std::string &mapPath, uint32_t mapSize, const BYTEARRAY &mapInfo, const BYTEARRAY &mapCRC, const BYTEARRAY &mapSHA1)
 {
-	if (!mapPath.empty() && mapSize.size() == 4 && mapInfo.size() == 4 && mapCRC.size() == 4 && mapSHA1.size() == 20)
+	if (!mapPath.empty() && mapInfo.size() == 4 && mapCRC.size() == 4 && mapSHA1.size() == 20)
 	{
 		BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_MAPCHECK, 0, 0, 1, 0, 0, 0 };
 		AppendByteArrayFast(packet, mapPath);     // map path
-		AppendByteArrayFast(packet, mapSize);     // map size
+		AppendByteArray(packet, mapSize, false);     // map size
 		AppendByteArrayFast(packet, mapInfo);     // map info
 		AppendByteArrayFast(packet, mapCRC);      // map crc
 		AppendByteArrayFast(packet, mapSHA1);     // map sha1
