@@ -104,7 +104,7 @@ protected:
 	bool m_DeleteMe;
 
 public:
-	CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nName, const BYTEARRAY &nInternalIP);
+	CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nName, uint32_t nInternalIP);
 	~CGamePlayer();
 
 	inline CTCPSocket *GetSocket() const                                { return m_Socket; }

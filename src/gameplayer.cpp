@@ -115,11 +115,11 @@ void CPotentialPlayer::Send(const BYTEARRAY &data) const
 // CGamePlayer
 //
 
-CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nName, const BYTEARRAY &nInternalIP)
+CGamePlayer::CGamePlayer(CPotentialPlayer *potential, uint8_t nPID, const std::string &nName, uint32_t nInternalIP)
 	: m_Protocol(potential->m_Protocol),
 	m_Game(potential->m_Game),
 	m_Socket(potential->GetSocket()),
-	m_InternalIP(ByteArrayToUInt32(nInternalIP, false)),
+	m_InternalIP(nInternalIP),
 	m_Name(nName),
 	m_LeftCode(PLAYERLEAVE_LOBBY),
 	m_SyncCounter(0),

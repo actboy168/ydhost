@@ -148,18 +148,18 @@ class CIncomingJoinPlayer
 {
 private:
 	std::string m_Name;
-	BYTEARRAY m_InternalIP;
+	uint32_t m_InternalIP;
 	uint32_t m_HostCounter;
 	uint32_t m_EntryKey;
 
 public:
-	CIncomingJoinPlayer(uint32_t nHostCounter, uint32_t nEntryKey, const std::string &nName, const BYTEARRAY &nInternalIP);
+	CIncomingJoinPlayer(uint32_t nHostCounter, uint32_t nEntryKey, const std::string &nName, uint32_t nInternalIP);
 	~CIncomingJoinPlayer();
 
 	inline uint32_t GetHostCounter() const                     { return m_HostCounter; }
 	inline uint32_t GetEntryKey() const                        { return m_EntryKey; }
 	inline std::string GetName() const                         { return m_Name; }
-	inline BYTEARRAY GetInternalIP() const                     { return m_InternalIP; }
+	inline uint32_t GetInternalIP() const                      { return m_InternalIP; }
 };
 
 //

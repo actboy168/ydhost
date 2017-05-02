@@ -68,7 +68,7 @@ CIncomingJoinPlayer *CGameProtocol::RECEIVE_W3GS_REQJOIN(const BYTEARRAY &data)
 
 		if (!Name.empty() && data.size() >= Name.size() + 30)
 		{
-			const BYTEARRAY InternalIP = BYTEARRAY(std::begin(data) + Name.size() + 26, std::begin(data) + Name.size() + 30);
+			uint32_t InternalIP = ByteArrayToUInt32(data, false, Name.size() + 26);
 			return new CIncomingJoinPlayer(HostCounter, EntryKey, std::string(std::begin(Name), std::end(Name)), InternalIP);
 		}
 	}
@@ -622,7 +622,7 @@ BYTEARRAY CGameProtocol::EncodeSlotInfo(const std::vector<CGameSlot> &slots, uin
 // CIncomingJoinPlayer
 //
 
-CIncomingJoinPlayer::CIncomingJoinPlayer(uint32_t nHostCounter, uint32_t nEntryKey, const std::string &nName, const BYTEARRAY &nInternalIP)
+CIncomingJoinPlayer::CIncomingJoinPlayer(uint32_t nHostCounter, uint32_t nEntryKey, const std::string &nName, uint32_t nInternalIP)
 	: m_Name(nName),
 	m_InternalIP(nInternalIP),
 	m_HostCounter(nHostCounter),
