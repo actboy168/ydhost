@@ -560,12 +560,8 @@ bool CUDPSocket::SendTo(struct sockaddr_in sin, const BYTEARRAY &message)
 {
 	if (m_Socket == INVALID_SOCKET || m_HasError)
 		return false;
-
-	const std::string MessageString = std::string(std::begin(message), std::end(message));
-
-	if (sendto(m_Socket, MessageString.c_str(), MessageString.size(), 0, (struct sockaddr *) &sin, sizeof(sin)) == -1)
+	if (sendto(m_Socket, (const char*)message.data(), message.size(), 0, (struct sockaddr *) &sin, sizeof(sin)) == -1)
 		return false;
-
 	return true;
 }
 
@@ -601,20 +597,15 @@ bool CUDPSocket::Broadcast(uint16_t port, const BYTEARRAY &message)
 {
 	if (m_Socket == INVALID_SOCKET || m_HasError)
 		return false;
-
 	struct sockaddr_in sin;
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = m_BroadcastTarget.s_addr;
 	sin.sin_port = htons(port);
-
-	const std::string MessageString = std::string(std::begin(message), std::end(message));
-
-	if (sendto(m_Socket, MessageString.c_str(), MessageString.size(), 0, (struct sockaddr *) &sin, sizeof(sin)) == -1)
+	if (sendto(m_Socket, (const char*)message.data(), message.size(), 0, (struct sockaddr *) &sin, sizeof(sin)) == -1)
 	{
-		Print("[UDPSOCKET] failed to broadcast packet (port " + std::to_string(port) + ", size " + std::to_string(MessageString.size()) + " bytes)");
+		Print("[UDPSOCKET] failed to broadcast packet (port " + std::to_string(port) + ", size " + std::to_string(message.size()) + " bytes)");
 		return false;
 	}
-
 	return true;
 }
 
