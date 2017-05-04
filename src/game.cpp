@@ -1037,32 +1037,12 @@ void CGame::EventGameStarted(uint32_t Ticks)
 
 uint8_t CGame::GetSIDFromPID(uint8_t PID) const
 {
-	if (m_Slots.size() > 255)
-		return 255;
-
 	for (uint8_t i = 0; i < m_Slots.size(); ++i)
 	{
 		if (m_Slots[i].GetPID() == PID)
 			return i;
 	}
-
 	return 255;
-}
-
-CGamePlayer *CGame::GetPlayerFromSID(uint8_t SID)
-{
-	if (SID >= m_Slots.size())
-		return nullptr;
-
-	const uint8_t PID = m_Slots[SID].GetPID();
-
-	for (auto & player : m_Players)
-	{
-		if (!player->GetLeftMessageSent() && player->GetPID() == PID)
-			return player;
-	}
-
-	return nullptr;
 }
 
 uint8_t CGame::GetNewPID()

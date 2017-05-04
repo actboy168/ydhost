@@ -182,7 +182,6 @@ public:
 
 	void DeletePlayer(CGamePlayer* player, uint32_t nLeftCode, const std::string &nLeftReason);
 	uint8_t GetSIDFromPID(uint8_t PID) const;
-	CGamePlayer *GetPlayerFromSID(uint8_t SID);
 	uint8_t GetNewPID();
 	uint8_t GetNewColour();
 	BYTEARRAY GetPIDs();
