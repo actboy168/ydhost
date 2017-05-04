@@ -39,7 +39,7 @@ CMap::~CMap()
 
 }
 
-BYTEARRAY CMap::GetMapGameFlags() const
+uint32_t CMap::GetMapGameFlags() const
 {
 	uint32_t GameFlags = 0;
 
@@ -89,7 +89,7 @@ BYTEARRAY CMap::GetMapGameFlags() const
 	if (m_MapFlags & MAPFLAG_RANDOMRACES)
 		GameFlags |= 0x04000000;
 
-	return CreateByteArray(GameFlags, false);
+	return GameFlags;
 }
 
 uint8_t CMap::GetMapLayoutStyle() const
@@ -115,22 +115,22 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 	m_MapPath = MapPath;
 
 	m_MapSize = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_size", std::string()), 4), false);
-	m_MapInfo = ExtractNumbers(MAP->GetString("map_info", std::string()), 4);
-	m_MapCRC = ExtractNumbers(MAP->GetString("map_crc", std::string()), 4);
+	m_MapInfo = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_info", std::string()), 4), false);
+	m_MapCRC = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_crc", std::string()), 4), false);
 	m_MapSHA1 = ExtractNumbers(MAP->GetString("map_sha1", std::string()), 20);
 
-	Print("[MAP] map_size = " + ByteArrayToDecString(CreateByteArray(m_MapSize)));
-	Print("[MAP] map_info = " + ByteArrayToDecString(m_MapInfo));
-	Print("[MAP] map_crc = " + ByteArrayToDecString(m_MapCRC));
+	Print("[MAP] map_size = " + std::to_string(m_MapSize));
+	Print("[MAP] map_info = " + std::to_string(m_MapInfo));
+	Print("[MAP] map_crc = " + std::to_string(m_MapCRC));
 	Print("[MAP] map_sha1 = " + ByteArrayToDecString(m_MapSHA1));
 
 	m_MapOptions = MAP->GetInt("map_options", 0);
-	m_MapWidth = ExtractNumbers(MAP->GetString("map_width", std::string()), 2);
-	m_MapHeight = ExtractNumbers(MAP->GetString("map_height", std::string()), 2);
+	m_MapWidth = ByteArrayToUInt16(ExtractNumbers(MAP->GetString("map_width", std::string()), 2), false);
+	m_MapHeight = ByteArrayToUInt16(ExtractNumbers(MAP->GetString("map_height", std::string()), 2), false);
 
 	Print("[MAP] map_options = " + std::to_string(m_MapOptions));
-	Print("[MAP] map_width = " + ByteArrayToDecString(m_MapWidth));
-	Print("[MAP] map_height = " + ByteArrayToDecString(m_MapHeight));
+	Print("[MAP] map_width = " + std::to_string(m_MapWidth));
+	Print("[MAP] map_height = " + std::to_string(m_MapHeight));
 
 	m_MapNumPlayers = MAP->GetInt("map_numplayers", 0);
 	m_Slots.clear();
@@ -214,18 +214,6 @@ void CMap::CheckValid()
 		Print("[MAP] invalid map_size detected - size mismatch with actual map data");
 	}
 
-	if (m_MapInfo.size() != 4)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_info detected");
-	}
-
-	if (m_MapCRC.size() != 4)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_crc detected");
-	}
-
 	if (m_MapSHA1.size() != 20)
 	{
 		m_Valid = false;
@@ -248,18 +236,6 @@ void CMap::CheckValid()
 	{
 		m_Valid = false;
 		Print("[MAP] invalid map_observers detected");
-	}
-
-	if (m_MapWidth.size() != 2)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_width detected");
-	}
-
-	if (m_MapHeight.size() != 2)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_height detected");
 	}
 
 	if (m_MapNumPlayers == 0 || m_MapNumPlayers > 12)

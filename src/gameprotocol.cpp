@@ -447,20 +447,20 @@ BYTEARRAY CGameProtocol::SEND_W3GS_STOP_LAG(uint8_t pid, uint32_t time)
 	return packet;
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_GAMEINFO(uint8_t war3Version, uint32_t mapGameType, const BYTEARRAY &mapFlags, const BYTEARRAY &mapWidth, const BYTEARRAY &mapHeight, const std::string &gameName, const std::string &hostName, uint32_t upTime, const std::string &mapPath, const BYTEARRAY &mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey)
+BYTEARRAY CGameProtocol::SEND_W3GS_GAMEINFO(uint8_t war3Version, uint32_t mapGameType, uint32_t mapFlags, uint16_t mapWidth, uint16_t mapHeight, const std::string &gameName, const std::string &hostName, uint32_t upTime, const std::string &mapPath, uint32_t mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey)
 {
-	if (mapFlags.size() == 4 && mapWidth.size() == 2 && mapHeight.size() == 2 && !gameName.empty() && !hostName.empty() && !mapPath.empty() && mapCRC.size() == 4)
+	if (!gameName.empty() && !hostName.empty() && !mapPath.empty())
 	{
 		const uint8_t Unknown2[] = { 1, 0, 0, 0 };
 
 		// make the stat string
 
 		BYTEARRAY StatString;
-		AppendByteArrayFast(StatString, mapFlags);
+		AppendByteArray(StatString, mapFlags, false);
 		StatString.push_back(0);
-		AppendByteArrayFast(StatString, mapWidth);
-		AppendByteArrayFast(StatString, mapHeight);
-		AppendByteArrayFast(StatString, mapCRC);
+		AppendByteArray(StatString, mapWidth, false);
+		AppendByteArray(StatString, mapHeight, false);
+		AppendByteArray(StatString, mapCRC, false);
 		AppendByteArrayFast(StatString, mapPath);
 		AppendByteArrayFast(StatString, hostName);
 		StatString.push_back(0);
@@ -507,15 +507,15 @@ BYTEARRAY CGameProtocol::SEND_W3GS_DECREATEGAME()
 	return BYTEARRAY{ W3GS_HEADER_CONSTANT, W3GS_DECREATEGAME, 8, 0, 1, 0, 0, 0 };
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_MAPCHECK(const std::string &mapPath, uint32_t mapSize, const BYTEARRAY &mapInfo, const BYTEARRAY &mapCRC, const BYTEARRAY &mapSHA1)
+BYTEARRAY CGameProtocol::SEND_W3GS_MAPCHECK(const std::string &mapPath, uint32_t mapSize, uint32_t mapInfo, uint32_t mapCRC, const BYTEARRAY &mapSHA1)
 {
-	if (!mapPath.empty() && mapInfo.size() == 4 && mapCRC.size() == 4 && mapSHA1.size() == 20)
+	if (!mapPath.empty() && mapSHA1.size() == 20)
 	{
 		BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_MAPCHECK, 0, 0, 1, 0, 0, 0 };
 		AppendByteArrayFast(packet, mapPath);     // map path
 		AppendByteArray(packet, mapSize, false);     // map size
-		AppendByteArrayFast(packet, mapInfo);     // map info
-		AppendByteArrayFast(packet, mapCRC);      // map crc
+		AppendByteArray(packet, mapInfo, false);     // map info
+		AppendByteArray(packet, mapCRC, false);      // map crc
 		AppendByteArrayFast(packet, mapSHA1);     // map sha1
 		AssignLength(packet);
 		return packet;

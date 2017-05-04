@@ -89,11 +89,11 @@ class CMap
 private:
 	std::string m_MapData;              // the map data itself, for sending the map to players
 	BYTEARRAY m_MapSHA1;                // config value: map sha1 (20 bytes)
-	uint32_t m_MapSize;                // config value: map size (4 bytes)
-	BYTEARRAY m_MapInfo;                // config value: map info (4 bytes) -> this is the real CRC
-	BYTEARRAY m_MapCRC;                 // config value: map crc (4 bytes) -> this is not the real CRC, it's the "xoro" value
-	BYTEARRAY m_MapWidth;               // config value: map width (2 bytes)
-	BYTEARRAY m_MapHeight;              // config value: map height (2 bytes)
+	uint32_t m_MapSize;                 // config value: map size (4 bytes)
+	uint32_t m_MapInfo;                 // config value: map info (4 bytes) -> this is the real CRC
+	uint32_t m_MapCRC;                  // config value: map crc (4 bytes) -> this is not the real CRC, it's the "xoro" value
+	uint16_t m_MapWidth;                // config value: map width (2 bytes)
+	uint16_t m_MapHeight;               // config value: map height (2 bytes)
 	std::string m_MapPath;              // config value: map path
 	std::vector<CGameSlot> m_Slots;
 	uint32_t m_MapOptions;
@@ -111,18 +111,18 @@ public:
 	inline bool GetValid() const                               { return m_Valid; }
 	inline std::string GetMapPath() const                      { return m_MapPath; }
 	inline uint32_t GetMapSize() const                         { return m_MapSize; }
-	inline BYTEARRAY GetMapInfo() const                        { return m_MapInfo; }
-	inline BYTEARRAY GetMapCRC() const                         { return m_MapCRC; }
+	inline uint32_t GetMapInfo() const                         { return m_MapInfo; }
+	inline uint32_t GetMapCRC() const                          { return m_MapCRC; }
 	inline BYTEARRAY GetMapSHA1() const                        { return m_MapSHA1; }
 	inline uint8_t GetMapObservers() const                     { return m_MapObservers; }
 	inline uint8_t GetMapFlags() const                         { return m_MapFlags; }
 	inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
-	inline BYTEARRAY GetMapWidth() const                       { return m_MapWidth; }
-	inline BYTEARRAY GetMapHeight() const                      { return m_MapHeight; }
+	inline uint16_t GetMapWidth() const                        { return m_MapWidth; }
+	inline uint16_t GetMapHeight() const                       { return m_MapHeight; }
 	inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
 	inline std::vector<CGameSlot> GetSlots() const             { return m_Slots; }
 
-	BYTEARRAY GetMapGameFlags() const;
+	uint32_t GetMapGameFlags() const;
 	uint8_t GetMapLayoutStyle() const;
 	const std::string *GetMapData() const;
 	void Load(std::string const& MapPath, CConfig *MAP);
