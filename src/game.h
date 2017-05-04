@@ -22,7 +22,9 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #define AURA_GAME_H_
 
 #include "gameslot.h"
+#include <vector>
 #include <queue>
+typedef std::vector<uint8_t> BYTEARRAY;
 
 //
 // CGame

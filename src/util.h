@@ -96,6 +96,11 @@ inline void AppendByteArray(BYTEARRAY &b, const BYTEARRAY &append)
 	b.insert(end(b), begin(append), end(append));
 }
 
+inline void AppendByteArray(BYTEARRAY &b, uint8_t i)
+{
+	b.push_back(i);
+}
+
 inline void AppendByteArrayFast(BYTEARRAY &b, const BYTEARRAY &append)
 {
 	b.insert(end(b), begin(append), end(append));

@@ -141,7 +141,9 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 		if (SlotString.empty())
 			break;
 		BYTEARRAY SlotData = ExtractNumbers(SlotString, 9);
-		m_Slots.push_back(CGameSlot(SlotData));
+		if (SlotData.size() < 9)
+			break;
+		m_Slots.push_back(CGameSlot(SlotData[0], SlotData[1], SlotData[2], SlotData[3], SlotData[4], SlotData[5], SlotData[6], SlotData[7], SlotData[8]));
 	}
 	m_MapNumPlayers = m_Slots.size();
 

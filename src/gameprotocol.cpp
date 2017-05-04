@@ -610,7 +610,17 @@ BYTEARRAY CGameProtocol::EncodeSlotInfo(const std::vector<CGameSlot> &slots, uin
 	SlotInfo.push_back((uint8_t)slots.size()); // number of slots
 
 	for (auto & slot : slots)
-		AppendByteArray(SlotInfo, slot.GetByteArray());
+	{
+		AppendByteArray(SlotInfo, slot.GetPID());
+		AppendByteArray(SlotInfo, slot.GetDownloadStatus());
+		AppendByteArray(SlotInfo, slot.GetSlotStatus());
+		AppendByteArray(SlotInfo, slot.GetComputer());
+		AppendByteArray(SlotInfo, slot.GetTeam());
+		AppendByteArray(SlotInfo, slot.GetColour());
+		AppendByteArray(SlotInfo, slot.GetRace());
+		AppendByteArray(SlotInfo, slot.GetComputerType());
+		AppendByteArray(SlotInfo, slot.GetHandicap());
+	}
 
 	AppendByteArray(SlotInfo, randomSeed, false);     // random seed
 	SlotInfo.push_back(layoutStyle);                  // LayoutStyle (0 = melee, 1 = custom forces, 3 = custom forces + fixed player settings)

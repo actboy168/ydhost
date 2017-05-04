@@ -21,9 +21,7 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_GAMESLOT_H_
 #define AURA_GAMESLOT_H_
 
-#include <vector>
 #include <stdint.h>
-typedef std::vector<uint8_t> BYTEARRAY;
 
 #define SLOTSTATUS_OPEN     0
 #define SLOTSTATUS_CLOSED   1
@@ -58,7 +56,6 @@ private:
 	uint8_t m_Handicap;       // handicap
 
 public:
-	explicit CGameSlot(BYTEARRAY &n);
 	CGameSlot(uint8_t nPID, uint8_t nDownloadStatus, uint8_t nSlotStatus, uint8_t nComputer, uint8_t nTeam, uint8_t nColour, uint8_t nRace, uint8_t nComputerType = 1, uint8_t nHandicap = 100);
 	~CGameSlot();
 
@@ -71,7 +68,6 @@ public:
 	inline uint8_t GetRace() const                          { return m_Race; }
 	inline uint8_t GetComputerType() const                  { return m_ComputerType; }
 	inline uint8_t GetHandicap() const                      { return m_Handicap; }
-	BYTEARRAY GetByteArray() const;
 
 	inline void SetPID(uint8_t nPID)                       { m_PID = nPID; }
 	inline void SetDownloadStatus(uint8_t nDownloadStatus) { m_DownloadStatus = nDownloadStatus; }
