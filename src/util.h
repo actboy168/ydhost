@@ -111,16 +111,6 @@ inline void AppendByteArray(BYTEARRAY &b, const uint8_t *a, int32_t size)
 	AppendByteArray(b, CreateByteArray(a, size));
 }
 
-inline void AppendByteArray(BYTEARRAY &b, const std::string &append, bool terminator = true)
-{
-	// append the std::string plus a null terminator
-
-	b.insert(end(b), begin(append), end(append));
-
-	if (terminator)
-		b.push_back(0);
-}
-
 inline void AppendByteArrayFast(BYTEARRAY &b, const std::string &append, bool terminator = true)
 {
 	// append the std::string plus a null terminator
@@ -141,7 +131,7 @@ inline void AppendByteArray(BYTEARRAY &b, uint32_t i, bool reverse)
 	AppendByteArray(b, CreateByteArray(i, reverse));
 }
 
-inline BYTEARRAY ExtractCString(const BYTEARRAY &b, uint32_t start)
+inline std::string ExtractCString(const BYTEARRAY &b, uint32_t start)
 {
 	// start searching the byte array at position 'start' for the first null value
 	// if found, return the subarray from 'start' to the null value but not including the null value
@@ -151,15 +141,15 @@ inline BYTEARRAY ExtractCString(const BYTEARRAY &b, uint32_t start)
 		for (uint32_t i = start; i < b.size(); ++i)
 		{
 			if (b[i] == 0)
-				return BYTEARRAY(begin(b) + start, begin(b) + i);
+				return std::string(begin(b) + start, begin(b) + i);
 		}
 
 		// no null value found, return the rest of the byte array
 
-		return BYTEARRAY(begin(b) + start, end(b));
+		return std::string(begin(b) + start, end(b));
 	}
 
-	return BYTEARRAY();
+	return std::string();
 }
 
 

@@ -64,12 +64,12 @@ CIncomingJoinPlayer *CGameProtocol::RECEIVE_W3GS_REQJOIN(const BYTEARRAY &data)
 	{
 		const uint32_t HostCounter = ByteArrayToUInt32(data, false, 4);
 		const uint32_t EntryKey = ByteArrayToUInt32(data, false, 8);
-		const BYTEARRAY Name = ExtractCString(data, 19);
+		const std::string Name = ExtractCString(data, 19);
 
 		if (!Name.empty() && data.size() >= Name.size() + 30)
 		{
 			uint32_t InternalIP = ByteArrayToUInt32(data, false, Name.size() + 26);
-			return new CIncomingJoinPlayer(HostCounter, EntryKey, std::string(std::begin(Name), std::end(Name)), InternalIP);
+			return new CIncomingJoinPlayer(HostCounter, EntryKey, Name, InternalIP);
 		}
 	}
 
@@ -184,8 +184,8 @@ CIncomingChatPlayer *CGameProtocol::RECEIVE_W3GS_CHAT_TO_HOST(const BYTEARRAY &d
 			{
 				// chat message
 
-				const BYTEARRAY Message = ExtractCString(data, i);
-				return new CIncomingChatPlayer(FromPID, ToPIDs, Flag, std::string(begin(Message), end(Message)));
+				const std::string Message = ExtractCString(data, i);
+				return new CIncomingChatPlayer(FromPID, ToPIDs, Flag, Message);
 			}
 			else if ((Flag >= 17 && Flag <= 20) && data.size() >= i + 1)
 			{
@@ -199,8 +199,8 @@ CIncomingChatPlayer *CGameProtocol::RECEIVE_W3GS_CHAT_TO_HOST(const BYTEARRAY &d
 				// chat message with extra flags
 
 				const BYTEARRAY ExtraFlags = BYTEARRAY(begin(data) + i, begin(data) + i + 4);
-				const BYTEARRAY Message = ExtractCString(data, i + 4);
-				return new CIncomingChatPlayer(FromPID, ToPIDs, Flag, std::string(begin(Message), end(Message)), ExtraFlags);
+				const std::string Message = ExtractCString(data, i + 4);
+				return new CIncomingChatPlayer(FromPID, ToPIDs, Flag, Message, ExtraFlags);
 			}
 		}
 	}
