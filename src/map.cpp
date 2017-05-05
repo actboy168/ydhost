@@ -19,10 +19,10 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 */
 
 #include "map.h"
-#include "util.h"
 #include "config.h"
 #include "gameslot.h"
-#include <type_traits>
+#include <string>
+#include <sstream>
 
 void Print(const std::string &message);
 
