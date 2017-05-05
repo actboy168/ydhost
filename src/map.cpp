@@ -153,7 +153,6 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 	Print("[MAP] map_width = " + std::to_string(m_MapWidth));
 	Print("[MAP] map_height = " + std::to_string(m_MapHeight));
 
-	m_MapNumPlayers = MAP->GetInt("map_numplayers", 0);
 	m_Slots.clear();
 	for (uint32_t Slot = 1; Slot <= 12; ++Slot)
 	{
