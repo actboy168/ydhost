@@ -61,48 +61,48 @@ uint32_t CMap::GetMapGameFlags() const
 
 	// speed
 
-	if (m_MapSpeed == MAPSPEED_SLOW)
+	if (m_MapSpeed == MAPSPEED::SLOW)
 		GameFlags = 0x00000000;
-	else if (m_MapSpeed == MAPSPEED_NORMAL)
+	else if (m_MapSpeed == MAPSPEED::NORMAL)
 		GameFlags = 0x00000001;
 	else
 		GameFlags = 0x00000002;
 
 	// visibility
 
-	if (m_MapVisibility == MAPVIS_HIDETERRAIN)
+	if (m_MapVisibility == MAPVIS::HIDETERRAIN)
 		GameFlags |= 0x00000100;
-	else if (m_MapVisibility == MAPVIS_EXPLORED)
+	else if (m_MapVisibility == MAPVIS::EXPLORED)
 		GameFlags |= 0x00000200;
-	else if (m_MapVisibility == MAPVIS_ALWAYSVISIBLE)
+	else if (m_MapVisibility == MAPVIS::ALWAYSVISIBLE)
 		GameFlags |= 0x00000400;
 	else
 		GameFlags |= 0x00000800;
 
 	// observers
 
-	if (m_MapObservers == MAPOBS_ONDEFEAT)
+	if (m_MapObservers == MAPOBS::ONDEFEAT)
 		GameFlags |= 0x00002000;
-	else if (m_MapObservers == MAPOBS_ALLOWED)
+	else if (m_MapObservers == MAPOBS::ALLOWED)
 		GameFlags |= 0x00003000;
-	else if (m_MapObservers == MAPOBS_REFEREES)
+	else if (m_MapObservers == MAPOBS::REFEREES)
 		GameFlags |= 0x40000000;
 
 	// teams/units/hero/race
 
-	if (m_MapFlags & MAPFLAG_TEAMSTOGETHER)
+	if (m_MapFlags & MAPFLAG::TEAMSTOGETHER)
 		GameFlags |= 0x00004000;
 
-	if (m_MapFlags & MAPFLAG_FIXEDTEAMS)
+	if (m_MapFlags & MAPFLAG::FIXEDTEAMS)
 		GameFlags |= 0x00060000;
 
-	if (m_MapFlags & MAPFLAG_UNITSHARE)
+	if (m_MapFlags & MAPFLAG::UNITSHARE)
 		GameFlags |= 0x01000000;
 
-	if (m_MapFlags & MAPFLAG_RANDOMHERO)
+	if (m_MapFlags & MAPFLAG::RANDOMHERO)
 		GameFlags |= 0x02000000;
 
-	if (m_MapFlags & MAPFLAG_RANDOMRACES)
+	if (m_MapFlags & MAPFLAG::RANDOMRACES)
 		GameFlags |= 0x04000000;
 
 	return GameFlags;
@@ -115,10 +115,10 @@ uint8_t CMap::GetMapLayoutStyle() const
 	// 2 = fixed player settings (not possible with the Warcraft III map editor)
 	// 3 = custom forces + fixed player settings
 
-	if (!(m_MapOptions & MAPOPT_CUSTOMFORCES))
+	if (!(m_MapOptions & MAPOPT::CUSTOMFORCES))
 		return 0;
 
-	if (!(m_MapOptions & MAPOPT_FIXEDPLAYERSETTINGS))
+	if (!(m_MapOptions & MAPOPT::FIXEDPLAYERSETTINGS))
 		return 1;
 
 	return 3;
@@ -169,12 +169,12 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 	}
 	m_MapNumPlayers = m_Slots.size();
 
-	m_MapSpeed = MAPSPEED_FAST;
-	m_MapVisibility = MAPVIS_DEFAULT;
-	m_MapObservers = MAPOBS_NONE;
-	m_MapFlags = MAPFLAG_TEAMSTOGETHER | MAPFLAG_FIXEDTEAMS;
+	m_MapSpeed = MAPSPEED::FAST;
+	m_MapVisibility = MAPVIS::DEFAULT;
+	m_MapObservers = MAPOBS::NONE;
+	m_MapFlags = MAPFLAG::TEAMSTOGETHER | MAPFLAG::FIXEDTEAMS;
 
-	if (m_MapOptions & MAPOPT_MELEE)
+	if (m_MapOptions & MAPOPT::MELEE)
 	{
 		uint8_t Team = 0;
 		for (auto & Slot : m_Slots)
@@ -183,11 +183,11 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 			(Slot).SetRace(SLOTRACE_RANDOM);
 		}
 		// force melee maps to have observer slots enabled by default
-		if (m_MapObservers == MAPOBS_NONE)
-			m_MapObservers = MAPOBS_ALLOWED;
+		if (m_MapObservers == MAPOBS::NONE)
+			m_MapObservers = MAPOBS::ALLOWED;
 	}
 
-	if (!(m_MapOptions & MAPOPT_FIXEDPLAYERSETTINGS))
+	if (!(m_MapOptions & MAPOPT::FIXEDPLAYERSETTINGS))
 	{
 		for (auto & Slot : m_Slots)
 			(Slot).SetRace((Slot).GetRace() | SLOTRACE_SELECTABLE);
@@ -195,7 +195,7 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 
 	// if random races is set force every slot's race to random
 
-	if (m_MapFlags & MAPFLAG_RANDOMRACES)
+	if (m_MapFlags & MAPFLAG::RANDOMRACES)
 	{
 		Print("[MAP] forcing races to random");
 
@@ -205,7 +205,7 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 
 	// add observer slots
 
-	if (m_MapObservers == MAPOBS_ALLOWED || m_MapObservers == MAPOBS_REFEREES)
+	if (m_MapObservers == MAPOBS::ALLOWED || m_MapObservers == MAPOBS::REFEREES)
 	{
 		Print("[MAP] adding " + std::to_string(12 - m_Slots.size()) + " observer slots");
 
@@ -234,24 +234,6 @@ void CMap::CheckValid()
 	{
 		m_Valid = false;
 		Print("[MAP] invalid map_size detected - size mismatch with actual map data");
-	}
-
-	if (m_MapSpeed != MAPSPEED_SLOW && m_MapSpeed != MAPSPEED_NORMAL && m_MapSpeed != MAPSPEED_FAST)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_speed detected");
-	}
-
-	if (m_MapVisibility != MAPVIS_HIDETERRAIN && m_MapVisibility != MAPVIS_EXPLORED && m_MapVisibility != MAPVIS_ALWAYSVISIBLE && m_MapVisibility != MAPVIS_DEFAULT)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_visibility detected");
-	}
-
-	if (m_MapObservers != MAPOBS_NONE && m_MapObservers != MAPOBS_ONDEFEAT && m_MapObservers != MAPOBS_ALLOWED && m_MapObservers != MAPOBS_REFEREES)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_observers detected");
 	}
 
 	if (m_MapNumPlayers == 0 || m_MapNumPlayers > 12)

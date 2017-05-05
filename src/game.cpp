@@ -169,7 +169,7 @@ bool CGame::Update(void *fd, void *send_fd)
 			// note: the PrivateGame flag is not set when broadcasting to LAN (as you might expect)
 			// note: we do not use m_Map->GetMapGameType because none of the filters are set when broadcasting to LAN (also as you might expect)
 
-			m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Config->War3Version, MAPGAMETYPE_UNKNOWN0, m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), GetGameName(), "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
+			m_UDPSocket->Broadcast(6112, m_Protocol->SEND_W3GS_GAMEINFO(m_Config->War3Version, 1, m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), GetGameName(), "Clan 007", 0, m_Map->GetMapPath(), m_Map->GetMapCRC(), 12, 12, m_HostPort, m_HostCounter & 0x0FFFFFFF, m_EntryKey));
 		}
 	}
 
@@ -639,11 +639,11 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 	potential->SetSocket(nullptr);
 	potential->SetDeleteMe(true);
 
-	if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
+	if (m_Map->GetMapOptions() & CMap::MAPOPT::CUSTOMFORCES)
 		m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, m_Slots[SID].GetTeam(), m_Slots[SID].GetColour(), m_Slots[SID].GetRace());
 	else
 	{
-		if (m_Map->GetMapFlags() & MAPFLAG_RANDOMRACES)
+		if (m_Map->GetMapFlags() & CMap::MAPFLAG::RANDOMRACES)
 			m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, 12, 12, SLOTRACE_RANDOM);
 		else
 			m_Slots[SID] = CGameSlot(Player->GetPID(), 255, SLOTSTATUS_OCCUPIED, 0, 12, 12, SLOTRACE_RANDOM | SLOTRACE_SELECTABLE);
@@ -788,7 +788,7 @@ void CGame::EventPlayerChangeTeam(CGamePlayer *player, uint8_t team)
 {
 	// player is requesting a team change
 
-	if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
+	if (m_Map->GetMapOptions() & CMap::MAPOPT::CUSTOMFORCES)
 	{
 		uint8_t oldSID = GetSIDFromPID(player->GetPID());
 		uint8_t newSID = GetEmptySlot(team, player->GetPID());
@@ -801,7 +801,7 @@ void CGame::EventPlayerChangeTeam(CGamePlayer *player, uint8_t team)
 
 		if (team == 12)
 		{
-			if (m_Map->GetMapObservers() != MAPOBS_ALLOWED && m_Map->GetMapObservers() != MAPOBS_REFEREES)
+			if (m_Map->GetMapObservers() != CMap::MAPOBS::ALLOWED && m_Map->GetMapObservers() != CMap::MAPOBS::REFEREES)
 				return;
 		}
 		else
@@ -851,7 +851,7 @@ void CGame::EventPlayerChangeColour(CGamePlayer *player, uint8_t colour)
 {
 	// player is requesting a colour change
 
-	if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
+	if (m_Map->GetMapOptions() & CMap::MAPOPT::FIXEDPLAYERSETTINGS)
 		return;
 
 	if (colour > 11)
@@ -874,10 +874,10 @@ void CGame::EventPlayerChangeRace(CGamePlayer *player, uint8_t race)
 {
 	// player is requesting a race change
 
-	if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
+	if (m_Map->GetMapOptions() & CMap::MAPOPT::FIXEDPLAYERSETTINGS)
 		return;
 
-	if (m_Map->GetMapFlags() & MAPFLAG_RANDOMRACES)
+	if (m_Map->GetMapFlags() & CMap::MAPFLAG::RANDOMRACES)
 		return;
 
 	if (race != SLOTRACE_HUMAN && race != SLOTRACE_ORC && race != SLOTRACE_NIGHTELF && race != SLOTRACE_UNDEAD && race != SLOTRACE_RANDOM)
@@ -896,7 +896,7 @@ void CGame::EventPlayerChangeHandicap(CGamePlayer *player, uint8_t handicap)
 {
 	// player is requesting a handicap change
 
-	if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
+	if (m_Map->GetMapOptions() & CMap::MAPOPT::FIXEDPLAYERSETTINGS)
 		return;
 
 	if (handicap != 50 && handicap != 60 && handicap != 70 && handicap != 80 && handicap != 90 && handicap != 100)
@@ -1190,7 +1190,7 @@ void CGame::SwapSlots(uint8_t SID1, uint8_t SID2)
 		CGameSlot Slot1 = m_Slots[SID1];
 		CGameSlot Slot2 = m_Slots[SID2];
 
-		if (m_Map->GetMapOptions() & MAPOPT_FIXEDPLAYERSETTINGS)
+		if (m_Map->GetMapOptions() & CMap::MAPOPT::FIXEDPLAYERSETTINGS)
 		{
 			// don't swap the team, colour, race, or handicap
 			m_Slots[SID1] = CGameSlot(Slot2.GetPID(), Slot2.GetDownloadStatus(), Slot2.GetSlotStatus(), Slot2.GetComputer(), Slot1.GetTeam(), Slot1.GetColour(), Slot1.GetRace(), Slot2.GetComputerType(), Slot1.GetHandicap());
@@ -1200,7 +1200,7 @@ void CGame::SwapSlots(uint8_t SID1, uint8_t SID2)
 		{
 			// swap everything
 
-			if (m_Map->GetMapOptions() & MAPOPT_CUSTOMFORCES)
+			if (m_Map->GetMapOptions() & CMap::MAPOPT::CUSTOMFORCES)
 			{
 				// except if custom forces is set, then we don't swap teams...
 				Slot1.SetTeam(m_Slots[SID2].GetTeam());

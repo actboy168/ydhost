@@ -21,57 +21,6 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_MAP_H_
 #define AURA_MAP_H_
 
-#define MAPSPEED_SLOW                     1
-#define MAPSPEED_NORMAL                   2
-#define MAPSPEED_FAST                     3
-
-#define MAPVIS_HIDETERRAIN                1
-#define MAPVIS_EXPLORED                   2
-#define MAPVIS_ALWAYSVISIBLE              3
-#define MAPVIS_DEFAULT                    4
-
-#define MAPOBS_NONE                       1
-#define MAPOBS_ONDEFEAT                   2
-#define MAPOBS_ALLOWED                    3
-#define MAPOBS_REFEREES                   4
-
-#define MAPFLAG_TEAMSTOGETHER             1
-#define MAPFLAG_FIXEDTEAMS                2
-#define MAPFLAG_UNITSHARE                 4
-#define MAPFLAG_RANDOMHERO                8
-#define MAPFLAG_RANDOMRACES               16
-
-#define MAPOPT_HIDEMINIMAP                1 << 0
-#define MAPOPT_MODIFYALLYPRIORITIES       1 << 1
-#define MAPOPT_MELEE                      1 << 2  // the bot cares about this one...
-#define MAPOPT_REVEALTERRAIN              1 << 4
-#define MAPOPT_FIXEDPLAYERSETTINGS        1 << 5  // and this one...
-#define MAPOPT_CUSTOMFORCES               1 << 6  // and this one, the rest don't affect the bot's logic
-#define MAPOPT_CUSTOMTECHTREE             1 << 7
-#define MAPOPT_CUSTOMABILITIES            1 << 8
-#define MAPOPT_CUSTOMUPGRADES             1 << 9
-#define MAPOPT_WATERWAVESONCLIFFSHORES    1 << 11
-#define MAPOPT_WATERWAVESONSLOPESHORES    1 << 12
-
-#define MAPFILTER_TYPE_MELEE              1
-#define MAPFILTER_TYPE_SCENARIO           2
-
-#define MAPGAMETYPE_UNKNOWN0              1       // always set except for saved games?
-#define MAPGAMETYPE_BLIZZARD              1 << 3
-#define MAPGAMETYPE_MELEE                 1 << 5
-#define MAPGAMETYPE_SAVEDGAME             1 << 9
-#define MAPGAMETYPE_PRIVATEGAME           1 << 11
-#define MAPGAMETYPE_MAKERUSER             1 << 13
-#define MAPGAMETYPE_MAKERBLIZZARD         1 << 14
-#define MAPGAMETYPE_TYPEMELEE             1 << 15
-#define MAPGAMETYPE_TYPESCENARIO          1 << 16
-#define MAPGAMETYPE_SIZESMALL             1 << 17
-#define MAPGAMETYPE_SIZEMEDIUM            1 << 18
-#define MAPGAMETYPE_SIZELARGE             1 << 19
-#define MAPGAMETYPE_OBSFULL               1 << 20
-#define MAPGAMETYPE_OBSONDEATH            1 << 21
-#define MAPGAMETYPE_OBSNONE               1 << 22
-
 //
 // CMap
 //
@@ -86,6 +35,78 @@ class CConfig;
 
 class CMap
 {
+public:
+	enum class MAPSPEED
+	{
+		SLOW   = 1,
+		NORMAL = 2,
+		FAST   = 3,
+	};
+
+	enum class MAPVIS
+	{
+		HIDETERRAIN   = 1,
+		EXPLORED      = 2,
+		ALWAYSVISIBLE = 3,
+		DEFAULT       = 4,
+	};
+
+	enum class MAPOBS
+	{
+		NONE     = 1,
+		ONDEFEAT = 2,
+		ALLOWED  = 3,
+		REFEREES = 4,
+	};
+
+	enum class MAPFLAG
+	{
+		TEAMSTOGETHER = 1,
+		FIXEDTEAMS    = 2,
+		UNITSHARE     = 4,
+		RANDOMHERO    = 8,
+		RANDOMRACES   = 16, 
+	};
+
+	enum class MAPOPT
+	{
+		HIDEMINIMAP             = 1 << 0,
+		MODIFYALLYPRIORITIES    = 1 << 1,
+		MELEE                   = 1 << 2, // the bot cares about this one...
+		REVEALTERRAIN           = 1 << 4,
+		FIXEDPLAYERSETTINGS     = 1 << 5, // and this one...
+		CUSTOMFORCES            = 1 << 6, // and this one, the rest don't affect the bot's logic
+		CUSTOMTECHTREE          = 1 << 7,
+		CUSTOMABILITIES         = 1 << 8,
+		CUSTOMUPGRADES          = 1 << 9,
+		WATERWAVESONCLIFFSHORES = 1 << 11,
+		WATERWAVESONSLOPESHORES = 1 << 12,
+	};
+
+public:
+	CMap(std::string const& MapPath, CConfig *MAP);
+	~CMap();
+
+	inline bool GetValid() const                               { return m_Valid; }
+	inline std::string GetMapPath() const                      { return m_MapPath; }
+	inline uint32_t GetMapSize() const                         { return m_MapSize; }
+	inline uint32_t GetMapInfo() const                         { return m_MapInfo; }
+	inline uint32_t GetMapCRC() const                          { return m_MapCRC; }
+	inline std::array<uint8_t, 20> GetMapSHA1() const          { return m_MapSHA1; }
+	inline MAPOBS GetMapObservers() const                      { return m_MapObservers; }
+	inline uint32_t GetMapFlags() const                         { return m_MapFlags; }
+	inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
+	inline uint16_t GetMapWidth() const                        { return m_MapWidth; }
+	inline uint16_t GetMapHeight() const                       { return m_MapHeight; }
+	inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
+	inline std::vector<CGameSlot> GetSlots() const             { return m_Slots; }
+
+	uint32_t GetMapGameFlags() const;
+	uint8_t GetMapLayoutStyle() const;
+	const std::string *GetMapData() const;
+	void Load(std::string const& MapPath, CConfig *MAP);
+	void CheckValid();
+
 private:
 	std::string m_MapData;              // the map data itself, for sending the map to players
 	std::array<uint8_t, 20> m_MapSHA1;  // config value: map sha1 (20 bytes)
@@ -98,35 +119,26 @@ private:
 	std::vector<CGameSlot> m_Slots;
 	uint32_t m_MapOptions;
 	uint32_t m_MapNumPlayers;
-	uint8_t m_MapSpeed;
-	uint8_t m_MapVisibility;
-	uint8_t m_MapObservers;
-	uint8_t m_MapFlags;
+	MAPSPEED m_MapSpeed;
+	MAPVIS   m_MapVisibility;
+	MAPOBS   m_MapObservers;
+	uint32_t  m_MapFlags;
 	bool m_Valid;
-
-public:
-	CMap(std::string const& MapPath, CConfig *MAP);
-	~CMap();
-
-	inline bool GetValid() const                               { return m_Valid; }
-	inline std::string GetMapPath() const                      { return m_MapPath; }
-	inline uint32_t GetMapSize() const                         { return m_MapSize; }
-	inline uint32_t GetMapInfo() const                         { return m_MapInfo; }
-	inline uint32_t GetMapCRC() const                          { return m_MapCRC; }
-	inline std::array<uint8_t, 20> GetMapSHA1() const          { return m_MapSHA1; }
-	inline uint8_t GetMapObservers() const                     { return m_MapObservers; }
-	inline uint8_t GetMapFlags() const                         { return m_MapFlags; }
-	inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
-	inline uint16_t GetMapWidth() const                        { return m_MapWidth; }
-	inline uint16_t GetMapHeight() const                       { return m_MapHeight; }
-	inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
-	inline std::vector<CGameSlot> GetSlots() const             { return m_Slots; }
-
-	uint32_t GetMapGameFlags() const;
-	uint8_t GetMapLayoutStyle() const;
-	const std::string *GetMapData() const;
-	void Load(std::string const& MapPath, CConfig *MAP);
-	void CheckValid();
 };
+
+inline uint32_t operator&(uint32_t a, CMap::MAPFLAG b)
+{
+	return a & (uint32_t)b;
+}
+
+inline uint32_t operator|(CMap::MAPFLAG a, CMap::MAPFLAG b)
+{
+	return (uint32_t)a | (uint32_t)b;
+}
+
+inline uint32_t operator&(uint32_t a, CMap::MAPOPT b)
+{
+	return a & (uint32_t)b;
+}
 
 #endif  // AURA_MAP_H_
