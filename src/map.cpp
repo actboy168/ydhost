@@ -25,6 +25,22 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 
 void Print(const std::string &message);
 
+template <class T, size_t N>
+bool ExtractNumbers(const std::string &s, std::array<T, N>& result)
+{
+	uint32_t c;
+	std::stringstream SS;
+	SS << s;
+	for (size_t i = 0; i < N; ++i)
+	{
+		if (SS.eof())
+			return false;
+		SS >> c;
+		result[i] = (T)c;
+	}
+	return true;
+}
+
 //
 // CMap
 //
@@ -117,12 +133,17 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 	m_MapSize = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_size", std::string()), 4), false);
 	m_MapInfo = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_info", std::string()), 4), false);
 	m_MapCRC = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_crc", std::string()), 4), false);
-	m_MapSHA1 = ExtractNumbers(MAP->GetString("map_sha1", std::string()), 20);
+	std::string sha1_str = MAP->GetString("map_sha1", std::string());
+	if (!ExtractNumbers(sha1_str, m_MapSHA1)) {
+		m_Valid = false;
+		Print("[MAP] invalid map_sha1 detected");
+		return;
+	}
 
 	Print("[MAP] map_size = " + std::to_string(m_MapSize));
 	Print("[MAP] map_info = " + std::to_string(m_MapInfo));
 	Print("[MAP] map_crc = " + std::to_string(m_MapCRC));
-	Print("[MAP] map_sha1 = " + ByteArrayToDecString(m_MapSHA1));
+	Print("[MAP] map_sha1 = " + sha1_str);
 
 	m_MapOptions = MAP->GetInt("map_options", 0);
 	m_MapWidth = ByteArrayToUInt16(ExtractNumbers(MAP->GetString("map_width", std::string()), 2), false);
@@ -140,9 +161,10 @@ void CMap::Load(std::string const& MapPath, CConfig *MAP)
 		Print("[MAP] map_slot" + std::to_string(Slot) + " = " + SlotString);
 		if (SlotString.empty())
 			break;
-		BYTEARRAY SlotData = ExtractNumbers(SlotString, 9);
-		if (SlotData.size() < 9)
+		std::array<uint8_t, 9> SlotData;
+		if (!ExtractNumbers(SlotString, SlotData)) {
 			break;
+		}
 		m_Slots.push_back(CGameSlot(SlotData[0], SlotData[1], SlotData[2], SlotData[3], SlotData[4], SlotData[5], SlotData[6], SlotData[7], SlotData[8]));
 	}
 	m_MapNumPlayers = m_Slots.size();
@@ -212,12 +234,6 @@ void CMap::CheckValid()
 	{
 		m_Valid = false;
 		Print("[MAP] invalid map_size detected - size mismatch with actual map data");
-	}
-
-	if (m_MapSHA1.size() != 20)
-	{
-		m_Valid = false;
-		Print("[MAP] invalid map_sha1 detected");
 	}
 
 	if (m_MapSpeed != MAPSPEED_SLOW && m_MapSpeed != MAPSPEED_NORMAL && m_MapSpeed != MAPSPEED_FAST)

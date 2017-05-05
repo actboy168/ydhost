@@ -21,6 +21,7 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #ifndef AURA_GAMEPROTOCOL_H_
 #define AURA_GAMEPROTOCOL_H_
 
+#include <array>
 #include <queue>
 #include <stdint.h>
 typedef std::vector<uint8_t> BYTEARRAY;
@@ -129,7 +130,7 @@ public:
 	BYTEARRAY SEND_W3GS_CREATEGAME(uint8_t war3Version);
 	BYTEARRAY SEND_W3GS_REFRESHGAME(uint32_t players, uint32_t playerSlots);
 	BYTEARRAY SEND_W3GS_DECREATEGAME();
-	BYTEARRAY SEND_W3GS_MAPCHECK(const std::string &mapPath, uint32_t mapSize, uint32_t mapInfo, uint32_t mapCRC, const BYTEARRAY &mapSHA1);
+	BYTEARRAY SEND_W3GS_MAPCHECK(const std::string &mapPath, uint32_t mapSize, uint32_t mapInfo, uint32_t mapCRC, const std::array<uint8_t, 20>& mapSHA1);
 	BYTEARRAY SEND_W3GS_STARTDOWNLOAD(uint8_t fromPID);
 	BYTEARRAY SEND_W3GS_MAPPART(uint8_t fromPID, uint8_t toPID, uint32_t start, const std::string *mapData);
 

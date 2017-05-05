@@ -507,16 +507,16 @@ BYTEARRAY CGameProtocol::SEND_W3GS_DECREATEGAME()
 	return BYTEARRAY{ W3GS_HEADER_CONSTANT, W3GS_DECREATEGAME, 8, 0, 1, 0, 0, 0 };
 }
 
-BYTEARRAY CGameProtocol::SEND_W3GS_MAPCHECK(const std::string &mapPath, uint32_t mapSize, uint32_t mapInfo, uint32_t mapCRC, const BYTEARRAY &mapSHA1)
+BYTEARRAY CGameProtocol::SEND_W3GS_MAPCHECK(const std::string &mapPath, uint32_t mapSize, uint32_t mapInfo, uint32_t mapCRC, const std::array<uint8_t, 20>& mapSHA1)
 {
-	if (!mapPath.empty() && mapSHA1.size() == 20)
+	if (!mapPath.empty())
 	{
 		BYTEARRAY packet = { W3GS_HEADER_CONSTANT, W3GS_MAPCHECK, 0, 0, 1, 0, 0, 0 };
 		AppendByteArrayFast(packet, mapPath);     // map path
 		AppendByteArray(packet, mapSize, false);     // map size
 		AppendByteArray(packet, mapInfo, false);     // map info
 		AppendByteArray(packet, mapCRC, false);      // map crc
-		AppendByteArrayFast(packet, mapSHA1);     // map sha1
+		AppendByteArray(packet, mapSHA1.data(), mapSHA1.size());     // map sha1
 		AssignLength(packet);
 		return packet;
 	}

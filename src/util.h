@@ -77,20 +77,6 @@ inline uint32_t ByteArrayToUInt32(const BYTEARRAY &b, bool reverse, uint32_t sta
 		return (uint32_t)(b[start] << 24 | b[start + 1] << 16 | b[start + 2] << 8 | b[start + 3]);
 }
 
-inline std::string ByteArrayToDecString(const BYTEARRAY &b)
-{
-	if (b.empty())
-		return std::string();
-
-	std::string result = std::to_string(b[0]);
-
-	for (auto i = begin(b) + 1; i != end(b); ++i)
-		result += " " + std::to_string(*i);
-
-	return result;
-}
-
-
 inline void AppendByteArray(BYTEARRAY &b, const BYTEARRAY &append)
 {
 	b.insert(end(b), begin(append), end(append));

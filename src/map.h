@@ -76,9 +76,9 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 // CMap
 //
 
+#include <array>
 #include <vector>
 #include <stdint.h>
-typedef std::vector<uint8_t> BYTEARRAY;
 
 class CAura;
 class CGameSlot;
@@ -88,7 +88,7 @@ class CMap
 {
 private:
 	std::string m_MapData;              // the map data itself, for sending the map to players
-	BYTEARRAY m_MapSHA1;                // config value: map sha1 (20 bytes)
+	std::array<uint8_t, 20> m_MapSHA1;  // config value: map sha1 (20 bytes)
 	uint32_t m_MapSize;                 // config value: map size (4 bytes)
 	uint32_t m_MapInfo;                 // config value: map info (4 bytes) -> this is the real CRC
 	uint32_t m_MapCRC;                  // config value: map crc (4 bytes) -> this is not the real CRC, it's the "xoro" value
@@ -113,7 +113,7 @@ public:
 	inline uint32_t GetMapSize() const                         { return m_MapSize; }
 	inline uint32_t GetMapInfo() const                         { return m_MapInfo; }
 	inline uint32_t GetMapCRC() const                          { return m_MapCRC; }
-	inline BYTEARRAY GetMapSHA1() const                        { return m_MapSHA1; }
+	inline std::array<uint8_t, 20> GetMapSHA1() const          { return m_MapSHA1; }
 	inline uint8_t GetMapObservers() const                     { return m_MapObservers; }
 	inline uint8_t GetMapFlags() const                         { return m_MapFlags; }
 	inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
