@@ -138,31 +138,6 @@ inline std::string ExtractCString(const BYTEARRAY &b, uint32_t start)
 	return std::string();
 }
 
-
-inline BYTEARRAY ExtractNumbers(const std::string &s, uint32_t count)
-{
-	// consider the std::string to contain a bytearray in dec-text form, e.g. "52 99 128 1"
-
-	BYTEARRAY result;
-	uint32_t c;
-	std::stringstream SS;
-	SS << s;
-
-	for (uint32_t i = 0; i < count; ++i)
-	{
-		if (SS.eof())
-			break;
-
-		SS >> c;
-
-		// TODO: if c > 255 handle the error instead of truncating
-
-		result.push_back((uint8_t)c);
-	}
-
-	return result;
-}
-
 inline void AssignLength(BYTEARRAY &content)
 {
 	// insert the actual length of the content array into bytes 3 and 4 (indices 2 and 3)

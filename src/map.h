@@ -68,19 +68,19 @@ public:
 		RANDOMRACES   = 16, 
 	};
 
-	enum class MAPOPT
+	enum class MAPOPT : uint8_t
 	{
-		HIDEMINIMAP             = 1 << 0,
-		MODIFYALLYPRIORITIES    = 1 << 1,
+		//HIDEMINIMAP             = 1 << 0,
+		//MODIFYALLYPRIORITIES    = 1 << 1,
 		MELEE                   = 1 << 2, // the bot cares about this one...
-		REVEALTERRAIN           = 1 << 4,
+		//REVEALTERRAIN           = 1 << 4,
 		FIXEDPLAYERSETTINGS     = 1 << 5, // and this one...
 		CUSTOMFORCES            = 1 << 6, // and this one, the rest don't affect the bot's logic
-		CUSTOMTECHTREE          = 1 << 7,
-		CUSTOMABILITIES         = 1 << 8,
-		CUSTOMUPGRADES          = 1 << 9,
-		WATERWAVESONCLIFFSHORES = 1 << 11,
-		WATERWAVESONSLOPESHORES = 1 << 12,
+		//CUSTOMTECHTREE          = 1 << 7,
+		//CUSTOMABILITIES         = 1 << 8,
+		//CUSTOMUPGRADES          = 1 << 9,
+		//WATERWAVESONCLIFFSHORES = 1 << 11,
+		//WATERWAVESONSLOPESHORES = 1 << 12,
 	};
 
 public:
@@ -94,8 +94,8 @@ public:
 	inline uint32_t GetMapCRC() const                          { return m_MapCRC; }
 	inline std::array<uint8_t, 20> GetMapSHA1() const          { return m_MapSHA1; }
 	inline MAPOBS GetMapObservers() const                      { return m_MapObservers; }
-	inline uint32_t GetMapFlags() const                         { return m_MapFlags; }
-	inline uint32_t GetMapOptions() const                      { return m_MapOptions; }
+	inline uint32_t GetMapFlags() const                        { return m_MapFlags; }
+	inline uint8_t GetMapOptions() const                       { return m_MapOptions; }
 	inline uint16_t GetMapWidth() const                        { return m_MapWidth; }
 	inline uint16_t GetMapHeight() const                       { return m_MapHeight; }
 	inline uint32_t GetMapNumPlayers() const                   { return m_MapNumPlayers; }
@@ -117,12 +117,12 @@ private:
 	uint16_t m_MapHeight;               // config value: map height (2 bytes)
 	std::string m_MapPath;              // config value: map path
 	std::vector<CGameSlot> m_Slots;
-	uint32_t m_MapOptions;
+	uint8_t  m_MapOptions;
 	uint32_t m_MapNumPlayers;
 	MAPSPEED m_MapSpeed;
 	MAPVIS   m_MapVisibility;
 	MAPOBS   m_MapObservers;
-	uint32_t  m_MapFlags;
+	uint32_t m_MapFlags;
 	bool m_Valid;
 };
 
@@ -136,9 +136,9 @@ inline uint32_t operator|(CMap::MAPFLAG a, CMap::MAPFLAG b)
 	return (uint32_t)a | (uint32_t)b;
 }
 
-inline uint32_t operator&(uint32_t a, CMap::MAPOPT b)
+inline uint8_t operator&(uint8_t a, CMap::MAPOPT b)
 {
-	return a & (uint32_t)b;
+	return a & (uint8_t)b;
 }
 
 #endif  // AURA_MAP_H_

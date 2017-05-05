@@ -22,6 +22,7 @@ CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
 #include "util.h"
 #include "config.h"
 #include "gameslot.h"
+#include <type_traits>
 
 void Print(const std::string &message);
 
@@ -36,8 +37,50 @@ bool ExtractNumbers(const std::string &s, std::array<T, N>& result)
 		if (SS.eof())
 			return false;
 		SS >> c;
+		if (c > T(-1))
+			return false;
 		result[i] = (T)c;
 	}
+	return true;
+}
+
+template <class T>
+bool ExtractNumbers(const std::string &s, T& result, typename std::enable_if<std::is_integral<T>::value>::type* = 0)
+{
+	std::array<uint8_t, sizeof T> tmp;
+	if (!ExtractNumbers(s, tmp))
+		return false;
+	result = 0;
+	for (auto it = tmp.rbegin(); it != tmp.rend();++it)
+	{
+		result <<= 8;
+		result |= *it;
+	}
+	return true;
+}
+
+template <class T>
+bool ConfigRead(CConfig* cfg, const std::string& key, T& result)
+{
+	if (!ExtractNumbers(cfg->GetString(key, std::string()), result)) {
+		Print("[MAP] invalid " + key + " detected");
+		return false;
+	}
+	Print("[MAP] " + key + " = " + std::to_string(result));
+	return true;
+}
+
+template <class T, size_t N>
+bool ConfigRead(CConfig* cfg, const std::string& key, std::array<T, N>& result, bool showerror = true)
+{
+	std::string str = cfg->GetString(key, std::string());
+	if (!ExtractNumbers(str, result)) {
+		if (showerror) {
+			Print("[MAP] invalid " + key + " detected");
+		}
+		return false;
+	}
+	Print("[MAP] " + key + " = " + str);
 	return true;
 }
 
@@ -126,42 +169,23 @@ uint8_t CMap::GetMapLayoutStyle() const
 
 void CMap::Load(std::string const& MapPath, CConfig *MAP)
 {
-	m_Valid = true;
+	m_Valid = false;
 
 	m_MapPath = MapPath;
 
-	m_MapSize = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_size", std::string()), 4), false);
-	m_MapInfo = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_info", std::string()), 4), false);
-	m_MapCRC = ByteArrayToUInt32(ExtractNumbers(MAP->GetString("map_crc", std::string()), 4), false);
-	std::string sha1_str = MAP->GetString("map_sha1", std::string());
-	if (!ExtractNumbers(sha1_str, m_MapSHA1)) {
-		m_Valid = false;
-		Print("[MAP] invalid map_sha1 detected");
-		return;
-	}
-
-	Print("[MAP] map_size = " + std::to_string(m_MapSize));
-	Print("[MAP] map_info = " + std::to_string(m_MapInfo));
-	Print("[MAP] map_crc = " + std::to_string(m_MapCRC));
-	Print("[MAP] map_sha1 = " + sha1_str);
-
-	m_MapOptions = MAP->GetInt("map_options", 0);
-	m_MapWidth = ByteArrayToUInt16(ExtractNumbers(MAP->GetString("map_width", std::string()), 2), false);
-	m_MapHeight = ByteArrayToUInt16(ExtractNumbers(MAP->GetString("map_height", std::string()), 2), false);
-
-	Print("[MAP] map_options = " + std::to_string(m_MapOptions));
-	Print("[MAP] map_width = " + std::to_string(m_MapWidth));
-	Print("[MAP] map_height = " + std::to_string(m_MapHeight));
+	if (!ConfigRead(MAP, "map_size", m_MapSize)) { return; }
+	if (!ConfigRead(MAP, "map_info", m_MapInfo)) { return; }
+	if (!ConfigRead(MAP, "map_crc", m_MapCRC)) { return; }
+	if (!ConfigRead(MAP, "map_sha1", m_MapSHA1)) { return; }
+	if (!ConfigRead(MAP, "map_options", m_MapOptions)) { return; }
+	if (!ConfigRead(MAP, "map_width", m_MapWidth)) { return; }
+	if (!ConfigRead(MAP, "map_height", m_MapHeight)) { return; }
 
 	m_Slots.clear();
 	for (uint32_t Slot = 1; Slot <= 12; ++Slot)
 	{
-		std::string SlotString = MAP->GetString("map_slot" + std::to_string(Slot), std::string());
-		Print("[MAP] map_slot" + std::to_string(Slot) + " = " + SlotString);
-		if (SlotString.empty())
-			break;
 		std::array<uint8_t, 9> SlotData;
-		if (!ExtractNumbers(SlotString, SlotData)) {
+		if (!ConfigRead(MAP, "map_slot" + std::to_string(Slot), SlotData, false)) { 
 			break;
 		}
 		m_Slots.push_back(CGameSlot(SlotData[0], SlotData[1], SlotData[2], SlotData[3], SlotData[4], SlotData[5], SlotData[6], SlotData[7], SlotData[8]));
@@ -221,31 +245,32 @@ void CMap::CheckValid()
 
 	if (m_MapPath.empty() || m_MapPath.length() > 53)
 	{
-		m_Valid = false;
 		Print("[MAP] invalid map_path detected");
+		return;
 	}
 
-	if (m_MapPath.find('/') != std::string::npos)
+	if (m_MapPath.find('/') != std::string::npos) {
 		Print("[MAP] warning - map_path contains forward slashes '/' but it must use Windows style back slashes '\\'");
-
+	}
 
 	if (!m_MapData.empty() && m_MapData.size() != m_MapSize)
 	{
-		m_Valid = false;
 		Print("[MAP] invalid map_size detected - size mismatch with actual map data");
+		return;
 	}
 
 	if (m_MapNumPlayers == 0 || m_MapNumPlayers > 12)
 	{
-		m_Valid = false;
 		Print("[MAP] invalid map_numplayers detected");
+		return;
 	}
 
 	if (m_Slots.empty() || m_Slots.size() > 12)
 	{
-		m_Valid = false;
 		Print("[MAP] invalid map_slot<x> detected");
+		return;
 	}
+	m_Valid = true;
 }
 
 const std::string* CMap::GetMapData() const
