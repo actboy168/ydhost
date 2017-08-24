@@ -54,7 +54,7 @@ public:
 		{
 			return false;
 		}
-		reset(CurTicks);
+		reset(m_Ticks + Timeout);
 		return true;
 	}
 
