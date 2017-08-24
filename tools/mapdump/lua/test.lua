@@ -19,5 +19,6 @@ end
 
 local mapdump = require 'mapdump'
 mapdump(input, jass, write)
+of:close()
 
 print(os.clock() - t)
