@@ -69,7 +69,7 @@ bool CPotentialPlayer::Update(void *fd)
 		{
 			// bytes 2 and 3 contain the length of the packet
 
-			const uint16_t Length = ByteArrayToUInt16(Bytes, false, 2);
+			const uint16_t Length = ByteArrayToUInt16(Bytes, 2);
 			const BYTEARRAY Data = BYTEARRAY(begin(Bytes), begin(Bytes) + Length);
 
 			if (Bytes.size() >= Length)
@@ -180,7 +180,7 @@ bool CGamePlayer::Update(uint32_t Ticks, void *fd)
 	{
 		// bytes 2 and 3 contain the length of the packet
 
-		const uint16_t Length = ByteArrayToUInt16(Bytes, false, 2);
+		const uint16_t Length = ByteArrayToUInt16(Bytes, 2);
 		const BYTEARRAY Data = BYTEARRAY(begin(Bytes), begin(Bytes) + Length);
 
 		if (Bytes[0] == W3GS_HEADER_CONSTANT)

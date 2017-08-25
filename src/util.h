@@ -29,7 +29,6 @@ inline BYTEARRAY CreateByteArray(const uint8_t *a, int32_t size)
 {
 	if (size < 1)
 		return BYTEARRAY();
-
 	return BYTEARRAY{ a, a + size };
 }
 
@@ -38,42 +37,28 @@ inline BYTEARRAY CreateByteArray(uint8_t c)
 	return BYTEARRAY{ c };
 }
 
-inline BYTEARRAY CreateByteArray(uint16_t i, bool reverse)
+inline BYTEARRAY CreateByteArray(uint16_t i)
 {
-	if (!reverse)
-		return BYTEARRAY{ (uint8_t)i, (uint8_t)(i >> 8) };
-	else
-		return BYTEARRAY{ (uint8_t)(i >> 8), (uint8_t)i };
+	return BYTEARRAY{ (uint8_t)i, (uint8_t)(i >> 8) };
 }
 
-inline BYTEARRAY CreateByteArray(uint32_t i, bool reverse)
+inline BYTEARRAY CreateByteArray(uint32_t i)
 {
-	if (!reverse)
-		return BYTEARRAY{ (uint8_t)i, (uint8_t)(i >> 8), (uint8_t)(i >> 16), (uint8_t)(i >> 24) };
-	else
-		return BYTEARRAY{ (uint8_t)(i >> 24), (uint8_t)(i >> 16), (uint8_t)(i >> 8), (uint8_t)i };
+	return BYTEARRAY{ (uint8_t)i, (uint8_t)(i >> 8), (uint8_t)(i >> 16), (uint8_t)(i >> 24) };
 }
 
-inline uint16_t ByteArrayToUInt16(const BYTEARRAY &b, bool reverse, uint32_t start = 0)
+inline uint16_t ByteArrayToUInt16(const BYTEARRAY &b, uint32_t start)
 {
 	if (b.size() < start + 2)
 		return 0;
-
-	if (!reverse)
-		return (uint16_t)(b[start + 1] << 8 | b[start]);
-	else
-		return (uint16_t)(b[start] << 8 | b[start + 1]);
+	return (uint16_t)(b[start + 1] << 8 | b[start]);
 }
 
-inline uint32_t ByteArrayToUInt32(const BYTEARRAY &b, bool reverse, uint32_t start = 0)
+inline uint32_t ByteArrayToUInt32(const BYTEARRAY &b, uint32_t start)
 {
 	if (b.size() < start + 4)
 		return 0;
-
-	if (!reverse)
-		return (uint32_t)(b[start + 3] << 24 | b[start + 2] << 16 | b[start + 1] << 8 | b[start]);
-	else
-		return (uint32_t)(b[start] << 24 | b[start + 1] << 16 | b[start + 2] << 8 | b[start + 3]);
+	return (uint32_t)(b[start + 3] << 24 | b[start + 2] << 16 | b[start + 1] << 8 | b[start]);
 }
 
 inline void AppendByteArray(BYTEARRAY &b, const BYTEARRAY &append)
@@ -86,34 +71,25 @@ inline void AppendByteArray(BYTEARRAY &b, uint8_t i)
 	b.push_back(i);
 }
 
-inline void AppendByteArrayFast(BYTEARRAY &b, const BYTEARRAY &append)
-{
-	b.insert(end(b), begin(append), end(append));
-}
-
 inline void AppendByteArray(BYTEARRAY &b, const uint8_t *a, int32_t size)
 {
 	AppendByteArray(b, CreateByteArray(a, size));
 }
 
-inline void AppendByteArrayFast(BYTEARRAY &b, const std::string &append, bool terminator = true)
+inline void AppendByteArray(BYTEARRAY &b, const std::string &append)
 {
-	// append the std::string plus a null terminator
-
 	b.insert(end(b), begin(append), end(append));
-
-	if (terminator)
-		b.push_back(0);
+	b.push_back(0);
 }
 
-inline void AppendByteArray(BYTEARRAY &b, uint16_t i, bool reverse)
+inline void AppendByteArray(BYTEARRAY &b, uint16_t i)
 {
-	AppendByteArray(b, CreateByteArray(i, reverse));
+	AppendByteArray(b, CreateByteArray(i));
 }
 
-inline void AppendByteArray(BYTEARRAY &b, uint32_t i, bool reverse)
+inline void AppendByteArray(BYTEARRAY &b, uint32_t i)
 {
-	AppendByteArray(b, CreateByteArray(i, reverse));
+	AppendByteArray(b, CreateByteArray(i));
 }
 
 inline std::string ExtractCString(const BYTEARRAY &b, uint32_t start)
