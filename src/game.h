@@ -180,7 +180,7 @@ public:
 
 	// other functions
 
-	void DeletePlayer(CGamePlayer* player, uint32_t nLeftCode, const std::string &nLeftReason);
+	void DeletePlayer(CGamePlayer* player, uint32_t nLeftCode);
 	uint8_t GetSIDFromPID(uint8_t PID) const;
 	uint8_t GetNewPID();
 	uint8_t GetNewColour();
@@ -191,7 +191,7 @@ public:
 	void SwapSlots(uint8_t SID1, uint8_t SID2);
 	void ColourSlot(uint8_t SID, uint8_t colour);
 	void StartCountDown();
-	void StopLaggers(const std::string &reason);
+	void StopLaggers();
 	void CreateVirtualHost();
 	void DeleteVirtualHost();
 };

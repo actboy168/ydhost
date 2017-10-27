@@ -85,7 +85,6 @@ protected:
 private:
 	uint32_t m_InternalIP;                    // the player's internal IP address as reported by the player when connecting
 	std::queue<uint32_t> m_CheckSums;         // the last few checksums the player has sent (for detecting desyncs)
-	std::string m_LeftReason;                 // the reason the player left the game
 	std::string m_Name;                       // the player's name
 	uint32_t m_LeftCode;                      // the code to be sent in W3GS_PLAYERLEAVE_OTHERS for why this player left the game
 	uint32_t m_SyncCounter;                   // the number of keepalive packets received from this player
@@ -114,7 +113,6 @@ public:
 	inline std::string GetName() const                                  { return m_Name; }
 	inline uint32_t GetInternalIP() const                               { return m_InternalIP; }
 	inline std::queue<uint32_t> *GetCheckSums()                         { return &m_CheckSums; }
-	inline std::string GetLeftReason() const                            { return m_LeftReason; }
 	inline uint32_t GetLeftCode() const                                 { return m_LeftCode; }
 	inline uint32_t GetSyncCounter() const                              { return m_SyncCounter; }
 	inline uint32_t GetLastMapPartSent() const                          { return m_LastMapPartSent; }
@@ -128,7 +126,6 @@ public:
 
 	inline void SetSocket(CTCPSocket *nSocket)                                           { m_Socket = nSocket; }
 	inline void SetDeleteMe(bool nDeleteMe)                                              { m_DeleteMe = nDeleteMe; }
-	inline void SetLeftReason(const std::string &nLeftReason)                            { m_LeftReason = nLeftReason; }
 	inline void SetLeftCode(uint32_t nLeftCode)                                          { m_LeftCode = nLeftCode; }
 	inline void SetSyncCounter(uint32_t nSyncCounter)                                    { m_SyncCounter = nSyncCounter; }
 	inline void SetLastMapPartSent(uint32_t nLastMapPartSent)                            { m_LastMapPartSent = nLastMapPartSent; }

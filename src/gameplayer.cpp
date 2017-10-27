@@ -265,7 +265,6 @@ bool CGamePlayer::Update(uint32_t Ticks, void *fd)
 	*RecvBuffer = RecvBuffer->substr(LengthProcessed);
 
 	// try to find out why we're requesting deletion
-	// in cases other than the ones covered here m_LeftReason should have been set when m_DeleteMe was set
 
 	if (m_Socket)
 	{

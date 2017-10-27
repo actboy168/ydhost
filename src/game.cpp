@@ -250,7 +250,7 @@ bool CGame::Update(void *fd, void *send_fd)
 		if (m_Lagging)
 		{
 			if (Ticks - m_StartedLaggingTicks >= 600000)
-				StopLaggers("was automatically dropped after 60 seconds");
+				StopLaggers();
 
 			// we cannot allow the lag screen to stay up for more than ~65 seconds because Warcraft III disconnects if it doesn't receive an action packet at least this often
 			// one (easy) solution is to simply drop all the laggers if they lag for more than 60 seconds
@@ -542,12 +542,7 @@ void CGame::SendAllActions()
 
 void CGame::EventPlayerDeleted(uint32_t Ticks, CGamePlayer *player)
 {
-	Print("[GAME: " + GetGameName() + "] deleting player [" + player->GetName() + "]: " + player->GetLeftReason());
-
-	// in some cases we're forced to send the left message early so don't send it again
-
-	if (m_State == State::Loaded)
-		SendAllChat(player->GetName() + " " + player->GetLeftReason() + ".");
+	Print("[GAME: " + GetGameName() + "] deleting player [" + player->GetName() + "]");
 
 	if (player->GetLagging())
 		SendAll(m_Protocol->SEND_W3GS_STOP_LAG(player->GetPID(), Ticks - player->GetStartedLaggingTicks()));
@@ -567,17 +562,17 @@ void CGame::EventPlayerDeleted(uint32_t Ticks, CGamePlayer *player)
 
 void CGame::EventPlayerDisconnectTimedOut(CGamePlayer *player)
 {
-	DeletePlayer(player, PLAYERLEAVE_DISCONNECT, "has lost the connection (timed out)");
+	DeletePlayer(player, PLAYERLEAVE_DISCONNECT);
 }
 
 void CGame::EventPlayerDisconnectSocketError(CGamePlayer *player)
 {
-	DeletePlayer(player, PLAYERLEAVE_DISCONNECT, "has lost the connection (connection error - " + player->GetSocket()->GetErrorString() + ")");
+	DeletePlayer(player, PLAYERLEAVE_DISCONNECT);
 }
 
 void CGame::EventPlayerDisconnectConnectionClosed(CGamePlayer *player)
 {
-	DeletePlayer(player, PLAYERLEAVE_DISCONNECT, "has lost the connection (connection closed by remote host)");
+	DeletePlayer(player, PLAYERLEAVE_DISCONNECT);
 }
 
 void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *joinPlayer)
@@ -724,7 +719,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 void CGame::EventPlayerLeft(CGamePlayer *player, uint32_t reason)
 {
 	// this function is only called when a player leave packet is received, not when there's a socket error, kick, etc...
-	DeletePlayer(player, PLAYERLEAVE_LOST, "has left the game voluntarily");
+	DeletePlayer(player, PLAYERLEAVE_LOST);
 }
 
 void CGame::EventPlayerLoaded(CGamePlayer *player)
@@ -927,7 +922,7 @@ void CGame::EventPlayerDropRequest(CGamePlayer *player)
 		}
 
 		if ((float)Votes / m_Players.size() > 0.50f)
-			StopLaggers("lagged out (dropped by vote)");
+			StopLaggers();
 	}
 }
 
@@ -957,7 +952,7 @@ void CGame::EventPlayerMapSize(CGamePlayer *player, CIncomingMapSize *mapSize)
 		}
 		else
 		{
-			DeletePlayer(player, PLAYERLEAVE_LOBBY, "doesn't have the map and there is no local copy of the map to send");
+			DeletePlayer(player, PLAYERLEAVE_LOBBY);
 		}
 	}
 	else if (player->GetDownloadStarted())
@@ -1209,10 +1204,9 @@ void CGame::SwapSlots(uint8_t SID1, uint8_t SID2)
 	}
 }
 
-void CGame::DeletePlayer(CGamePlayer* player, uint32_t nLeftCode, const std::string &nLeftReason)
+void CGame::DeletePlayer(CGamePlayer* player, uint32_t nLeftCode)
 {
 	player->SetDeleteMe(true);
-	player->SetLeftReason(nLeftReason);
 	player->SetLeftCode(nLeftCode);
 
 	if (m_State == State::CountDown)
@@ -1281,13 +1275,13 @@ void CGame::StartCountDown()
 	}
 }
 
-void CGame::StopLaggers(const std::string &reason)
+void CGame::StopLaggers()
 {
 	for (auto & player : m_Players)
 	{
 		if (player->GetLagging())
 		{
-			DeletePlayer(player, PLAYERLEAVE_DISCONNECT, reason);
+			DeletePlayer(player, PLAYERLEAVE_DISCONNECT);
 		}
 	}
 }
