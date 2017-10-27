@@ -98,7 +98,6 @@ private:
 	bool m_FinishedLoading;                   // if the player has finished loading or not
 	bool m_Lagging;                           // if the player is lagging or not (on the lag screen)
 	bool m_DropVote;                          // if the player voted to drop the laggers or not (on the lag screen)
-	bool m_LeftMessageSent;                   // if the playerleave message has been sent or not
 
 protected:
 	bool m_DeleteMe;
@@ -126,7 +125,6 @@ public:
 	inline bool GetFinishedLoading() const                              { return m_FinishedLoading; }
 	inline bool GetLagging() const                                      { return m_Lagging; }
 	inline bool GetDropVote() const                                     { return m_DropVote; }
-	inline bool GetLeftMessageSent() const                              { return m_LeftMessageSent; }
 
 	inline void SetSocket(CTCPSocket *nSocket)                                           { m_Socket = nSocket; }
 	inline void SetDeleteMe(bool nDeleteMe)                                              { m_DeleteMe = nDeleteMe; }
@@ -140,7 +138,6 @@ public:
 	inline void SetDownloadFinished(bool nDownloadFinished)                              { m_DownloadFinished = nDownloadFinished; }
 	inline void SetLagging(bool nLagging)                                                { m_Lagging = nLagging; }
 	inline void SetDropVote(bool nDropVote)                                              { m_DropVote = nDropVote; }
-	inline void SetLeftMessageSent(bool nLeftMessageSent)                                { m_LeftMessageSent = nLeftMessageSent; }
 
 	// processing functions
 

@@ -95,8 +95,7 @@ uint32_t CGame::GetNumPlayers() const
 
 	for (const auto & player : m_Players)
 	{
-		if (!player->GetLeftMessageSent())
-			++NumPlayers;
+		++NumPlayers;
 	}
 
 	return NumPlayers;
@@ -547,9 +546,6 @@ void CGame::EventPlayerDeleted(uint32_t Ticks, CGamePlayer *player)
 
 	// in some cases we're forced to send the left message early so don't send it again
 
-	if (player->GetLeftMessageSent())
-		return;
-
 	if (m_State == State::Loaded)
 		SendAllChat(player->GetName() + " " + player->GetLeftReason() + ".");
 
@@ -681,7 +677,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 
 	for (auto & ply : m_Players)
 	{
-		if (!ply->GetLeftMessageSent() && ply != Player)
+		if (ply != Player)
 		{
 			// send info about the new player to every other player
 
@@ -1057,7 +1053,7 @@ uint8_t CGame::GetNewPID()
 		bool InUse = false;
 		for (auto & player : m_Players)
 		{
-			if (!player->GetLeftMessageSent() && player->GetPID() == TestPID)
+			if (player->GetPID() == TestPID)
 			{
 				InUse = true;
 				break;
@@ -1105,8 +1101,7 @@ BYTEARRAY CGame::GetPIDs()
 
 	for (auto & player : m_Players)
 	{
-		if (!player->GetLeftMessageSent())
-			result.push_back(player->GetPID());
+		result.push_back(player->GetPID());
 	}
 
 	return result;
@@ -1124,8 +1119,7 @@ uint8_t CGame::GetHostPID()
 
 	for (auto & player : m_Players)
 	{
-		if (!player->GetLeftMessageSent())
-			return player->GetPID();
+		return player->GetPID();
 	}
 
 	return 255;
