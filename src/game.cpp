@@ -579,7 +579,7 @@ void CGame::EventPlayerJoined(CPotentialPlayer *potential, CIncomingJoinPlayer *
 {
 	// check the new player's name
 
-	if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == GetVirtualHostName() || joinPlayer->GetName().find(" ") != std::string::npos || joinPlayer->GetName().find("|") != std::string::npos)
+	if (joinPlayer->GetName().empty() || joinPlayer->GetName().size() > 15 || joinPlayer->GetName() == GetVirtualHostName())
 	{
 		Print("[GAME: " + GetGameName() + "] player [" + joinPlayer->GetName() + "|" + potential->GetExternalIPString() + "] invalid name (taken, invalid char, spoofer, too long)");
 		potential->Send(m_Protocol->SEND_W3GS_REJECTJOIN(REJECTJOIN_FULL));
