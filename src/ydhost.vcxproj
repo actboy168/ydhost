@@ -22,6 +22,7 @@
     <ProjectGuid>{B57A04BC-13D4-4CAD-B835-C046B9D66269}</ProjectGuid>
     <RootNamespace>aura</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
